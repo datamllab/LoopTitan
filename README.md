@@ -49,6 +49,10 @@ print(estimate_cost(spec, seq_len=16)["calls"]["forward_cells"])  # 6
 | | `.github/` | Issue forms, CI and merge tooling. |
 | | `scripts/run.py`, `scripts/results.py`, `src/moeloop_lab/` | Run tooling: recorded launches and results comments. |
 
+## Research record
+
+The [issues](https://github.com/datamllab/LoopTitan/issues) are a copy of the development record, under the original issue numbers: studies with their criteria, run tasks with their results tables, code tasks and pull-request records. Private paths and details of the operating environment were removed; numbers, tables and verdicts are unchanged.
+
 ## Tests
 
 ```sh
