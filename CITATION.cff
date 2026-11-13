@@ -3,7 +3,7 @@ message: "If you use this software, cite the repository and the exact source com
 type: software
 title: "LoopTitan"
 authors:
-  - name: "doem97"
+  - name: "The LoopTitan authors"
 repository-code: "https://github.com/datamllab/LoopTitan"
 url: "https://github.com/datamllab/LoopTitan"
 version: "1.0.0rc1"
