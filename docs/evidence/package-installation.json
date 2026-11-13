@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "source_commit": "30f0857f0a0be3568569d45183497eaa5ead08f0",
+  "environment": {
+    "python": "3.12.3",
+    "torch": "2.14.0+cpu",
+    "transformers": "5.20.2",
+    "tokenizers": "0.23.3",
+    "safetensors": "0.8.0",
+    "torchtitan": "0.3.0 at 086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+    "triton": "3.8.0"
+  },
+  "artifacts": {
+    "moeloop_lab-0.1.0a1-py3-none-any.whl": "2281876565de83a80680ca855c2abdd79c6664ebd102cc8637f439db06c34aae",
+    "moeloop_lab-0.1.0a1.tar.gz": "051b556f0235877b86f90fc0fe5cb0af802ce12afdd91dad18062f468f9feb9e"
+  },
+  "verified": [
+    "git archive snapshot -> isolated uv build sdist -> wheel from sdist, both successful",
+    "clean base venv wheel installation and -I imports of moeloop/moeloop_lab.protocol without torch/torchtitan/transformers/mlflow; protocol build_record computes correct budget",
+    "clean model venv CPU Torch first then wheel[data,hf]; torch stays 2.14.0+cpu",
+    "installed prepare/export/evaluate/generate --help entrypoints pass from /tmp with -I",
+    "installed train extra loads pinned actual wheel source; with triton and --config tiny --help exit 0",
+    "wheel-only local text/tokenizer prepare -> native_grouped-layout DCP -> strict model export -> heldout CLI (9 labels, 2 batches) -> cached generation CLI -> HF/core logits assert_close",
+    "fresh HF-only consumer venv, no moeloop/torchtitan/mlflow installed, loads AutoTokenizer/AutoModelForCausalLM locally and passes cached/full logits + generation",
+    "wheel includes all 14 public Python modules, both optional protocol files and LICENSE, no datasets/checkpoints/private deployment files",
+    "source, lockfile and exported HF artifact contain no private filesystem or deployment paths, credential markers or authenticated URLs"
+  ],
+  "release_blockers": [],
+  "boundaries": [
+    "No GPU or new baseline execution in this packaging task",
+    "CPU train extra imports require Triton because of upstream eager imports; development docs already acknowledge this and normal CUDA Torch wheels provide Triton",
+    "Current sdist is runtime-focused: docs/scripts/configs are absent; optional protocol capture requires original editable Git checkout by design. Pure protocol import/build_record works in wheel."
+  ]
+}

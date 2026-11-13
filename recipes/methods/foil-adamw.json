@@ -1,0 +1,171 @@
+{
+  "name": "method-foil-adamw",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 1280,
+    "hidden_dim": 432,
+    "num_heads": 10,
+    "num_kv_heads": 1,
+    "num_experts": 64,
+    "top_k": 8,
+    "num_cells": 4,
+    "num_visits": 2,
+    "visit_capacity": 2,
+    "prefix_cells": 2,
+    "suffix_cells": 2,
+    "order": "stack",
+    "attention_per_visit": true,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "lora_attention_rank": 0,
+    "lora_ffn_rank": 0,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "injection_dt": 0.8047189562170501,
+    "injection_decay": 1.0,
+    "injection_eps": 1e-06,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": false,
+    "init_std": 0.02,
+    "schema_version": 4,
+    "prefix": {
+      "hidden_dim": null,
+      "num_experts": 64,
+      "top_k": null,
+      "always_on_hidden_dim": null,
+      "residual_scale": null
+    },
+    "core": {
+      "hidden_dim": null,
+      "num_experts": 128,
+      "top_k": null,
+      "always_on_hidden_dim": null,
+      "residual_scale": null
+    },
+    "suffix": {
+      "hidden_dim": null,
+      "num_experts": 64,
+      "top_k": null,
+      "always_on_hidden_dim": null,
+      "residual_scale": null
+    }
+  },
+  "training": {
+    "num_visits": 2,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.01,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "terminal_ce",
+    "entropy_coeff": 0.0
+  },
+  "source": {
+    "method": "Foil",
+    "version": "v1",
+    "url": "https://arxiv.org/html/2609.35751v1",
+    "sections": [
+      "2.1",
+      "2.2"
+    ],
+    "selected_path": "flatten_core_per_visit_attention",
+    "base_E_D_L": [
+      64,
+      8,
+      1
+    ],
+    "selected_E_D_L": [
+      128,
+      4,
+      2
+    ],
+    "track": "P2",
+    "constructor": "foil_spec"
+  },
+  "preserved": [
+    "Flatten only core: (E,D,L)->(2E,D/2,2L); D is physical bank count.",
+    "Residual and single-expert widths stay fixed; experts/router/norms are shared within each bank.",
+    "Base and Foil both have per-visit attention: DL attention owners are preserved.",
+    "Independent prelude/coda retain the external Base expert count E."
+  ],
+  "adaptations": [
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Track P2's AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Geometry: Base (E, D, L) = (64, 8, 1) with a prelude and coda of 2 layers instead of (4, 4, 1) with 1 keeps the constructor's 1:4:1 prelude/core/coda ratio and gives m0's 12 logical layers and expert pool at P2's width (core banks of 128 experts).",
+    "Matrix initialization std=.02 and unit norm scales are P2's; seq 4096, 1,048,576 positions per update, the schedule (95-update linear warmup, constant peak, last 20% linear to 0) and the AdamW or Muon settings are Track P2's; the training recipe (objective, depth, aux coefficient, expert LR multiplier) is the constructor's."
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "base_lr": 0.0012,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "max_norm": 1.0
+  },
+  "inference": {
+    "num_visits": 2,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": []
+  },
+  "run": {
+    "seq_len": 4096,
+    "global_batch_positions": 1048576,
+    "successful_updates": 4769,
+    "schedule_total_steps": 4769,
+    "validation_interval": 477,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "manifest_identity": null,
+    "schedule": {
+      "name": "warmup_stable_decay",
+      "coordinate": "successful_optimizer_updates",
+      "total_steps": 4769,
+      "warmup_steps": 95,
+      "decay_ratio": 0.2,
+      "decay_type": "linear",
+      "min_lr_factor": 0.0
+    },
+    "data_infinite": false,
+    "validation_label_tokens": 1000000,
+    "validation_infinite": false,
+    "checkpoint_interval": 477,
+    "training_seeds": [
+      42
+    ],
+    "activation_checkpointing": "none",
+    "panel": "methods",
+    "local_batch_size": 16,
+    "keep_latest_k": 0
+  },
+  "evidence": [],
+  "schema_version": 1
+}

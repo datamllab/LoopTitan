@@ -1,0 +1,161 @@
+{
+  "name": "method-ouro-muon",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 640,
+    "hidden_dim": 304,
+    "num_heads": 5,
+    "num_kv_heads": 1,
+    "num_experts": 562,
+    "top_k": 8,
+    "num_cells": 4,
+    "num_visits": 3,
+    "visit_capacity": null,
+    "prefix_cells": 0,
+    "suffix_cells": 0,
+    "order": "stack",
+    "attention_per_visit": false,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "lora_attention_rank": 0,
+    "lora_ffn_rank": 0,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "injection_dt": 0.8047189562170501,
+    "injection_decay": 1.0,
+    "injection_eps": 1e-06,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": true,
+    "init_std": 0.02,
+    "schema_version": 4,
+    "prefix": null,
+    "core": null,
+    "suffix": null
+  },
+  "training": {
+    "num_visits": 3,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.01,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "expected_ce",
+    "entropy_coeff": 0.1
+  },
+  "source": {
+    "method": "Ouro",
+    "version": "v5",
+    "url": "https://arxiv.org/html/2510.25741v5",
+    "sections": [
+      "3.2",
+      "3.3",
+      "3.4"
+    ],
+    "selected_path": "stage_I_full_depth_tokenwise_expected_CE_entropy",
+    "track": "P2",
+    "constructor": "ouro_spec"
+  },
+  "preserved": [
+    "A shared linear gate defines tokenwise conditional halting hazards; the final exit receives all remaining survival probability.",
+    "Training minimizes sum_r p_r*CE_r minus beta*H(p), with full gradients through the gate, backbone and unique head.",
+    "Every visit is executed; terminal logits provide common fixed-depth evaluation and generation."
+  ],
+  "adaptations": [
+    "Shared gate weights and bias start at zero; the entropy coefficient is an explicit public-stack choice.",
+    "Each visit reads through the common final norm and unique output head, with no independent coda.",
+    "Stage II, token-level early exit and missing-KV strategies are outside this selected path.",
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Track P2's Muon for hidden matrices (AdamW for embedding, head, routers, norms and other 1-D parameters) and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Geometry: width 640 (5 heads of 128) instead of P2's 1280, because the expected-CE readout at each of the 3 visits projects onto the 151669-token vocabulary three times per token and only half of P2's width fits m0's training FLOPs; 4 core layers instead of 2 give m0's 12 logical layers (4 x 3), experts of width 304 fill the FLOPs and 562 experts per layer meet m0's unique parameters; so the vocabulary readout is 74% of its training FLOPs (m0: 37%), its other compute is 41% of m0's, and top-8 of 562 experts activates 1.4% of them (m0: 12.5%).",
+    "Matrix initialization std=.02 and unit norm scales are P2's; seq 4096, 1,048,576 positions per update, the schedule (95-update linear warmup, constant peak, last 20% linear to 0) and the AdamW or Muon settings are Track P2's; the training recipe (objective, depth, aux coefficient, expert LR multiplier) is the constructor's."
+  ],
+  "optimizer": {
+    "name": "Muon",
+    "base_lr": 0.0017,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "max_norm": 1.0,
+    "muon": {
+      "momentum": 0.95,
+      "nesterov": true,
+      "ns_steps": 5,
+      "ns_coefficients": [
+        3.4445,
+        -4.775,
+        2.0315
+      ],
+      "eps": 1e-07,
+      "weight_decay": 0.1,
+      "adjust_lr_fn": "match_rms_adamw",
+      "lr": 0.0017
+    }
+  },
+  "inference": {
+    "num_visits": 3,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": [],
+    "labels_loss": "terminal_ce_only"
+  },
+  "run": {
+    "seq_len": 4096,
+    "global_batch_positions": 1048576,
+    "successful_updates": 4769,
+    "schedule_total_steps": 4769,
+    "validation_interval": 477,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "manifest_identity": null,
+    "schedule": {
+      "name": "warmup_stable_decay",
+      "coordinate": "successful_optimizer_updates",
+      "total_steps": 4769,
+      "warmup_steps": 95,
+      "decay_ratio": 0.2,
+      "decay_type": "linear",
+      "min_lr_factor": 0.0
+    },
+    "data_infinite": false,
+    "validation_label_tokens": 1000000,
+    "validation_infinite": false,
+    "checkpoint_interval": 477,
+    "training_seeds": [
+      42
+    ],
+    "activation_checkpointing": "none",
+    "panel": "methods",
+    "local_batch_size": 16,
+    "keep_latest_k": 0
+  },
+  "evidence": [],
+  "schema_version": 1
+}

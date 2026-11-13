@@ -1,0 +1,676 @@
+{
+  "schema_version": 1,
+  "protocol": "looped_moe_bench_v1",
+  "status": "Draft frozen by the human merge of #27; any change is a protocol change (AGENTS.md gate 1).",
+  "verdicts": [
+    "eligible",
+    "budget-mismatch",
+    "protocol-mismatch",
+    "missing-evidence"
+  ],
+  "tracks": {
+    "S": {
+      "name": "S",
+      "description": "Entry track: C-grid scale (about 26M unique non-embedding parameters), one GPU.",
+      "hardware": "1x H100/H200, target under 1 hour per run (not an eligibility condition)",
+      "reference": {
+        "constructor": "sharing_panel_specs",
+        "arm": "a0_r0",
+        "recipe_file": "recipes/c_a0_r0.json",
+        "geometry": {
+          "vocab_size": 151669,
+          "dim": 512,
+          "hidden_dim": 1024,
+          "num_heads": 8,
+          "num_kv_heads": 2,
+          "num_experts": 8,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 4,
+          "max_seq_len": 2048,
+          "attention_per_visit": false,
+          "router_per_visit": false
+        },
+        "note": "Shared attention/router C-grid baseline (2 banks x 4 visits). Only geometry, objective and inference depth enter the budget; the track schedule applies to every arm."
+      },
+      "seq_len": 2048,
+      "global_batch_positions": 32768,
+      "mixed_precision_param": "bfloat16",
+      "target_label_tokens": 500000000,
+      "horizon_updates": 15259,
+      "nominal_positions": 500006912,
+      "token_budget": {
+        "status": "provisional",
+        "note": "About 0.5B labels until measured on one GPU (#45). The 4x H200 C grid measured a median 256555 labels/s (docs/evidence/v3/performance.csv), so 0.5B may exceed 1 GPU hour; the human re-freezes this value before the first reference run."
+      },
+      "schedule": {
+        "name": "warmup_stable_decay",
+        "coordinate": "successful_optimizer_updates",
+        "warmup_fraction": 0.02,
+        "decay_fraction": 0.2,
+        "total_steps": 15259,
+        "warmup_steps": 305,
+        "decay_ratio": 0.2,
+        "decay_type": "linear",
+        "min_lr_factor": 0.0,
+        "rule": "horizon = ceil(target_label_tokens / global_batch_positions); linear warmup over round(0.02 * horizon) updates, constant peak, last 20% linear to 0. The submitted recipe's run.schedule_total_steps, run.successful_updates and run.schedule carry these values."
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "required_seed": 42,
+      "min_seeds": 1,
+      "seed_rule": "One seed is enough for eligibility and it must be 42; further seeds are optional and come from seeds. The leaderboard reports the mean over submitted seeds, their range when there are several, and the count.",
+      "lr_grid": {
+        "AdamW": [
+          0.00015,
+          0.0003,
+          0.0006
+        ],
+        "Muon": [
+          0.0003,
+          0.0006,
+          0.0012
+        ]
+      },
+      "optimizers": {
+        "fixed": {
+          "AdamW": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ]
+          },
+          "Muon": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ],
+            "muon": {
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_steps": 5,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "weight_decay": 0.1,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          }
+        },
+        "rule": "The validator checks that each setting listed under fixed for the submitted optimizer equals the listed value. AdamW: P1's betas, eps, weight_decay, max_norm and zero_weight_decay_roles (recipes/p1_moe.json). Muon: the same five for its AdamW-updated parameters (embedding, lm_head, routers, norms), plus optimizer.muon momentum, nesterov, ns_steps, ns_coefficients and eps at the TorchTitan 086bf6c DistMuon defaults, weight_decay equal to AdamW's and adjust_lr_fn match_rms_adamw (#26 optim.MUON_FIELDS); optimizer.muon.lr must equal optimizer.base_lr. optimizer.expert_lr_multiplier and optimizer.expert_group_size are method-level: they may differ but must be stated, and are reported. Other optimizer keys are not checked here."
+      },
+      "lr_selection": {
+        "trial_seed": 42,
+        "trial_updates": 15259,
+        "split": "validation",
+        "metric": "bpb on the complete validation split at the trial's final update",
+        "rule": "Run every grid LR for the submitted optimizer at trial_seed over the full schedule; select the lowest validation BPB, ties to the smaller LR. If it lies on an edge of the trial set, add the next point beyond that edge (x2 above, /2 below) and repeat until the minimum is interior. Run all seeds at the selected LR; the trial at the selected LR may be reported again as the trial_seed run. Every trial reports its log_sha256.",
+        "grid_basis": "Muon = 2 x AdamW: the Infra E1 Muon/AdamW optimum ratio (2e-3 vs 1e-3); only the ratio transfers, not the absolute values from another model family."
+      },
+      "data": {
+        "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+        "manifest": "docs/evidence/p1-data-manifest.json",
+        "fingerprint_definition": "moeloop.data.PreparedManifest.fingerprint: sha256 of the canonical manifest JSON",
+        "dataset": "mlfoundations/dclm-baseline-1.0-parquet",
+        "dataset_revision": "817d6752765f6a41261085171dd546b104f60626"
+      },
+      "tokenizer": {
+        "id": "Qwen/Qwen3-30B-A3B",
+        "revision": "ae659febe817e4b3ebd7355f47792725801204c9",
+        "vocab_size": 151669,
+        "tokenizer_json_sha256": "a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794"
+      },
+      "evaluation": {
+        "metric": "bpb",
+        "complete_split": true,
+        "seq_len": 2048,
+        "selection_split": "validation",
+        "selection_label_tokens": 10001497,
+        "ranking_split": "test",
+        "ranking_label_tokens": 10009889,
+        "byte_table_sha256": "b504f8826a5ed6fc6a83ceb55c1c96f6c757ada30c6e38c46995ae2e5b74e17c",
+        "definition": "Byte-exact held-out BPB (#24) over complete splits of the data manifest, at the track seq_len and the recipe's fixed inference depth; special tokens carry no bytes. LR selection reads validation BPB only; reports and ranks read test BPB only.",
+        "byte_table_definition": "moeloop.tokens.byte_table_sha256(token_byte_lengths(dir)) of the source Qwen/Qwen3-30B-A3B tokenizer.json (sha256 aeb13307..., moeloop.prepare.DCLM_TOKENIZER), vocab 151669.",
+        "secondary": []
+      },
+      "budget": {
+        "tolerance": 0.05,
+        "metrics": [
+          "unique_non_embedding_parameters",
+          "training_flops_per_token",
+          "logical_kv_bytes"
+        ],
+        "accounting": {
+          "activation_checkpointing": "none",
+          "bytes_per_element": 2,
+          "attention_pairs_per_sequence": null
+        },
+        "rule": "moeloop.comparison.compare_recipes(reference, candidate, seq_len): abs(candidate-reference)/reference <= tolerance for each metric; unknown is never matched. Dense S^2 attention and no recompute, so the budget counts model work, not the execution policy.",
+        "reported_not_eligibility": [
+          "gpu_hours",
+          "throughput"
+        ]
+      },
+      "endpoint": "Only the completed schedule counts: every seed and LR trial reports final_update == horizon_updates. Intermediate checkpoints are never ranked. Each seed reports validation_bpb and test_bpb; the leaderboard ranks test_bpb."
+    },
+    "M": {
+      "name": "M",
+      "description": "Screening track: P1 geometry (about 100M active), 5B labels (daily screen).",
+      "hardware": "4-8x H200, target under 8 hours per run (not an eligibility condition)",
+      "reference": {
+        "constructor": "p1_moe_spec",
+        "geometry": {
+          "vocab_size": 151669,
+          "dim": 672,
+          "hidden_dim": 544,
+          "num_heads": 7,
+          "num_kv_heads": 1,
+          "num_experts": 64,
+          "top_k": 8,
+          "num_cells": 10,
+          "num_visits": 1,
+          "max_seq_len": 4096,
+          "attention_per_visit": false,
+          "router_per_visit": false
+        },
+        "note": "P1 ordinary MoE geometry. Only geometry, objective and inference depth enter the budget; the track schedule applies to every arm."
+      },
+      "seq_len": 4096,
+      "global_batch_positions": 1048576,
+      "mixed_precision_param": "bfloat16",
+      "target_label_tokens": 5000000000,
+      "horizon_updates": 4769,
+      "nominal_positions": 5000658944,
+      "token_budget": {
+        "status": "fixed"
+      },
+      "schedule": {
+        "name": "warmup_stable_decay",
+        "coordinate": "successful_optimizer_updates",
+        "warmup_fraction": 0.02,
+        "decay_fraction": 0.2,
+        "total_steps": 4769,
+        "warmup_steps": 95,
+        "decay_ratio": 0.2,
+        "decay_type": "linear",
+        "min_lr_factor": 0.0,
+        "rule": "horizon = ceil(target_label_tokens / global_batch_positions); linear warmup over round(0.02 * horizon) updates, constant peak, last 20% linear to 0. The submitted recipe's run.schedule_total_steps, run.successful_updates and run.schedule carry these values."
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "required_seed": 42,
+      "min_seeds": 1,
+      "seed_rule": "One seed is enough for eligibility and it must be 42; further seeds are optional and come from seeds. The leaderboard reports the mean over submitted seeds, their range when there are several, and the count.",
+      "lr_grid": {
+        "AdamW": [
+          0.00015,
+          0.0003,
+          0.0006
+        ],
+        "Muon": [
+          0.0003,
+          0.0006,
+          0.0012
+        ]
+      },
+      "optimizers": {
+        "fixed": {
+          "AdamW": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ]
+          },
+          "Muon": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ],
+            "muon": {
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_steps": 5,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "weight_decay": 0.1,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          }
+        },
+        "rule": "The validator checks that each setting listed under fixed for the submitted optimizer equals the listed value. AdamW: P1's betas, eps, weight_decay, max_norm and zero_weight_decay_roles (recipes/p1_moe.json). Muon: the same five for its AdamW-updated parameters (embedding, lm_head, routers, norms), plus optimizer.muon momentum, nesterov, ns_steps, ns_coefficients and eps at the TorchTitan 086bf6c DistMuon defaults, weight_decay equal to AdamW's and adjust_lr_fn match_rms_adamw (#26 optim.MUON_FIELDS); optimizer.muon.lr must equal optimizer.base_lr. optimizer.expert_lr_multiplier and optimizer.expert_group_size are method-level: they may differ but must be stated, and are reported. Other optimizer keys are not checked here."
+      },
+      "lr_selection": {
+        "trial_seed": 42,
+        "trial_updates": 4769,
+        "split": "validation",
+        "metric": "bpb on the complete validation split at the trial's final update",
+        "rule": "Run every grid LR for the submitted optimizer at trial_seed over the full schedule; select the lowest validation BPB, ties to the smaller LR. If it lies on an edge of the trial set, add the next point beyond that edge (x2 above, /2 below) and repeat until the minimum is interior. Run all seeds at the selected LR; the trial at the selected LR may be reported again as the trial_seed run. Every trial reports its log_sha256.",
+        "grid_basis": "Muon = 2 x AdamW: the Infra E1 Muon/AdamW optimum ratio (2e-3 vs 1e-3); only the ratio transfers, not the absolute values from another model family."
+      },
+      "data": {
+        "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+        "manifest": "docs/evidence/p1-data-manifest.json",
+        "fingerprint_definition": "moeloop.data.PreparedManifest.fingerprint: sha256 of the canonical manifest JSON",
+        "dataset": "mlfoundations/dclm-baseline-1.0-parquet",
+        "dataset_revision": "817d6752765f6a41261085171dd546b104f60626"
+      },
+      "tokenizer": {
+        "id": "Qwen/Qwen3-30B-A3B",
+        "revision": "ae659febe817e4b3ebd7355f47792725801204c9",
+        "vocab_size": 151669,
+        "tokenizer_json_sha256": "a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794"
+      },
+      "evaluation": {
+        "metric": "bpb",
+        "complete_split": true,
+        "seq_len": 4096,
+        "selection_split": "validation",
+        "selection_label_tokens": 10001497,
+        "ranking_split": "test",
+        "ranking_label_tokens": 10009889,
+        "byte_table_sha256": "b504f8826a5ed6fc6a83ceb55c1c96f6c757ada30c6e38c46995ae2e5b74e17c",
+        "definition": "Byte-exact held-out BPB (#24) over complete splits of the data manifest, at the track seq_len and the recipe's fixed inference depth; special tokens carry no bytes. LR selection reads validation BPB only; reports and ranks read test BPB only.",
+        "byte_table_definition": "moeloop.tokens.byte_table_sha256(token_byte_lengths(dir)) of the source Qwen/Qwen3-30B-A3B tokenizer.json (sha256 aeb13307..., moeloop.prepare.DCLM_TOKENIZER), vocab 151669.",
+        "secondary": [
+          "CORE (#25), reported, not an eligibility condition"
+        ]
+      },
+      "budget": {
+        "tolerance": 0.05,
+        "metrics": [
+          "unique_non_embedding_parameters",
+          "training_flops_per_token",
+          "logical_kv_bytes"
+        ],
+        "accounting": {
+          "activation_checkpointing": "none",
+          "bytes_per_element": 2,
+          "attention_pairs_per_sequence": null
+        },
+        "rule": "moeloop.comparison.compare_recipes(reference, candidate, seq_len): abs(candidate-reference)/reference <= tolerance for each metric; unknown is never matched. Dense S^2 attention and no recompute, so the budget counts model work, not the execution policy.",
+        "reported_not_eligibility": [
+          "gpu_hours",
+          "throughput"
+        ]
+      },
+      "endpoint": "Only the completed schedule counts: every seed and LR trial reports final_update == horizon_updates. Intermediate checkpoints are never ranked. Each seed reports validation_bpb and test_bpb; the leaderboard ranks test_bpb."
+    },
+    "L": {
+      "name": "L",
+      "description": "Confirmation track: P1 geometry, P1 label budget (about 20.5B) and the frozen P1 schedule.",
+      "hardware": "P1 scale, e.g. 16x H200 (not an eligibility condition)",
+      "reference": {
+        "constructor": "p1_moe_spec",
+        "geometry": {
+          "vocab_size": 151669,
+          "dim": 672,
+          "hidden_dim": 544,
+          "num_heads": 7,
+          "num_kv_heads": 1,
+          "num_experts": 64,
+          "top_k": 8,
+          "num_cells": 10,
+          "num_visits": 1,
+          "max_seq_len": 4096,
+          "attention_per_visit": false,
+          "router_per_visit": false
+        },
+        "note": "P1 ordinary MoE geometry. Only geometry, objective and inference depth enter the budget; the track schedule applies to every arm."
+      },
+      "seq_len": 4096,
+      "global_batch_positions": 1048576,
+      "mixed_precision_param": "bfloat16",
+      "target_label_tokens": 20485760000,
+      "horizon_updates": 19537,
+      "nominal_positions": 20486029312,
+      "token_budget": {
+        "status": "fixed"
+      },
+      "schedule": {
+        "coordinate": "successful_optimizer_updates",
+        "decay_label_tokens": 10000000000,
+        "decay_ratio": 0.48815068843732407,
+        "decay_steps": 9537,
+        "decay_type": "cosine",
+        "label_position_policy": "Fresh document packing normally fills every position; padding is not a label. Verify actual endpoint labels and report any shortfall, never infer labels from step count.",
+        "maximum_endpoint_rounding_positions": 1048576,
+        "min_lr_factor": 0.1,
+        "name": "warmup_stable_cosine_decay",
+        "native_step_convention": "Pinned TorchTitan LambdaLR: first update uses index 0; virtual final stable step keeps index 10000 at peak and index 19537 at min_lr_factor.",
+        "requested_coordinate": "global_valid_label_tokens",
+        "rounded_nominal_positions": 20486029312,
+        "rounding": "ceil(requested labels / nominal global positions per update); actual labels must be reported separately",
+        "stable_end_label_tokens": 10485760000,
+        "stable_end_steps": 10000,
+        "target_label_tokens": 20485760000,
+        "total_steps": 19537,
+        "warmup_label_tokens": 20000000,
+        "warmup_steps": 20,
+        "rule": "The frozen P1 schedule, copied from recipes/p1_moe.json run.schedule (identical in p1_smelt.json): 20M-label warmup, constant to 10.486B labels, cosine decay to 0.1x. The submitted recipe's run.schedule_total_steps, run.successful_updates and run.schedule carry these values."
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "required_seed": 42,
+      "min_seeds": 1,
+      "seed_rule": "One seed is enough for eligibility and it must be 42; further seeds are optional and come from seeds. The leaderboard reports the mean over submitted seeds, their range when there are several, and the count.",
+      "lr_grid": {
+        "AdamW": [
+          0.0003
+        ],
+        "Muon": [
+          0.0006
+        ]
+      },
+      "optimizers": {
+        "fixed": {
+          "AdamW": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ]
+          },
+          "Muon": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ],
+            "muon": {
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_steps": 5,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "weight_decay": 0.1,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          }
+        },
+        "rule": "The validator checks that each setting listed under fixed for the submitted optimizer equals the listed value. AdamW: P1's betas, eps, weight_decay, max_norm and zero_weight_decay_roles (recipes/p1_moe.json). Muon: the same five for its AdamW-updated parameters (embedding, lm_head, routers, norms), plus optimizer.muon momentum, nesterov, ns_steps, ns_coefficients and eps at the TorchTitan 086bf6c DistMuon defaults, weight_decay equal to AdamW's and adjust_lr_fn match_rms_adamw (#26 optim.MUON_FIELDS); optimizer.muon.lr must equal optimizer.base_lr. optimizer.expert_lr_multiplier and optimizer.expert_group_size are method-level: they may differ but must be stated, and are reported. Other optimizer keys are not checked here."
+      },
+      "lr_selection": {
+        "rule": "Single LR per optimizer; no trials. Run all seeds at that LR.",
+        "grid_basis": "Muon = 2 x AdamW: the Infra E1 Muon/AdamW optimum ratio (2e-3 vs 1e-3); only the ratio transfers, not the absolute values from another model family."
+      },
+      "data": {
+        "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+        "manifest": "docs/evidence/p1-data-manifest.json",
+        "fingerprint_definition": "moeloop.data.PreparedManifest.fingerprint: sha256 of the canonical manifest JSON",
+        "dataset": "mlfoundations/dclm-baseline-1.0-parquet",
+        "dataset_revision": "817d6752765f6a41261085171dd546b104f60626"
+      },
+      "tokenizer": {
+        "id": "Qwen/Qwen3-30B-A3B",
+        "revision": "ae659febe817e4b3ebd7355f47792725801204c9",
+        "vocab_size": 151669,
+        "tokenizer_json_sha256": "a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794"
+      },
+      "evaluation": {
+        "metric": "bpb",
+        "complete_split": true,
+        "seq_len": 4096,
+        "selection_split": "validation",
+        "selection_label_tokens": 10001497,
+        "ranking_split": "test",
+        "ranking_label_tokens": 10009889,
+        "byte_table_sha256": "b504f8826a5ed6fc6a83ceb55c1c96f6c757ada30c6e38c46995ae2e5b74e17c",
+        "definition": "Byte-exact held-out BPB (#24) over complete splits of the data manifest, at the track seq_len and the recipe's fixed inference depth; special tokens carry no bytes. LR selection reads validation BPB only; reports and ranks read test BPB only.",
+        "byte_table_definition": "moeloop.tokens.byte_table_sha256(token_byte_lengths(dir)) of the source Qwen/Qwen3-30B-A3B tokenizer.json (sha256 aeb13307..., moeloop.prepare.DCLM_TOKENIZER), vocab 151669.",
+        "secondary": [
+          "CORE (#25), reported, not an eligibility condition"
+        ]
+      },
+      "budget": {
+        "tolerance": 0.05,
+        "metrics": [
+          "unique_non_embedding_parameters",
+          "training_flops_per_token",
+          "logical_kv_bytes"
+        ],
+        "accounting": {
+          "activation_checkpointing": "none",
+          "bytes_per_element": 2,
+          "attention_pairs_per_sequence": null
+        },
+        "rule": "moeloop.comparison.compare_recipes(reference, candidate, seq_len): abs(candidate-reference)/reference <= tolerance for each metric; unknown is never matched. Dense S^2 attention and no recompute, so the budget counts model work, not the execution policy.",
+        "reported_not_eligibility": [
+          "gpu_hours",
+          "throughput"
+        ]
+      },
+      "endpoint": "Only the completed schedule counts: every seed and LR trial reports final_update == horizon_updates. Intermediate checkpoints are never ranked. Each seed reports validation_bpb and test_bpb; the leaderboard ranks test_bpb."
+    },
+    "P2": {
+      "name": "P2",
+      "description": "Main track: P2 geometry (about 200M active), 5B labels (Phase 1 study).",
+      "hardware": "8x H200, target under 6 hours per run (not an eligibility condition)",
+      "reference": {
+        "constructor": "p2_moe_spec",
+        "geometry": {
+          "vocab_size": 151669,
+          "dim": 1280,
+          "hidden_dim": 432,
+          "num_heads": 10,
+          "num_kv_heads": 1,
+          "num_experts": 64,
+          "top_k": 8,
+          "num_cells": 12,
+          "num_visits": 1,
+          "max_seq_len": 4096,
+          "attention_per_visit": false,
+          "router_per_visit": false
+        },
+        "note": "P2 ordinary MoE geometry. Only geometry, objective and inference depth enter the budget; the track schedule applies to every arm."
+      },
+      "seq_len": 4096,
+      "global_batch_positions": 1048576,
+      "mixed_precision_param": "bfloat16",
+      "target_label_tokens": 5000000000,
+      "horizon_updates": 4769,
+      "nominal_positions": 5000658944,
+      "token_budget": {
+        "status": "fixed"
+      },
+      "schedule": {
+        "name": "warmup_stable_decay",
+        "coordinate": "successful_optimizer_updates",
+        "warmup_fraction": 0.02,
+        "decay_fraction": 0.2,
+        "total_steps": 4769,
+        "warmup_steps": 95,
+        "decay_ratio": 0.2,
+        "decay_type": "linear",
+        "min_lr_factor": 0.0,
+        "rule": "horizon = ceil(target_label_tokens / global_batch_positions); linear warmup over round(0.02 * horizon) updates, constant peak, last 20% linear to 0. The submitted recipe's run.schedule_total_steps, run.successful_updates and run.schedule carry these values."
+      },
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "required_seed": 42,
+      "min_seeds": 1,
+      "seed_rule": "One seed is enough for eligibility and it must be 42; further seeds are optional and come from seeds. The leaderboard reports the mean over submitted seeds, their range when there are several, and the count.",
+      "lr_grid": {
+        "AdamW": [
+          0.0012
+        ],
+        "Muon": [
+          0.0017
+        ]
+      },
+      "optimizers": {
+        "fixed": {
+          "AdamW": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ]
+          },
+          "Muon": {
+            "betas": [
+              0.9,
+              0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.1,
+            "max_norm": 1.0,
+            "zero_weight_decay_roles": [
+              "norm",
+              "embedding",
+              "lm_head",
+              "router"
+            ],
+            "muon": {
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_steps": 5,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "weight_decay": 0.1,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          }
+        },
+        "rule": "The validator checks that each setting listed under fixed for the submitted optimizer equals the listed value. AdamW: P1's betas, eps, weight_decay, max_norm and zero_weight_decay_roles (recipes/p1_moe.json). Muon: the same five for its AdamW-updated parameters (embedding, lm_head, routers, norms), plus optimizer.muon momentum, nesterov, ns_steps, ns_coefficients and eps at the TorchTitan 086bf6c DistMuon defaults, weight_decay equal to AdamW's and adjust_lr_fn match_rms_adamw (#26 optim.MUON_FIELDS); optimizer.muon.lr must equal optimizer.base_lr. optimizer.expert_lr_multiplier and optimizer.expert_group_size are method-level: they may differ but must be stated, and are reported. Other optimizer keys are not checked here."
+      },
+      "lr_selection": {
+        "rule": "Single LR per optimizer; no trials. Run all seeds at that LR. Both LRs were calibrated in issue #180: a x2 grid refined with sqrt(2) points, over the full 4769-update schedule on M0 and M3, which agreed on the same point for each optimizer. Every P2 submission uses this one LR per optimizer, so no LR trials are run or reported.",
+        "grid_basis": "AdamW 1.2e-3 and Muon 1.7e-3 are the optima of the x2 grid refined with sqrt(2) points that issue #180 ran on M0 (ordinary MoE) and M3 (SMELT) at the full 4769-update schedule; both arms chose the same point. The optimum of a method with a very different shape may differ from these values, and this track does not search for it."
+      },
+      "data": {
+        "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+        "manifest": "docs/evidence/p1-data-manifest.json",
+        "fingerprint_definition": "moeloop.data.PreparedManifest.fingerprint: sha256 of the canonical manifest JSON",
+        "dataset": "mlfoundations/dclm-baseline-1.0-parquet",
+        "dataset_revision": "817d6752765f6a41261085171dd546b104f60626"
+      },
+      "tokenizer": {
+        "id": "Qwen/Qwen3-30B-A3B",
+        "revision": "ae659febe817e4b3ebd7355f47792725801204c9",
+        "vocab_size": 151669,
+        "tokenizer_json_sha256": "a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794"
+      },
+      "evaluation": {
+        "metric": "bpb",
+        "complete_split": true,
+        "seq_len": 4096,
+        "selection_split": "validation",
+        "selection_label_tokens": 10001497,
+        "ranking_split": "test",
+        "ranking_label_tokens": 10009889,
+        "byte_table_sha256": "b504f8826a5ed6fc6a83ceb55c1c96f6c757ada30c6e38c46995ae2e5b74e17c",
+        "definition": "Byte-exact held-out BPB (#24) over complete splits of the data manifest, at the track seq_len and the recipe's fixed inference depth; special tokens carry no bytes. LR selection reads validation BPB only; reports and ranks read test BPB only.",
+        "byte_table_definition": "moeloop.tokens.byte_table_sha256(token_byte_lengths(dir)) of the source Qwen/Qwen3-30B-A3B tokenizer.json (sha256 aeb13307..., moeloop.prepare.DCLM_TOKENIZER), vocab 151669.",
+        "secondary": [
+          "CORE (#25), reported, not an eligibility condition"
+        ]
+      },
+      "budget": {
+        "tolerance": 0.05,
+        "metrics": [
+          "unique_non_embedding_parameters",
+          "training_flops_per_token",
+          "logical_kv_bytes"
+        ],
+        "accounting": {
+          "activation_checkpointing": "none",
+          "bytes_per_element": 2,
+          "attention_pairs_per_sequence": null
+        },
+        "rule": "moeloop.comparison.compare_recipes(reference, candidate, seq_len): abs(candidate-reference)/reference <= tolerance for each metric; unknown is never matched. Dense S^2 attention and no recompute, so the budget counts model work, not the execution policy.",
+        "reported_not_eligibility": [
+          "gpu_hours",
+          "throughput"
+        ]
+      },
+      "endpoint": "Only the completed schedule counts: every seed and LR trial reports final_update == horizon_updates. Intermediate checkpoints are never ranked. Each seed reports validation_bpb and test_bpb; the leaderboard ranks test_bpb."
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "cvsm": {
+    "repository": "https://github.com/doem97/cvsm",
+    "commit": "b9cb290051f481b24c1abee332218efecfaaa02e"
+  },
+  "torchtitan": {
+    "repository": "https://github.com/pytorch/torchtitan",
+    "commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+    "version": "v0.3.0"
+  }
+}

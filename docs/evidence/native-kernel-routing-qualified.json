@@ -1,0 +1,951 @@
+{
+  "schema_version": 2,
+  "status": "passed",
+  "scope": "same canonical BF16 parameters; CUDA native grouped experts and document-masked FlexAttention versus ordinary PyTorch expert loop and SDPA; all gradients including balance/z objectives",
+  "torch_version": "2.14.0+cu130",
+  "cuda": "13.0",
+  "python": "3.12.15",
+  "dtype": "bfloat16",
+  "script_sha256": "de2ccdbf9b3e95aa0280494aafae8cf839fc886dace14fee8d86b4ce5f0c6555",
+  "routing_scope": "valid token expert sets at every logical Router call, including no-grad visits; top-k order ignored",
+  "tolerances_predeclared": {
+    "logits": {
+      "atol": 0.01,
+      "rtol": 0.03
+    },
+    "loss": {
+      "atol": 0.005,
+      "rtol": 0.01
+    },
+    "gradient": {
+      "relative_l2": 0.03,
+      "peak_eps_multiplier": 2.0,
+      "absolute_floor": 1e-06
+    },
+    "global_gradient_relative_l2": 0.03
+  },
+  "cases": {
+    "shared": {
+      "model_config": {
+        "vocab_size": 64,
+        "dim": 64,
+        "hidden_dim": 128,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 2,
+        "visit_capacity": null,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "stack",
+        "attention_per_visit": false,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.02,
+        "schema_version": 1
+      },
+      "grad_visits": null,
+      "valid_inputs": 50,
+      "valid_labels": 46,
+      "document_count": 4,
+      "padding_positions": 14,
+      "logits": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 0.62890625,
+        "reference_l2": 10.264503479003906
+      },
+      "loss": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 4.408300876617432,
+        "reference_l2": 4.408300876617432
+      },
+      "balance_sum": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 4.050846099853516,
+        "reference_l2": 4.050846099853516
+      },
+      "z_sum": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 7.951015472412109,
+        "reference_l2": 7.951015472412109
+      },
+      "native_loss": 4.408300876617432,
+      "reference_loss": 4.408300876617432,
+      "status": "passed",
+      "physical_parameter_tensors": 27,
+      "auxiliary_calls": 4,
+      "router_assignment_counts_equal": true,
+      "router_assignments_equal": true,
+      "routing": {
+        "equal": true,
+        "logical_calls": 4,
+        "valid_token_expert_assignments": 400,
+        "calls": [
+          {
+            "call": 0,
+            "router": "core.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "a3f7b842996999c072c370aafa9eb1eccae44984921e6d3eaf5ef546646a8692",
+            "reference_ids_sha256": "a3f7b842996999c072c370aafa9eb1eccae44984921e6d3eaf5ef546646a8692"
+          },
+          {
+            "call": 1,
+            "router": "core.1.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "2c59b5486eabab5ac537de1c0a981c225573de282cdd5f55c0f626ff1e9fa80c",
+            "reference_ids_sha256": "2c59b5486eabab5ac537de1c0a981c225573de282cdd5f55c0f626ff1e9fa80c"
+          },
+          {
+            "call": 2,
+            "router": "core.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "afa48ee258d1da0b7845ac3ff6f13f984286907a65d3a21f0ae0ed898c19220b",
+            "reference_ids_sha256": "afa48ee258d1da0b7845ac3ff6f13f984286907a65d3a21f0ae0ed898c19220b"
+          },
+          {
+            "call": 3,
+            "router": "core.1.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "faf907557abc35f49c908bb4ca68889be66be03c38942def7f7bd07b68900178",
+            "reference_ids_sha256": "faf907557abc35f49c908bb4ca68889be66be03c38942def7f7bd07b68900178"
+          }
+        ],
+        "failures": []
+      },
+      "global_gradient_relative_l2": 0.005978814052462981,
+      "gradient_errors": {
+        "embedding.weight": {
+          "max_absolute": 0.00146484375,
+          "rms_absolute": 0.00018329759768676013,
+          "relative_l2": 0.007495350092919594,
+          "reference_max_absolute": 0.1611328125,
+          "reference_l2": 1.5651098489761353,
+          "max_absolute_allowed": 0.0025187001953125
+        },
+        "core.0.attentions.0.q_proj.weight": {
+          "max_absolute": 0.000244140625,
+          "rms_absolute": 5.7622728490969166e-05,
+          "relative_l2": 0.007040510241107466,
+          "reference_max_absolute": 0.041259765625,
+          "reference_l2": 0.5238050222396851,
+          "max_absolute_allowed": 0.000645683837890625
+        },
+        "core.0.attentions.0.k_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 9.026849147630855e-05,
+          "relative_l2": 0.007961948741744442,
+          "reference_max_absolute": 0.05810546875,
+          "reference_l2": 0.51307612657547,
+          "max_absolute_allowed": 0.00090889794921875
+        },
+        "core.0.attentions.0.v_proj.weight": {
+          "max_absolute": 0.0009765625,
+          "rms_absolute": 0.00017301682964898646,
+          "relative_l2": 0.006683765444909873,
+          "reference_max_absolute": 0.134765625,
+          "reference_l2": 1.1714725494384766,
+          "max_absolute_allowed": 0.002106712890625
+        },
+        "core.0.attentions.0.out_proj.weight": {
+          "max_absolute": 0.0006103515625,
+          "rms_absolute": 0.00010528167331358418,
+          "relative_l2": 0.0058739319544326195,
+          "reference_max_absolute": 0.0791015625,
+          "reference_l2": 1.1471067667007446,
+          "max_absolute_allowed": 0.0012369619140625
+        },
+        "core.0.attentions.0.q_norm.weight": {
+          "max_absolute": 4.57763671875e-05,
+          "rms_absolute": 1.8791255570249632e-05,
+          "relative_l2": 0.009046382719811943,
+          "reference_max_absolute": 0.004638671875,
+          "reference_l2": 0.00830884836614132,
+          "max_absolute_allowed": 7.3479248046875e-05
+        },
+        "core.0.attentions.0.k_norm.weight": {
+          "max_absolute": 4.57763671875e-05,
+          "rms_absolute": 1.8319486116524786e-05,
+          "relative_l2": 0.00995641798544669,
+          "reference_max_absolute": 0.0034637451171875,
+          "reference_l2": 0.007359870243817568,
+          "max_absolute_allowed": 5.5121017456054685e-05
+        },
+        "core.0.attention_norms.0.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 2.4260261852759868e-05,
+          "relative_l2": 0.007887596820738581,
+          "reference_max_absolute": 0.0093994140625,
+          "reference_l2": 0.02460598573088646,
+          "max_absolute_allowed": 0.0001478658447265625
+        },
+        "core.0.ffn_norms.0.weight": {
+          "max_absolute": 9.5367431640625e-06,
+          "rms_absolute": 3.40959923050832e-06,
+          "relative_l2": 0.008280587876604451,
+          "reference_max_absolute": 0.00095367431640625,
+          "reference_l2": 0.0032940648961812258,
+          "max_absolute_allowed": 1.5901161193847657e-05
+        },
+        "core.0.routers.0.gate.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 7.303454367502127e-06,
+          "relative_l2": 0.0023061608412968835,
+          "reference_max_absolute": 0.016357421875,
+          "reference_l2": 0.05067091062664986,
+          "max_absolute_allowed": 0.000256584716796875
+        },
+        "core.0.experts.w1_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 4.202772288408596e-06,
+          "relative_l2": 0.006149944352830534,
+          "reference_max_absolute": 0.00518798828125,
+          "reference_l2": 0.1237056776881218,
+          "max_absolute_allowed": 8.206231689453125e-05
+        },
+        "core.0.experts.w2_EDF": {
+          "max_absolute": 3.814697265625e-05,
+          "rms_absolute": 3.535829137035762e-06,
+          "relative_l2": 0.00537130541302112,
+          "reference_max_absolute": 0.005157470703125,
+          "reference_l2": 0.11916161328554153,
+          "max_absolute_allowed": 8.158547973632812e-05
+        },
+        "core.0.experts.w3_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 3.937305336876307e-06,
+          "relative_l2": 0.0059520493187554336,
+          "reference_max_absolute": 0.0062255859375,
+          "reference_l2": 0.11974504590034485,
+          "max_absolute_allowed": 9.82747802734375e-05
+        },
+        "core.1.attentions.0.q_proj.weight": {
+          "max_absolute": 0.0001373291015625,
+          "rms_absolute": 2.8722775823553093e-05,
+          "relative_l2": 0.005887016983525776,
+          "reference_max_absolute": 0.0216064453125,
+          "reference_l2": 0.31225621700286865,
+          "max_absolute_allowed": 0.0003386007080078125
+        },
+        "core.1.attentions.0.k_proj.weight": {
+          "max_absolute": 0.000244140625,
+          "rms_absolute": 5.133026934345253e-05,
+          "relative_l2": 0.007192725151746661,
+          "reference_max_absolute": 0.033203125,
+          "reference_l2": 0.32295724749565125,
+          "max_absolute_allowed": 0.000519798828125
+        },
+        "core.1.attentions.0.v_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 0.00010592479520710185,
+          "relative_l2": 0.004905156109176015,
+          "reference_max_absolute": 0.1103515625,
+          "reference_l2": 0.9772592186927795,
+          "max_absolute_allowed": 0.0017252431640625
+        },
+        "core.1.attentions.0.out_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 5.462964691105299e-05,
+          "relative_l2": 0.003860595606201869,
+          "reference_max_absolute": 0.09130859375,
+          "reference_l2": 0.9056367874145508,
+          "max_absolute_allowed": 0.00142769677734375
+        },
+        "core.1.attentions.0.q_norm.weight": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 8.533254003850743e-06,
+          "relative_l2": 0.006604039824741801,
+          "reference_max_absolute": 0.0025177001953125,
+          "reference_l2": 0.0051685054786503315,
+          "max_absolute_allowed": 4.033906555175781e-05
+        },
+        "core.1.attentions.0.k_norm.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 1.1225945854675956e-05,
+          "relative_l2": 0.008223159020893768,
+          "reference_max_absolute": 0.0031280517578125,
+          "reference_l2": 0.00546064879745245,
+          "max_absolute_allowed": 4.987580871582031e-05
+        },
+        "core.1.attention_norms.0.weight": {
+          "max_absolute": 4.57763671875e-05,
+          "rms_absolute": 1.3455476619128603e-05,
+          "relative_l2": 0.00483281955137546,
+          "reference_max_absolute": 0.007568359375,
+          "reference_l2": 0.022273501381278038,
+          "max_absolute_allowed": 0.000119255615234375
+        },
+        "core.1.ffn_norms.0.weight": {
+          "max_absolute": 3.814697265625e-06,
+          "rms_absolute": 1.6832376559250406e-06,
+          "relative_l2": 0.005246979262038487,
+          "reference_max_absolute": 0.00104522705078125,
+          "reference_l2": 0.0025664102286100388,
+          "max_absolute_allowed": 1.7331672668457032e-05
+        },
+        "core.1.routers.0.gate.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 7.088192887749756e-06,
+          "relative_l2": 0.001678530423152247,
+          "reference_max_absolute": 0.0184326171875,
+          "reference_l2": 0.06756570190191269,
+          "max_absolute_allowed": 0.0002890096435546875
+        },
+        "core.1.experts.w1_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 2.311675189048401e-06,
+          "relative_l2": 0.004349573890290574,
+          "reference_max_absolute": 0.004547119140625,
+          "reference_l2": 0.09620664268732071,
+          "max_absolute_allowed": 7.204873657226562e-05
+        },
+        "core.1.experts.w2_EDF": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 2.095103127430775e-06,
+          "relative_l2": 0.0037395888554922754,
+          "reference_max_absolute": 0.0054931640625,
+          "reference_l2": 0.10141600668430328,
+          "max_absolute_allowed": 8.68306884765625e-05
+        },
+        "core.1.experts.w3_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 2.4021601348067634e-06,
+          "relative_l2": 0.004225518159633269,
+          "reference_max_absolute": 0.005035400390625,
+          "reference_l2": 0.10290747880935669,
+          "max_absolute_allowed": 7.967813110351562e-05
+        },
+        "final_norm.weight": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.006195068359375,
+          "reference_l2": 0.020436400547623634,
+          "max_absolute_allowed": 9.779794311523437e-05
+        },
+        "lm_head.weight": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.06640625,
+          "reference_l2": 1.1117433309555054,
+          "max_absolute_allowed": 0.00103859765625
+        }
+      },
+      "failures": []
+    },
+    "injected_suffix": {
+      "model_config": {
+        "vocab_size": 64,
+        "dim": 64,
+        "hidden_dim": 128,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 3,
+        "visit_capacity": null,
+        "prefix_cells": 1,
+        "suffix_cells": 1,
+        "order": "stack",
+        "attention_per_visit": false,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "linear",
+        "injection_scale": 1.0,
+        "initial_state": "zero",
+        "init_std": 0.02,
+        "schema_version": 1
+      },
+      "grad_visits": 1,
+      "valid_inputs": 50,
+      "valid_labels": 46,
+      "document_count": 4,
+      "padding_positions": 14,
+      "logits": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 0.515625,
+        "reference_l2": 10.824398040771484
+      },
+      "loss": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 4.4119110107421875,
+        "reference_l2": 4.4119110107421875
+      },
+      "balance_sum": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 4.078839302062988,
+        "reference_l2": 4.078839302062988
+      },
+      "z_sum": {
+        "max_absolute": 0.0,
+        "rms_absolute": 0.0,
+        "relative_l2": 0.0,
+        "reference_max_absolute": 7.344528675079346,
+        "reference_l2": 7.344528675079346
+      },
+      "native_loss": 4.4119110107421875,
+      "reference_loss": 4.4119110107421875,
+      "status": "passed",
+      "physical_parameter_tensors": 53,
+      "auxiliary_calls": 4,
+      "router_assignment_counts_equal": true,
+      "router_assignments_equal": true,
+      "routing": {
+        "equal": true,
+        "logical_calls": 8,
+        "valid_token_expert_assignments": 800,
+        "calls": [
+          {
+            "call": 0,
+            "router": "prefix.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "bd3b04d321074b76f8314f44d9dfb046924471a62a0dd231cc49c1ef6cc992fc",
+            "reference_ids_sha256": "bd3b04d321074b76f8314f44d9dfb046924471a62a0dd231cc49c1ef6cc992fc"
+          },
+          {
+            "call": 1,
+            "router": "core.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "b477370f41feb68f0d236e07f3b86192b3c0404ac664b43a9b63dde5b005b743",
+            "reference_ids_sha256": "b477370f41feb68f0d236e07f3b86192b3c0404ac664b43a9b63dde5b005b743"
+          },
+          {
+            "call": 2,
+            "router": "core.1.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "05fa607d0be58e7d43ff42e1fa2867ab09bf79c170120fb28e580f61032ec6e9",
+            "reference_ids_sha256": "05fa607d0be58e7d43ff42e1fa2867ab09bf79c170120fb28e580f61032ec6e9"
+          },
+          {
+            "call": 3,
+            "router": "core.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "7e875130c503c7e40c193831cecab7b19b27ccb1cd76e92950634c7cd0f3fa5b",
+            "reference_ids_sha256": "7e875130c503c7e40c193831cecab7b19b27ccb1cd76e92950634c7cd0f3fa5b"
+          },
+          {
+            "call": 4,
+            "router": "core.1.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "3a8fcc8278a66726b68bd749934fd37e5717339ea7556c5767b464e43b498cb9",
+            "reference_ids_sha256": "3a8fcc8278a66726b68bd749934fd37e5717339ea7556c5767b464e43b498cb9"
+          },
+          {
+            "call": 5,
+            "router": "core.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "94b7064000175d26abb92280d3c284f1e28245b654441950e01f3e56bbe3ed66",
+            "reference_ids_sha256": "94b7064000175d26abb92280d3c284f1e28245b654441950e01f3e56bbe3ed66"
+          },
+          {
+            "call": 6,
+            "router": "core.1.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "39f1bf0c654d467824c83105a8a09fc27692bba765d3a6594486deca65cf0e12",
+            "reference_ids_sha256": "39f1bf0c654d467824c83105a8a09fc27692bba765d3a6594486deca65cf0e12"
+          },
+          {
+            "call": 7,
+            "router": "suffix.0.routers.0",
+            "valid_tokens": 50,
+            "top_k": 2,
+            "expert_sets_equal": true,
+            "native_ids_sha256": "cd90169ed6c53da695f7b456a5811fc0e441c5fce9762281f91f5c1fc3cab4d1",
+            "reference_ids_sha256": "cd90169ed6c53da695f7b456a5811fc0e441c5fce9762281f91f5c1fc3cab4d1"
+          }
+        ],
+        "failures": []
+      },
+      "global_gradient_relative_l2": 0.005284457338790598,
+      "gradient_errors": {
+        "embedding.weight": {
+          "max_absolute": 0.0009765625,
+          "rms_absolute": 8.264651842182502e-05,
+          "relative_l2": 0.007924805716573138,
+          "reference_max_absolute": 0.10302734375,
+          "reference_l2": 0.6674456596374512,
+          "max_absolute_allowed": 0.00161080224609375
+        },
+        "prefix.0.attentions.0.q_proj.weight": {
+          "max_absolute": 9.1552734375e-05,
+          "rms_absolute": 1.755337871145457e-05,
+          "relative_l2": 0.009246575132452129,
+          "reference_max_absolute": 0.00909423828125,
+          "reference_l2": 0.12149538844823837,
+          "max_absolute_allowed": 0.00014309747314453125
+        },
+        "prefix.0.attentions.0.k_proj.weight": {
+          "max_absolute": 0.0001220703125,
+          "rms_absolute": 2.7658110411721282e-05,
+          "relative_l2": 0.009578559779835323,
+          "reference_max_absolute": 0.01483154296875,
+          "reference_l2": 0.13067342340946198,
+          "max_absolute_allowed": 0.00023274285888671875
+        },
+        "prefix.0.attentions.0.v_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 7.984500552993268e-05,
+          "relative_l2": 0.007297115231432868,
+          "reference_max_absolute": 0.050537109375,
+          "reference_l2": 0.4951781928539276,
+          "max_absolute_allowed": 0.000790642333984375
+        },
+        "prefix.0.attentions.0.out_proj.weight": {
+          "max_absolute": 0.000244140625,
+          "rms_absolute": 4.9320264224661514e-05,
+          "relative_l2": 0.006576170525039557,
+          "reference_max_absolute": 0.044677734375,
+          "reference_l2": 0.4799901247024536,
+          "max_absolute_allowed": 0.000699089599609375
+        },
+        "prefix.0.attentions.0.q_norm.weight": {
+          "max_absolute": 1.1444091796875e-05,
+          "rms_absolute": 6.186261543916771e-06,
+          "relative_l2": 0.008869379258950358,
+          "reference_max_absolute": 0.00151824951171875,
+          "reference_l2": 0.0027899411506950855,
+          "max_absolute_allowed": 2.472264862060547e-05
+        },
+        "prefix.0.attentions.0.k_norm.weight": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 6.149396995169809e-06,
+          "relative_l2": 0.009105033910801107,
+          "reference_max_absolute": 0.0012664794921875,
+          "reference_l2": 0.0027015372179448605,
+          "max_absolute_allowed": 2.0788742065429688e-05
+        },
+        "prefix.0.attention_norms.0.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 1.213492578244768e-05,
+          "relative_l2": 0.008151899028434067,
+          "reference_max_absolute": 0.005401611328125,
+          "reference_l2": 0.01190880872309208,
+          "max_absolute_allowed": 8.540017700195312e-05
+        },
+        "prefix.0.ffn_norms.0.weight": {
+          "max_absolute": 2.86102294921875e-06,
+          "rms_absolute": 1.1017637007171288e-06,
+          "relative_l2": 0.009203171659638618,
+          "reference_max_absolute": 0.00034332275390625,
+          "reference_l2": 0.0009577252203598619,
+          "max_absolute_allowed": 6.364418029785156e-06
+        },
+        "prefix.0.routers.0.gate.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 4.638779500965029e-06,
+          "relative_l2": 0.0031055585059205954,
+          "reference_max_absolute": 0.00628662109375,
+          "reference_l2": 0.02389923483133316,
+          "max_absolute_allowed": 9.922845458984375e-05
+        },
+        "prefix.0.experts.w1_EFD": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 1.655415303503105e-06,
+          "relative_l2": 0.00814578339261747,
+          "reference_max_absolute": 0.00262451171875,
+          "reference_l2": 0.03678739815950394,
+          "max_absolute_allowed": 4.200799560546875e-05
+        },
+        "prefix.0.experts.w2_EDF": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 1.4583399661205476e-06,
+          "relative_l2": 0.007484108609912964,
+          "reference_max_absolute": 0.0021514892578125,
+          "reference_l2": 0.035273101180791855,
+          "max_absolute_allowed": 3.461701965332031e-05
+        },
+        "prefix.0.experts.w3_EFD": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 1.5526948118349537e-06,
+          "relative_l2": 0.007957374516813585,
+          "reference_max_absolute": 0.00213623046875,
+          "reference_l2": 0.0353216715157032,
+          "max_absolute_allowed": 3.437860107421875e-05
+        },
+        "core.0.attentions.0.q_proj.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 1.43985562317539e-05,
+          "relative_l2": 0.0058220332039879315,
+          "reference_max_absolute": 0.0115966796875,
+          "reference_l2": 0.15827934443950653,
+          "max_absolute_allowed": 0.0001821981201171875
+        },
+        "core.0.attentions.0.k_proj.weight": {
+          "max_absolute": 0.0001220703125,
+          "rms_absolute": 2.7086560294264928e-05,
+          "relative_l2": 0.0070890391934417644,
+          "reference_max_absolute": 0.0223388671875,
+          "reference_l2": 0.172914519906044,
+          "max_absolute_allowed": 0.0003500447998046875
+        },
+        "core.0.attentions.0.v_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 0.00012176193558843806,
+          "relative_l2": 0.006358241227736247,
+          "reference_max_absolute": 0.0849609375,
+          "reference_l2": 0.8666415810585022,
+          "max_absolute_allowed": 0.0013285146484375
+        },
+        "core.0.attentions.0.out_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 7.656287925783545e-05,
+          "relative_l2": 0.005150102955054544,
+          "reference_max_absolute": 0.07177734375,
+          "reference_l2": 0.9514420032501221,
+          "max_absolute_allowed": 0.00112252099609375
+        },
+        "core.0.attentions.0.q_norm.weight": {
+          "max_absolute": 1.0967254638671875e-05,
+          "rms_absolute": 4.775816250912612e-06,
+          "relative_l2": 0.005233469653932819,
+          "reference_max_absolute": 0.002685546875,
+          "reference_l2": 0.0036502103321254253,
+          "max_absolute_allowed": 4.2961669921875e-05
+        },
+        "core.0.attentions.0.k_norm.weight": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 7.049493433441967e-06,
+          "relative_l2": 0.007022073288999321,
+          "reference_max_absolute": 0.0027008056640625,
+          "reference_l2": 0.004015619400888681,
+          "max_absolute_allowed": 4.320008850097656e-05
+        },
+        "core.0.attention_norms.0.weight": {
+          "max_absolute": 4.57763671875e-05,
+          "rms_absolute": 1.5794728824403137e-05,
+          "relative_l2": 0.007412398783777257,
+          "reference_max_absolute": 0.00689697265625,
+          "reference_l2": 0.017046820372343063,
+          "max_absolute_allowed": 0.00010876519775390625
+        },
+        "core.0.ffn_norms.0.weight": {
+          "max_absolute": 5.7220458984375e-06,
+          "rms_absolute": 2.0846186998824123e-06,
+          "relative_l2": 0.006616265855050412,
+          "reference_max_absolute": 0.00096893310546875,
+          "reference_l2": 0.0025205984711647034,
+          "max_absolute_allowed": 1.613957977294922e-05
+        },
+        "core.0.routers.0.gate.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 3.6804158298764378e-06,
+          "relative_l2": 0.0008061219989837332,
+          "reference_max_absolute": 0.01904296875,
+          "reference_l2": 0.07304930686950684,
+          "max_absolute_allowed": 0.00029854638671875
+        },
+        "core.0.experts.w1_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 2.4917692371673184e-06,
+          "relative_l2": 0.005639930370334693,
+          "reference_max_absolute": 0.0045166015625,
+          "reference_l2": 0.07997588813304901,
+          "max_absolute_allowed": 7.15718994140625e-05
+        },
+        "core.0.experts.w2_EDF": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 2.2356621229846496e-06,
+          "relative_l2": 0.00472816913944392,
+          "reference_max_absolute": 0.006561279296875,
+          "reference_l2": 0.08559297770261765,
+          "max_absolute_allowed": 0.00010351998901367187
+        },
+        "core.0.experts.w3_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 2.4825694708852097e-06,
+          "relative_l2": 0.005350325111789402,
+          "reference_max_absolute": 0.005706787109375,
+          "reference_l2": 0.08399359881877899,
+          "max_absolute_allowed": 9.016854858398437e-05
+        },
+        "core.1.attentions.0.q_proj.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 7.03683463143534e-06,
+          "relative_l2": 0.005537769912800619,
+          "reference_max_absolute": 0.006134033203125,
+          "reference_l2": 0.08132468909025192,
+          "max_absolute_allowed": 9.684426879882812e-05
+        },
+        "core.1.attentions.0.k_proj.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 1.344923202850623e-05,
+          "relative_l2": 0.006849739871894363,
+          "reference_max_absolute": 0.01214599609375,
+          "reference_l2": 0.08885633200407028,
+          "max_absolute_allowed": 0.00019078118896484375
+        },
+        "core.1.attentions.0.v_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 6.859168206574395e-05,
+          "relative_l2": 0.00443800555600295,
+          "reference_max_absolute": 0.0673828125,
+          "reference_l2": 0.6994369626045227,
+          "max_absolute_allowed": 0.0010538564453125
+        },
+        "core.1.attentions.0.out_proj.weight": {
+          "max_absolute": 0.000244140625,
+          "rms_absolute": 3.4581484214868397e-05,
+          "relative_l2": 0.0031734841331288533,
+          "reference_max_absolute": 0.061279296875,
+          "reference_l2": 0.6974085569381714,
+          "max_absolute_allowed": 0.000958489013671875
+        },
+        "core.1.attentions.0.q_norm.weight": {
+          "max_absolute": 3.814697265625e-06,
+          "rms_absolute": 2.2720239485352067e-06,
+          "relative_l2": 0.006408684095844559,
+          "reference_max_absolute": 0.000614166259765625,
+          "reference_l2": 0.0014180907746776938,
+          "max_absolute_allowed": 1.0596347808837891e-05
+        },
+        "core.1.attentions.0.k_norm.weight": {
+          "max_absolute": 3.814697265625e-06,
+          "rms_absolute": 2.4920159376051743e-06,
+          "relative_l2": 0.006451398740220058,
+          "reference_max_absolute": 0.000614166259765625,
+          "reference_l2": 0.0015451011713594198,
+          "max_absolute_allowed": 1.0596347808837891e-05
+        },
+        "core.1.attention_norms.0.weight": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 1.0766642844828311e-05,
+          "relative_l2": 0.005894707745921847,
+          "reference_max_absolute": 0.006683349609375,
+          "reference_l2": 0.014611944556236267,
+          "max_absolute_allowed": 0.00010542733764648437
+        },
+        "core.1.ffn_norms.0.weight": {
+          "max_absolute": 7.62939453125e-06,
+          "rms_absolute": 1.536952026981453e-06,
+          "relative_l2": 0.005200777766958404,
+          "reference_max_absolute": 0.0009918212890625,
+          "reference_l2": 0.002364187967032194,
+          "max_absolute_allowed": 1.6497207641601563e-05
+        },
+        "core.1.routers.0.gate.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 6.47324804958771e-06,
+          "relative_l2": 0.0017546505397343082,
+          "reference_max_absolute": 0.0157470703125,
+          "reference_l2": 0.05902712047100067,
+          "max_absolute_allowed": 0.0002470479736328125
+        },
+        "core.1.experts.w1_EFD": {
+          "max_absolute": 3.0517578125e-05,
+          "rms_absolute": 1.3570163446274819e-06,
+          "relative_l2": 0.003996268245205231,
+          "reference_max_absolute": 0.00433349609375,
+          "reference_l2": 0.06146889552474022,
+          "max_absolute_allowed": 6.871087646484375e-05
+        },
+        "core.1.experts.w2_EDF": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 1.0080104857479455e-06,
+          "relative_l2": 0.0029413128768348055,
+          "reference_max_absolute": 0.0034027099609375,
+          "reference_l2": 0.06203671544790268,
+          "max_absolute_allowed": 5.4167343139648435e-05
+        },
+        "core.1.experts.w3_EFD": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 1.2127957234042697e-06,
+          "relative_l2": 0.003633286717097389,
+          "reference_max_absolute": 0.00372314453125,
+          "reference_l2": 0.060424480587244034,
+          "max_absolute_allowed": 5.917413330078125e-05
+        },
+        "suffix.0.attentions.0.q_proj.weight": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 1.26414624901372e-06,
+          "relative_l2": 0.001685023264255595,
+          "reference_max_absolute": 0.0087890625,
+          "reference_l2": 0.04801438748836517,
+          "max_absolute_allowed": 0.0001383291015625
+        },
+        "suffix.0.attentions.0.k_proj.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 6.768031653336948e-06,
+          "relative_l2": 0.004945836192956643,
+          "reference_max_absolute": 0.0098876953125,
+          "reference_l2": 0.06192808225750923,
+          "max_absolute_allowed": 0.0001554952392578125
+        },
+        "suffix.0.attentions.0.v_proj.weight": {
+          "max_absolute": 0.000244140625,
+          "rms_absolute": 3.80309866159223e-05,
+          "relative_l2": 0.0033219416742452873,
+          "reference_max_absolute": 0.061279296875,
+          "reference_l2": 0.518096387386322,
+          "max_absolute_allowed": 0.000958489013671875
+        },
+        "suffix.0.attentions.0.out_proj.weight": {
+          "max_absolute": 0.0001220703125,
+          "rms_absolute": 5.377589332056232e-06,
+          "relative_l2": 0.0006943636331427428,
+          "reference_max_absolute": 0.04248046875,
+          "reference_l2": 0.4956563115119934,
+          "max_absolute_allowed": 0.00066475732421875
+        },
+        "suffix.0.attentions.0.q_norm.weight": {
+          "max_absolute": 5.960464477539062e-07,
+          "rms_absolute": 2.0499254560490954e-07,
+          "relative_l2": 0.0010421901892642795,
+          "reference_max_absolute": 0.000545501708984375,
+          "reference_l2": 0.0007867759559303522,
+          "max_absolute_allowed": 9.52346420288086e-06
+        },
+        "suffix.0.attentions.0.k_norm.weight": {
+          "max_absolute": 3.814697265625e-06,
+          "rms_absolute": 1.1593256203923374e-06,
+          "relative_l2": 0.003768463487956782,
+          "reference_max_absolute": 0.00096893310546875,
+          "reference_l2": 0.0012305552372708917,
+          "max_absolute_allowed": 1.613957977294922e-05
+        },
+        "suffix.0.attention_norms.0.weight": {
+          "max_absolute": 1.52587890625e-05,
+          "rms_absolute": 4.623876066034427e-06,
+          "relative_l2": 0.004234798001220154,
+          "reference_max_absolute": 0.00299072265625,
+          "reference_l2": 0.008735011331737041,
+          "max_absolute_allowed": 4.773004150390625e-05
+        },
+        "suffix.0.ffn_norms.0.weight": {
+          "max_absolute": 1.9073486328125e-06,
+          "rms_absolute": 2.7356321652405313e-07,
+          "relative_l2": 0.001025445944948979,
+          "reference_max_absolute": 0.00102996826171875,
+          "reference_l2": 0.00213419902138412,
+          "max_absolute_allowed": 1.709325408935547e-05
+        },
+        "suffix.0.routers.0.gate.weight": {
+          "max_absolute": 6.103515625e-05,
+          "rms_absolute": 6.430102530430304e-06,
+          "relative_l2": 0.001333687994608134,
+          "reference_max_absolute": 0.01904296875,
+          "reference_l2": 0.07714071124792099,
+          "max_absolute_allowed": 0.00029854638671875
+        },
+        "suffix.0.experts.w1_EFD": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.00555419921875,
+          "reference_l2": 0.05565676838159561,
+          "max_absolute_allowed": 8.778436279296875e-05
+        },
+        "suffix.0.experts.w2_EDF": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.00445556640625,
+          "reference_l2": 0.055948302149772644,
+          "max_absolute_allowed": 7.061822509765625e-05
+        },
+        "suffix.0.experts.w3_EFD": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.0033416748046875,
+          "reference_l2": 0.053295865654945374,
+          "max_absolute_allowed": 5.3213668823242185e-05
+        },
+        "input_adapter.state_proj.weight": {
+          "max_absolute": 0.00048828125,
+          "rms_absolute": 8.969932969193906e-05,
+          "relative_l2": 0.006605358995661462,
+          "reference_max_absolute": 0.06689453125,
+          "reference_l2": 0.8691059947013855,
+          "max_absolute_allowed": 0.00104622705078125
+        },
+        "input_adapter.input_proj.weight": {
+          "max_absolute": 0.000244140625,
+          "rms_absolute": 6.0973292420385405e-05,
+          "relative_l2": 0.006608499736521329,
+          "reference_max_absolute": 0.038330078125,
+          "reference_l2": 0.5904957056045532,
+          "max_absolute_allowed": 0.000599907470703125
+        },
+        "final_norm.weight": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.00628662109375,
+          "reference_l2": 0.019871944561600685,
+          "max_absolute_allowed": 9.922845458984375e-05
+        },
+        "lm_head.weight": {
+          "max_absolute": 0.0,
+          "rms_absolute": 0.0,
+          "relative_l2": 0.0,
+          "reference_max_absolute": 0.06494140625,
+          "reference_l2": 1.0176111459732056,
+          "max_absolute_allowed": 0.00101570947265625
+        }
+      },
+      "failures": []
+    }
+  },
+  "elapsed_seconds": 11.228222519159317,
+  "source_commit": "75543a360c4f398e7c0c836c689a23e0c6141e3f",
+  "torchtitan_commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+  "hardware": {
+    "gpu": "NVIDIA H200",
+    "visible_gpus_for_this_program": 1
+  },
+  "historical_routing_scope": "The earlier schema-1 record checked pooled physical-cell histograms; exact token/call routing is established by this schema-2 run."
+}

@@ -1,0 +1,126 @@
+{
+  "name": "a1_r0",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 512,
+    "hidden_dim": 1024,
+    "num_heads": 8,
+    "num_kv_heads": 2,
+    "num_experts": 8,
+    "top_k": 2,
+    "num_cells": 2,
+    "num_visits": 4,
+    "visit_capacity": 4,
+    "prefix_cells": 0,
+    "suffix_cells": 0,
+    "order": "stack",
+    "attention_per_visit": true,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 2048,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": false,
+    "init_std": 0.02,
+    "schema_version": 3,
+    "prefix": null,
+    "core": null,
+    "suffix": null
+  },
+  "training": {
+    "num_visits": 4,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.01,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "terminal_ce",
+    "entropy_coeff": 0.0
+  },
+  "source": {
+    "kind": "attention_router_ownership_grid",
+    "version": 1
+  },
+  "preserved": [
+    "Two core banks in stack order, four visits, shared experts and norms; only attention/router owners vary.",
+    "Fixed-depth full BPTT, terminal CE and identical initialization/optimizer rules; independent owners increase unique parameters."
+  ],
+  "adaptations": [
+    "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "base_lr": 0.0003,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "expert_lr_scope": "core",
+    "weight_decay_compensation": false
+  },
+  "inference": {
+    "num_visits": 4,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": []
+  },
+  "run": {
+    "seq_len": 2048,
+    "global_batch_positions": 32768,
+    "successful_updates": 2048,
+    "schedule_total_steps": 2048,
+    "validation_interval": 64,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "objective": "terminal_ce_plus_router_aux",
+    "manifest_identity": null,
+    "panel": "C",
+    "schedule": {
+      "name": "warmup_cosine_decay",
+      "coordinate": "successful_optimizer_updates",
+      "total_steps": 2048,
+      "warmup_steps": 64,
+      "decay_type": "cosine",
+      "decay_ratio": 0.96875,
+      "min_lr_factor": 0.1
+    },
+    "training_seeds": [
+      42
+    ],
+    "data_infinite": false,
+    "validation_infinite": false,
+    "activation_checkpointing": "none",
+    "master_dtype": "float32",
+    "reduce_dtype": "float32"
+  },
+  "evidence": [],
+  "schema_version": 1
+}

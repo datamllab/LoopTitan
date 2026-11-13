@@ -1,0 +1,79 @@
+name: release
+
+# Tags are created by the human only; no agent or workflow creates or moves one. Tag only a commit
+# whose `test` workflow run on main is green: this workflow builds and checks the package but does
+# not rerun the test suite. Pushing a tag `v*` is the one release trigger: there is no manual
+# dispatch and no schedule. The tag must be `v` + the version in pyproject.toml. The jobs run only
+# in the main repository, so a fork that copies the tag cannot publish.
+#
+# PyPI uses trusted publishing: the project `moeloop-lab` on PyPI must list this repository,
+# workflow `release.yml` and environment `pypi` as its publisher (set up by the human; no API
+# token exists). Only the `publish` job holds `id-token: write`.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.repository == 'datamllab/LoopTitan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install uv==0.13.1
+      - name: Tag matches pyproject version
+        run: test "$GITHUB_REF_NAME" = "v$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+      - run: uv build --out-dir dist
+      - run: uvx --from twine==7.0.0 twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    if: github.repository == 'datamllab/LoopTitan'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/moeloop-lab/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
+
+  github-release:
+    # A draft only: the human reviews the notes and publishes the release.
+    if: github.repository == 'datamllab/LoopTitan'
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      # PEP 440 pre-releases (aN, bN, rcN, .devN) are marked as such; final and post releases are not.
+      - run: |
+          pre=()
+          if [[ "$GITHUB_REF_NAME" =~ [0-9](a|b|rc)[0-9]+ || "$GITHUB_REF_NAME" =~ \.dev[0-9]+$ ]]; then pre=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "$GITHUB_REF_NAME" --generate-notes "${pre[@]}"
+        env:
+          GH_TOKEN: ${{ github.token }}

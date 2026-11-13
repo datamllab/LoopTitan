@@ -1,0 +1,16 @@
+{
+  "raw_terminal_ce": {
+    "a0_r0": 5.16462516784668,
+    "a0_r1": 5.152528762817383,
+    "a1_r0": 5.105783939361572,
+    "a1_r1": 5.103172302246094
+  },
+  "I_AR": 0.00948476791381836,
+  "definition": "CE_AR-CE_A-CE_R+CE_B; one scale/budget/seed, descriptive only",
+  "parameter_deltas": {
+    "a0_r0": 0,
+    "a0_r1": 24576,
+    "a1_r0": 3932160,
+    "a1_r1": 3956736
+  }
+}

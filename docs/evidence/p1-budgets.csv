@@ -1,0 +1,4 @@
+budget,reference,candidate,relative_difference,relative_tolerance,basis
+unique_non_embedding_parameters,712656672,737845056,0.03534434600789088,0.05,analytical_estimate
+training_flops_per_token,1284757348.671257,1248742044.8630443,-0.028032767312412027,0.05,analytical_estimate
+logical_kv_bytes,15728640,15728640,0.0,0.05,analytical_estimate

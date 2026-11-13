@@ -1,0 +1,2 @@
+{"context_options": ["The cup does not fit in the box because the cup", "The cup does not fit in the box because the box"], "continuation": "is too big.", "gold": 0}
+{"context_options": ["The cup does not fit in the box because the cup", "The cup does not fit in the box because the box"], "continuation": "is too small.", "gold": 1}

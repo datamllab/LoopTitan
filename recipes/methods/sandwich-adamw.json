@@ -1,0 +1,159 @@
+{
+  "name": "method-sandwich-adamw",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 1280,
+    "hidden_dim": 1728,
+    "num_heads": 10,
+    "num_kv_heads": 1,
+    "num_experts": 39,
+    "top_k": 2,
+    "num_cells": 1,
+    "num_visits": 8,
+    "visit_capacity": null,
+    "prefix_cells": 2,
+    "suffix_cells": 2,
+    "order": "stack",
+    "attention_per_visit": false,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "lora_attention_rank": 0,
+    "lora_ffn_rank": 0,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "diag_decay",
+    "injection_scale": 1.0,
+    "injection_dt": 1.0,
+    "injection_decay": 1.0,
+    "injection_eps": 1e-06,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": false,
+    "init_std": 0.02,
+    "schema_version": 4,
+    "prefix": null,
+    "core": null,
+    "suffix": null
+  },
+  "training": {
+    "num_visits": 8,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.001,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "terminal_ce",
+    "entropy_coeff": 0.0
+  },
+  "source": {
+    "method": "Looped Models Done Right, Part I",
+    "version": "v1",
+    "url": "https://arxiv.org/html/2610.23036v1",
+    "sections": [
+      "2.1",
+      "3.1",
+      "3.4.2",
+      "4.1",
+      "Appendix A"
+    ],
+    "selected_path": "moe_middle_input_injection",
+    "reference_code": "https://github.com/ifm-ai/xllm-loop/blob/755c7b3/xllm/paper_part1/recipes.py",
+    "P_R_T_C": [
+      2,
+      1,
+      8,
+      2
+    ],
+    "track": "P2",
+    "constructor": "sandwich_spec"
+  },
+  "preserved": [
+    "Independent prelude and coda stacks surround one tied core stack run `passes` times in stack order.",
+    "Before every core pass the state becomes exp(-dt*a)*z + dt*(W e) with the fixed prelude output e: per-channel dt = softplus(.), a = exp(.), full W; W = I, a = 1 and dt = 1 at initialization, and no RMSNorm on e.",
+    "The recurrent state starts at the prelude output (z_0 = e); fixed depth, full BPTT and terminal CE.",
+    "Every physical FFN is a top-2 expert bank without shared experts; the balance loss E*sum(f_i*P_i), averaged over calls and microbatches, has coefficient 0.001."
+  ],
+  "adaptations": [
+    "The 1536-wide, 24/6-head, RoPE-base-1e6 paper cells are not reproduced.",
+    "Softmax top-k scores replace the paper's sigmoid top-2 scores; the paper's 25 experts of width 2432 become the expert count and width of the geometry note.",
+    "The Section 4.1 MoE tables report the random-state Huginn MoE; this recipe is the released input-initialized path (moe_middle_input_injection).",
+    "The paper's sequence length 8192 and global batch of 512 sequences, and the reference code's 250,624-token vocabulary, are replaced by Track P2's 4096-token sequences, 256 sequences per update and the 151669-token vocabulary.",
+    "Track P2's AdamW replaces the paper's AdamW (peak LR swept over 4e-4 to 8e-4, 200 warmup steps, cosine decay, weight decay 0.1) and the reference code's settings (peak LR 6e-4, betas 0.9/0.98, decay to 0.01x, weight decay on every parameter rather than exempting norms, embedding, head and router).",
+    "Common normal(init_std) matrices replace the reference truncated-normal init (std 0.02 cut at 3 std, embedding and head std 1/sqrt(d)).",
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Track P2's AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Geometry: the prelude/core/coda ratio becomes 2:1:2 (P2-R1x8-C2 instead of the constructor's 2:3:2 P2-R3x8-C2) to give m0's 12 logical layers at P2's width and heads, so 8 of the 12 logical layers are core visits against the paper's 86% (96 of 112 in P8-R12x8-C8); the preserved top-2 banks use 39 experts of width 1728 to meet m0's unique parameters, and 1728 = 4 x 432, so top-2 x 1728 equals m0's active 8 x 432.",
+    "Matrix initialization std=.02 and unit norm scales are P2's; seq 4096, 1,048,576 positions per update, the schedule (95-update linear warmup, constant peak, last 20% linear to 0) and the AdamW or Muon settings are Track P2's; the training recipe (objective, depth, aux coefficient, expert LR multiplier) is the constructor's."
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "base_lr": 0.0012,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "max_norm": 1.0
+  },
+  "inference": {
+    "num_visits": 8,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": []
+  },
+  "run": {
+    "seq_len": 4096,
+    "global_batch_positions": 1048576,
+    "successful_updates": 4769,
+    "schedule_total_steps": 4769,
+    "validation_interval": 477,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "manifest_identity": null,
+    "schedule": {
+      "name": "warmup_stable_decay",
+      "coordinate": "successful_optimizer_updates",
+      "total_steps": 4769,
+      "warmup_steps": 95,
+      "decay_ratio": 0.2,
+      "decay_type": "linear",
+      "min_lr_factor": 0.0
+    },
+    "data_infinite": false,
+    "validation_label_tokens": 1000000,
+    "validation_infinite": false,
+    "checkpoint_interval": 477,
+    "training_seeds": [
+      42
+    ],
+    "activation_checkpointing": "none",
+    "panel": "methods",
+    "local_batch_size": 16,
+    "keep_latest_k": 0
+  },
+  "evidence": [],
+  "schema_version": 1
+}

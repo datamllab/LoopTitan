@@ -1,0 +1,182 @@
+{
+  "adaptations": [
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "P1 public-stack expert intermediate/head geometry and independent 151669-token embedding/head are explicit project choices, not disclosed paper hyperparameters.",
+    "Normal matrix initialization std=.02, unit norm scales, aux coefficient .01, 20M-label linear warmup and final LR factor .1 are public-stack adaptations requiring the bounded stability pilot.",
+    "Physical active counts name one traversal of unique cells; repeated core calls still incur compute."
+  ],
+  "evidence": [],
+  "inference": {
+    "cache": "logical_visit_slots",
+    "generation": "fixed_depth",
+    "num_visits": 1,
+    "qualification_evidence": [],
+    "readout": "terminal"
+  },
+  "model": {
+    "always_on_hidden_dim": 0,
+    "attention_per_visit": false,
+    "core": null,
+    "dim": 672,
+    "hidden_dim": 544,
+    "init_std": 0.02,
+    "initial_state": "input",
+    "injection_scale": 1.0,
+    "input_injection": "none",
+    "max_seq_len": 4096,
+    "norm_per_visit": false,
+    "num_cells": 10,
+    "num_experts": 64,
+    "num_heads": 7,
+    "num_kv_heads": 1,
+    "num_visits": 1,
+    "order": "stack",
+    "prefix": null,
+    "prefix_cells": 0,
+    "qk_norm": false,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "router_per_visit": false,
+    "schema_version": 2,
+    "suffix": null,
+    "suffix_cells": 0,
+    "top_k": 8,
+    "visit_capacity": null,
+    "vocab_size": 151669
+  },
+  "name": "p1_moe",
+  "optimizer": {
+    "base_lr": 0.0003,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "expert_lr_scope": "core",
+    "max_norm": 1.0,
+    "name": "AdamW",
+    "weight_decay": 0.1,
+    "weight_decay_compensation": false,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ]
+  },
+  "preserved": [
+    "Every logical layer has independently owned attention, router, norms and experts."
+  ],
+  "run": {
+    "activation_checkpointing": "none",
+    "anchor": "P1",
+    "checkpoint_interval": 477,
+    "data_infinite": false,
+    "diagnostic_updates": [
+      954,
+      4769,
+      10000
+    ],
+    "final_test_label_tokens": 10000000,
+    "final_validation_label_tokens": 10000000,
+    "formal_identity_status": "frozen before formal training; observed qualification/results remain separate",
+    "frozen_data": {
+      "attention_pairs_per_sequence": 4180216.9229844734,
+      "attention_pairs_world_size": 16,
+      "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+      "manifest_sha256": "e0c607ecee9d95485f7475ba0101c1ac927483346e0fb7fdce7d682cf2279a8e",
+      "statistics_sha256": "ef73d75ca2d3d22bba16d11e3207bb3fa5df74e0c51ec0d68ab626b45e87361f"
+    },
+    "frozen_runtime": {
+      "gradient_accumulation_steps": 1,
+      "local_batch_size": 16,
+      "parallelism": {
+        "data_parallel_replicate_degree": 2,
+        "data_parallel_shard_degree": 8
+      },
+      "runtime": {
+        "cuda": "13.0",
+        "python": "3.12.15 (main, Oct  6 2026, 23:50:18) [GCC 15.3.0]",
+        "torch": "2.14.0+cu130"
+      },
+      "runtime_identity_sha256": "5395f53a9df808cb6c3fe65b5ccbcd6f63834fcc671c1d52f97f38317d286095",
+      "source_identity_sha256": "dd94dd0f1ac174baf8b99fdc3662f04c988c61f5284a2cc7f71b28600565e59b",
+      "world_size": 16
+    },
+    "global_batch_positions": 1048576,
+    "lr_trial_max_label_tokens": 100000000,
+    "lr_trial_max_updates": 95,
+    "lr_trial_peak_lrs": [
+      0.0003,
+      0.0001
+    ],
+    "manifest_identity": null,
+    "master_dtype": "float32",
+    "mixed_precision_param": "bfloat16",
+    "objective": "terminal_ce_plus_router_aux",
+    "reduce_dtype": "float32",
+    "schedule": {
+      "coordinate": "successful_optimizer_updates",
+      "decay_label_tokens": 10000000000,
+      "decay_ratio": 0.48815068843732407,
+      "decay_steps": 9537,
+      "decay_type": "cosine",
+      "label_position_policy": "Fresh document packing normally fills every position; padding is not a label. Verify actual endpoint labels and report any shortfall, never infer labels from step count.",
+      "maximum_endpoint_rounding_positions": 1048576,
+      "min_lr_factor": 0.1,
+      "name": "warmup_stable_cosine_decay",
+      "native_step_convention": "Pinned TorchTitan LambdaLR: first update uses index 0; virtual final stable step keeps index 10000 at peak and index 19537 at min_lr_factor.",
+      "requested_coordinate": "global_valid_label_tokens",
+      "rounded_nominal_positions": 20486029312,
+      "rounding": "ceil(requested labels / nominal global positions per update); actual labels must be reported separately",
+      "stable_end_label_tokens": 10485760000,
+      "stable_end_steps": 10000,
+      "target_label_tokens": 20485760000,
+      "total_steps": 19537,
+      "warmup_label_tokens": 20000000,
+      "warmup_steps": 20
+    },
+    "schedule_total_steps": 19537,
+    "seed": 42,
+    "seq_len": 4096,
+    "successful_updates": 19537,
+    "training_seeds": [
+      42
+    ],
+    "validation_infinite": false,
+    "validation_interval": 477,
+    "validation_label_tokens": 1000000
+  },
+  "schema_version": 1,
+  "source": {
+    "anchor": "P1",
+    "kind": "component",
+    "paper_reference": {
+      "baseline_active_tier": "100M",
+      "non_embedding_unique_tier": ".71B",
+      "private_stack_reproduction": false,
+      "sections": [
+        "3.1",
+        "Appendix A",
+        "Appendix B"
+      ],
+      "url": "https://arxiv.org/html/2609.01343v3"
+    },
+    "version": 1
+  },
+  "training": {
+    "aux_reduction": "local_micro_call_mean",
+    "balance_coeff": 0.01,
+    "depth_rule": "uniform_update_v1",
+    "depth_seed": 0,
+    "grad_visits": null,
+    "num_visits": 1,
+    "sampled_visits": [],
+    "z_loss_coeff": 0.0
+  }
+}

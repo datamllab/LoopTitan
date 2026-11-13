@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "source_commit": "a19c6fa611f564078a45533d8c92ce096b5564e1",
+  "scope": "CPU installed-wheel export license and offline delivery regression after training-path canonicalization",
+  "build": {
+    "source": "git archive of exact source commit; isolated sdist build; wheel built from that sdist",
+    "artifacts": {
+      "moeloop_lab-0.1.0a1.tar.gz": "456109d38433126f07d0369524c68c39018831cddd6a9eeaa9dff5a7838fda7f",
+      "moeloop_lab-0.1.0a1-py3-none-any.whl": "95259243dd183a5d11b0990826a5591709f938b7501973cd27793b21367533cc"
+    },
+    "public_python_module_count": 14,
+    "public_module_sha256": {
+      "__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+      "cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+      "data.py": "a2ab98bc07f352c393cf6ed87c64b7467db9b3d5c904c47b60d0fb01c5fd4f43",
+      "evaluate.py": "7d7c778cde2dbe23ae0813e76cea583995607c63efe079943a91863dd9861287",
+      "export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+      "generate.py": "8b267bca0a362001dfa163ec88d7f81196fb0cefd1648140ef0234d8bdc03fbb",
+      "hf.py": "8f6849d141941600af5625095cba8d31e0d80286500e6b69d665d8820546d23e",
+      "model.py": "59aef6452dd114a71a40767145601ee5e6b84e6d5deda6a30aa392b667ec47fb",
+      "moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+      "prepare.py": "70c0c820be5c43914fbc2efe30fd591238fe0a99c0096416ed0509b578584feb",
+      "recipes.py": "a44af0e81ad41e1afc8387c6340f6bb317c738f7d409d92e2c5a35c205524edb",
+      "titan.py": "be9be029f04a53878d9f6966d46e47b6b48796b2ba1af5186bdf19ce0da77710",
+      "train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+      "training.py": "7058fdf584adf27eb2d8566d6cf69ef410e78ca79916cc86b963eab8d922b803"
+    }
+  },
+  "environment": {
+    "python": "3.12.3",
+    "installed_dependency_versions": {
+      "moeloop-lab": "0.1.0a1",
+      "torch": "2.14.0+cpu",
+      "transformers": "5.20.2",
+      "tokenizers": "0.23.3",
+      "safetensors": "0.8.0",
+      "torchdata": "0.11.0",
+      "datasets": "4.7.0",
+      "torchtitan": "0.3.0",
+      "triton": "3.8.0"
+    }
+  },
+  "verified": [
+    "Non-editable exact wheel installation in a disposable model environment; commands run outside the checkout using python -I",
+    "Every installed public Python module matches the exact git archive and wheel bytes",
+    "Export reads inference LICENSE from installed dist-info/licenses/LICENSE with no checkout LICENSE available",
+    "Standalone export LICENSE matches installed distribution bytes and its SHA256 is recorded in export_provenance",
+    "All exported artifact hashes and all four portable inference source files match installed files",
+    "Actual native-grouped-layout DCP model export, complete fixture heldout CLI, and cached generation CLI pass offline",
+    "A separate HF-only environment without moeloop, TorchTitan or MLflow loads AutoTokenizer/AutoModelForCausalLM offline and checks cache/generation equivalence"
+  ],
+  "license": {
+    "filename": "LICENSE",
+    "source": "installed dist-info/licenses/LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "provenance_hash_matches": true
+  },
+  "heldout": {
+    "ce": 2.0788991186353893,
+    "ce_sum": 18.710092067718506,
+    "valid_tokens": 9,
+    "input_tokens": 9,
+    "batches": 2,
+    "complete_split": true,
+    "num_visits": 2,
+    "manifest_fingerprint": "0010d34510006a8fde22fece7ba99c59b6c97379cb7f06fc1898ef9fb3638ca7",
+    "label_contract": "already_aligned_document_internal_next_token",
+    "attention": "document_causal_block_local"
+  },
+  "standalone_hf": {
+    "status": "passed",
+    "project_torchtitan_mlflow_absent": true,
+    "full_prefix_cached_max_absolute_error": 0.0,
+    "cached_columns": 4,
+    "logical_cache_slots": 2,
+    "greedy_cached_generation_equals_recomputation": true,
+    "generated_new_tokens": 2
+  },
+  "boundaries": [
+    "Uses an existing offline engineering fixture with random model weights; no model-quality claim",
+    "Disposable model dependency environment reused; only the project wheel was replaced",
+    "No GPU execution, new baseline run, or full-suite repetition in this packaging regression"
+  ],
+  "release_blockers": []
+}

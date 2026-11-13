@@ -1,0 +1,294 @@
+{
+ "arms": [
+  {
+   "after": "smelt",
+   "matched": true,
+   "recipe": "p1_smelt",
+   "relative_differences": {
+    "kv_bytes_per_token": 0.0,
+    "training_flops_per_position": 0.02273206408164017,
+    "unique_non_embedding_parameters": 0.03534434600789088
+   },
+   "shape": {
+    "dim": 576,
+    "head_dim": 64,
+    "hidden_dim": 440,
+    "num_cells": 5,
+    "num_experts": 96,
+    "num_kv_heads": 1,
+    "num_visits": 2,
+    "prefix_cells": 2,
+    "suffix_cells": 3,
+    "top_k": 8
+   },
+   "source": "recipes/p1_smelt.json"
+  }
+ ],
+ "grid": {
+  "dims": [
+   480,
+   576,
+   672,
+   768,
+   864
+  ],
+  "head_dim": 96,
+  "hidden_dims": [
+   272,
+   408,
+   480,
+   544,
+   616,
+   680,
+   816
+  ],
+  "num_experts": [
+   32,
+   48,
+   64,
+   96,
+   128
+  ],
+  "num_kv_heads": 1,
+  "top_k": 8
+ },
+ "reference": {
+  "cost_formula_version": "fixed_terminal_matrix_v1",
+  "kv_bytes_per_token": 3840,
+  "name": "p1_moe",
+  "seq_len": 4096,
+  "source": "recipes/p1_moe.json",
+  "tolerance": 0.05,
+  "training_flops_per_position": 1532760768,
+  "unique_non_embedding_parameters": 712656672
+ },
+ "rows": [
+  {
+   "matched": 2,
+   "nearest": {
+    "matched": true,
+    "relative_differences": {
+     "kv_bytes_per_token": 0.0,
+     "training_flops_per_position": 0.0,
+     "unique_non_embedding_parameters": 0.0
+    },
+    "shape": {
+     "dim": 672,
+     "hidden_dim": 544,
+     "layers": 10,
+     "num_experts": 64
+    }
+   },
+   "points": 875,
+   "recipe": "moe",
+   "unknown_points": 0
+  },
+  {
+   "matched": 0,
+   "nearest": {
+    "matched": false,
+    "relative_differences": {
+     "kv_bytes_per_token": 0.5,
+     "training_flops_per_position": 0.1501584153281251,
+     "unique_non_embedding_parameters": -0.920528262450618
+    },
+    "shape": {
+     "dim": 864,
+     "hidden_dim": 816,
+     "layers": 15
+    }
+   },
+   "points": 175,
+   "recipe": "dense",
+   "unknown_points": 0
+  },
+  {
+   "matched": 0,
+   "nearest": {
+    "matched": false,
+    "relative_differences": {
+     "kv_bytes_per_token": -0.1,
+     "training_flops_per_position": -0.01843487685091898,
+     "unique_non_embedding_parameters": 0.012967455947707734
+    },
+    "shape": {
+     "dim": 672,
+     "hidden_dim": 616,
+     "num_experts": 96,
+     "physical_layers": 6
+    }
+   },
+   "points": 525,
+   "recipe": "smelt",
+   "unknown_points": 0
+  },
+  {
+   "matched": 2,
+   "nearest": {
+    "matched": true,
+    "relative_differences": {
+     "kv_bytes_per_token": 0.0,
+     "training_flops_per_position": 0.0014471769152170784,
+     "unique_non_embedding_parameters": 0.017798999852765007
+    },
+    "shape": {
+     "core_layers": 2,
+     "dim": 576,
+     "hidden_dim": 816,
+     "num_experts": 128,
+     "passes": 4
+    }
+   },
+   "points": 2100,
+   "recipe": "meta",
+   "unknown_points": 0
+  },
+  {
+   "matched": 4,
+   "nearest": {
+    "matched": true,
+    "relative_differences": {
+     "kv_bytes_per_token": 0.0,
+     "training_flops_per_position": 0.0013468403178753595,
+     "unique_non_embedding_parameters": -7.543604390754936e-06
+    },
+    "shape": {
+     "core_layers": 8,
+     "dim": 672,
+     "hidden_dim": 544,
+     "num_experts": 64,
+     "passes": 1
+    }
+   },
+   "points": 1575,
+   "recipe": "foil",
+   "unknown_points": 0
+  },
+  {
+   "matched": 0,
+   "nearest": {
+    "matched": false,
+    "relative_differences": {
+     "kv_bytes_per_token": -0.2,
+     "training_flops_per_position": -0.05016980184085714,
+     "unique_non_embedding_parameters": -0.0025384228774890357
+    },
+    "shape": {
+     "dim": 672,
+     "group_size": 2,
+     "groups": 4,
+     "hidden_dim": 680,
+     "num_experts": 128
+    }
+   },
+   "points": 1400,
+   "recipe": "expert_tying",
+   "unknown_points": 0
+  },
+  {
+   "matched": 3,
+   "nearest": {
+    "matched": true,
+    "relative_differences": {
+     "kv_bytes_per_token": 0.0,
+     "training_flops_per_position": -0.016441060536554954,
+     "unique_non_embedding_parameters": 0.02111279749584664
+    },
+    "shape": {
+     "core_layers": 4,
+     "dim": 576,
+     "eval_passes": 2,
+     "hidden_dim": 544,
+     "num_experts": 128
+    }
+   },
+   "points": 2100,
+   "recipe": "huginn",
+   "unknown_points": 0
+  },
+  {
+   "matched": 0,
+   "nearest": {
+    "matched": false,
+    "relative_differences": {
+     "kv_bytes_per_token": -0.2,
+     "training_flops_per_position": -0.05016980184085714,
+     "unique_non_embedding_parameters": -0.008335682851784204
+    },
+    "shape": {
+     "core_layers": 4,
+     "dim": 672,
+     "hidden_dim": 680,
+     "num_experts": 128,
+     "passes": 2
+    }
+   },
+   "points": 2100,
+   "recipe": "loom",
+   "unknown_points": 0
+  },
+  {
+   "matched": 0,
+   "nearest": {
+    "matched": false,
+    "relative_differences": {
+     "kv_bytes_per_token": -0.2,
+     "training_flops_per_position": 0.19671246700385275,
+     "unique_non_embedding_parameters": -0.15235076757970772
+    },
+    "shape": {
+     "core_layers": 4,
+     "dim": 480,
+     "hidden_dim": 816,
+     "num_experts": 128,
+     "passes": 2
+    }
+   },
+   "points": 2100,
+   "recipe": "ouro",
+   "unknown_points": 0
+  },
+  {
+   "matched": 1,
+   "nearest": {
+    "matched": true,
+    "relative_differences": {
+     "kv_bytes_per_token": 0.0,
+     "training_flops_per_position": 0.004377231033094918,
+     "unique_non_embedding_parameters": 0.04555959871796443
+    },
+    "shape": {
+     "core_layers": 3,
+     "dim": 672,
+     "hidden_dim": 544,
+     "num_experts": 96,
+     "passes": 2
+    }
+   },
+   "points": 2800,
+   "recipe": "sandwich",
+   "unknown_points": 0
+  },
+  {
+   "matched": 0,
+   "nearest": {
+    "matched": false,
+    "relative_differences": {
+     "kv_bytes_per_token": -0.2,
+     "training_flops_per_position": -0.04805333848419586,
+     "unique_non_embedding_parameters": -0.008063574264831973
+    },
+    "shape": {
+     "core_layers": 4,
+     "dim": 672,
+     "hidden_dim": 680,
+     "num_experts": 128,
+     "passes": 2
+    }
+   },
+   "points": 2100,
+   "recipe": "relaxed",
+   "unknown_points": 0
+  }
+ ]
+}

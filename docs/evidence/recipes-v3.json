@@ -1,0 +1,2155 @@
+{
+  "analysis": {
+    "path": "v3-analysis.json",
+    "sha256": "b2055fcb4c29d2d3e1bfc921f3b8609461fc6c80afb37a9abd8d65d27bf52c99",
+    "verified_raw_sha256": "4283eaf816c93ea87a4c65a825c0013d46d476f8b2d77692d561636e43699a7f",
+    "private_paths_replaced_with_symbolic_artifact_ids": true
+  },
+  "delivery": {
+    "lm_eval": {
+      "models": [
+        "p1_moe",
+        "p1_smelt",
+        "p2_moe",
+        "p2_smelt"
+      ],
+      "path": "$ARTIFACT_ROOT/delivery/lm-eval-receipt.json",
+      "sha256": "34e8f12f39feb65c1e18c9994d90ffa16a7629269922364a8a72184a104f6bd5"
+    },
+    "package": {
+      "path": "$ARTIFACT_ROOT/installed-journey/journey-receipt.json",
+      "sha256": "9469a32f12d5c5f2eeea47b73145321a92b56559e3dc23cf529dd86bcfbbc947"
+    }
+  },
+  "inherited_v2": {
+    "inherited_v1": {
+      "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+      "release_check_sha256": "7d7f778ea8f8731ae4d24824dedb41fb25c57804e101779bdbc9996a5c58b939",
+      "release_sha256": "35a8f6bcd7f2cdc69b70b1bc11157822db6c0dc39c72868219fb475d2adaf26d",
+      "scope": "v1_full_acceptance",
+      "status": "inherited",
+      "training_source": "1bea4d6d2c539e3ae02517aaeede5f9ab68271a7"
+    },
+    "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+    "release_check_sha256": "a4756bc9664df757dbda7c52193c3757fe14a540e36dffdd74714a618ae24aae",
+    "release_sha256": "76c82c56726ecbda866467794a68488be484d11f713ba6fae9e6fa9ee88513ac",
+    "scope": "v2_full_acceptance",
+    "status": "inherited",
+    "training_source": "78d799dfa11c6be4130be63b252de9b91ae5aa8b"
+  },
+  "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+  "p2": {
+    "anchor": "P2",
+    "arms": {
+      "candidate": {
+        "actual_gpu_hours": 148.03375262949203,
+        "curve_points": 46,
+        "heldout": {
+          "test": {
+            "ce": 2.8730771860706414,
+            "document_losses": {
+              "document_count": 8212,
+              "path": "$ARTIFACT_ROOT/P2/candidate/full-test-documents.json",
+              "sha256": "35488cafad709a8549ab89beefa92baa8669df8bd07bd581f08c8e5f85c6e14f"
+            },
+            "valid_tokens": 10009889
+          },
+          "validation": {
+            "ce": 2.8780288967822782,
+            "document_losses": {
+              "document_count": 8167,
+              "path": "$ARTIFACT_ROOT/P2/candidate/full-validation-documents.json",
+              "sha256": "eae61c927e6e9e4cd233f9c31d2e12ac8c6e9747616364a18c0f0e86b1342568"
+            },
+            "valid_tokens": 10001497
+          }
+        },
+        "hf": {
+          "cache_max_absolute_error": 1.9073486328125e-05,
+          "ce": 2.3725130558013916,
+          "valid_tokens": 1024,
+          "scope": "Delivery smoke: context256, first4 batches/1024 labels. Complete context4096 HF validation/test are in heldout."
+        },
+        "labels": 20486029312,
+        "updates": 19537
+      },
+      "reference": {
+        "actual_gpu_hours": 135.0183714278539,
+        "curve_points": 46,
+        "heldout": {
+          "test": {
+            "ce": 2.8872579027533454,
+            "document_losses": {
+              "document_count": 8212,
+              "path": "$ARTIFACT_ROOT/P2/reference/full-test-documents.json",
+              "sha256": "e50133f1bd82a84a48e874886b6fdcc6e0ebdb8a8532f59c37bdf66d7a684ae7"
+            },
+            "valid_tokens": 10009889
+          },
+          "validation": {
+            "ce": 2.8923185287742346,
+            "document_losses": {
+              "document_count": 8167,
+              "path": "$ARTIFACT_ROOT/P2/reference/full-validation-documents.json",
+              "sha256": "b62f309532ff93fdad00dfd45209ea0e3818d1bd09c13cffab1406e3161c4f93"
+            },
+            "valid_tokens": 10001497
+          }
+        },
+        "hf": {
+          "cache_max_absolute_error": 1.811981201171875e-05,
+          "ce": 2.39693146944046,
+          "valid_tokens": 1024,
+          "scope": "Delivery smoke: context256, first4 batches/1024 labels. Complete context4096 HF validation/test are in heldout."
+        },
+        "labels": 20486029312,
+        "updates": 19537
+      }
+    },
+    "compute_basis": "native_padded_positions_times_frozen_training_flops_per_token_estimate",
+    "data_order": {
+      "attention_pairs_per_sequence": 4180216.9229844734,
+      "basis": "identical P1 manifest/loader/data source/world/local batch/accumulation/sequence streams"
+    },
+    "gpu_hours_scope": "measured native-process wall time including compile, validation and checkpoint",
+    "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+    "matched": {
+      "logical_kv_bytes": {
+        "basis": "analytical_estimate",
+        "candidate": 25952256,
+        "reference": 25165824,
+        "relative_difference": 0.03125,
+        "relative_tolerance": 0.05
+      },
+      "training_flops_per_token": {
+        "basis": "analytical_estimate",
+        "candidate": 2515805029.898698,
+        "reference": 2573863361.5343013,
+        "relative_difference": -0.022556881807818414,
+        "relative_tolerance": 0.05
+      },
+      "unique_non_embedding_parameters": {
+        "basis": "analytical_estimate",
+        "candidate": 1314771744,
+        "reference": 1318288640,
+        "relative_difference": -0.002667773879929664,
+        "relative_tolerance": 0.05
+      }
+    },
+    "result": {
+      "classification": "observed_single_seed_comparison",
+      "limitations": [
+        "One predeclared seed42; no scaling-law inference.",
+        "P2 E88 is a declared public-stack adaptation; quality differences are descriptive.",
+        "Analytical budget matching does not establish a winning recipe."
+      ]
+    },
+    "resumed_arms": [
+      "reference",
+      "candidate"
+    ],
+    "runtime": {
+      "basis": "frozen requests and native identities checked against approved P2 controls",
+      "gradient_accumulation_steps": 1,
+      "local_batch_size": 16,
+      "parallelism": {
+        "context_parallel_degree": 1,
+        "context_parallel_load_balancer": "headtail",
+        "context_parallel_ptrr_mask_key": null,
+        "data_parallel_replicate_degree": 2,
+        "data_parallel_shard_degree": 8,
+        "enable_fsdp_symm_mem": false,
+        "enable_sequence_parallel": false,
+        "expert_parallel_degree": 1,
+        "fsdp_reshard_after_forward": "default",
+        "module_fqns_per_model_part": null,
+        "pipeline_parallel_degree": 1,
+        "pipeline_parallel_first_stage_less_layers": 1,
+        "pipeline_parallel_last_stage_less_layers": 1,
+        "pipeline_parallel_layers_per_stage": null,
+        "pipeline_parallel_microbatch_size": 1,
+        "pipeline_parallel_schedule": "1F1B",
+        "pipeline_parallel_schedule_csv": "",
+        "spmd_backend": "partial_dtensor",
+        "tensor_parallel_degree": 1
+      },
+      "precision": [
+        "float32",
+        "bfloat16",
+        "float32"
+      ],
+      "runtime": {
+        "compute_capability": [
+          9,
+          0
+        ],
+        "cuda": "13.0",
+        "gpu_name": "NVIDIA H200",
+        "python": "3.12.15 (main, Oct  6 2026, 23:50:18) [GCC 15.3.0]",
+        "torch": "2.14.0+cu130"
+      },
+      "source": {
+        "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+        "dirty": false,
+        "files": {
+          "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+          "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+          "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+          "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+          "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+          "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+          "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+          "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+          "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+          "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+          "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+          "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+          "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+          "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+          "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+          "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+          "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+          "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+          "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+          "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+          "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+          "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+          "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+          "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+          "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+          "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+          "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+          "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+          "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+          "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+          "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+          "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+        }
+      },
+      "torchtitan_commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+      "world_size": 16
+    },
+    "public_recipe_files": {
+      "reference": {
+        "path": "../../recipes/p2_moe.json",
+        "sha256": "ec86ea53b5f078d472eb4765ea4618fbd207df3e9661a370da3bf56dc366b317",
+        "actual_saved_spec_sha256": "16885e23fe83828fb9833aa06242b34aac0f4238c2447fddaddaa6c240bb184b"
+      },
+      "candidate": {
+        "path": "../../recipes/p2_smelt.json",
+        "sha256": "bf4fd57211f1fe63f6676178d061e3731f3c641f36619ba3d393f60b65d06189",
+        "actual_saved_spec_sha256": "4c413e20b009f3759a24857a2429d738f2c81501934692a511ff39739ccba51f"
+      }
+    }
+  },
+  "performance": {
+    "p2_candidate": {
+      "aggregate_effective_labels_per_second": 603490.1259123929,
+      "basis": {
+        "activation_checkpointing": "none",
+        "global_batch_size": 256,
+        "metrics_sha256": "92593594820c2ab612bd87cbbc79ebf8ed3eac1b66254cf6caa9ef9907161c6d",
+        "run": "$ARTIFACT_ROOT/P2/candidate",
+        "runtime": {
+          "compute_capability": [
+            9,
+            0
+          ],
+          "cuda": "13.0",
+          "gpu_name": "NVIDIA H200",
+          "python": "3.12.15 (main, Oct  6 2026, 23:50:18) [GCC 15.3.0]",
+          "torch": "2.14.0+cu130"
+        },
+        "seq_len": 4096,
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "world_size": 16
+      },
+      "effective_labels_per_second": {
+        "max": 630299.291467192,
+        "median": 617181.8156609617,
+        "min": 507316.534555325
+      },
+      "measured_gpu_hours": 0.15444619812899166,
+      "measured_steps": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "peak_allocated_gib": 123.7073802947998,
+      "peak_reserved_gib": 133.67578125,
+      "scope": "continuous native update window; process GPUHr separately includes initialization/validation/checkpoint",
+      "step_seconds": {
+        "max": 2.0669068098068237,
+        "median": 1.698981063440442,
+        "min": 1.6636160220950842
+      },
+      "warmup_steps": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "p2_reference": {
+      "aggregate_effective_labels_per_second": 658901.6010198975,
+      "basis": {
+        "activation_checkpointing": "none",
+        "global_batch_size": 256,
+        "metrics_sha256": "a4cdafbac72ae32212a3fbe3ef24e897021684474b1b309e386d422aa9fd9451",
+        "run": "$ARTIFACT_ROOT/P2/reference",
+        "runtime": {
+          "compute_capability": [
+            9,
+            0
+          ],
+          "cuda": "13.0",
+          "gpu_name": "NVIDIA H200",
+          "python": "3.12.15 (main, Oct  6 2026, 23:50:18) [GCC 15.3.0]",
+          "torch": "2.14.0+cu130"
+        },
+        "seq_len": 4096,
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "world_size": 16
+      },
+      "effective_labels_per_second": {
+        "max": 689443.7844068729,
+        "median": 664652.0346589489,
+        "min": 602497.6587420786
+      },
+      "measured_gpu_hours": 0.1414577767170138,
+      "measured_steps": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "peak_allocated_gib": 102.46184587478638,
+      "peak_reserved_gib": 111.93359375,
+      "scope": "continuous native update window; process GPUHr separately includes initialization/validation/checkpoint",
+      "step_seconds": {
+        "max": 1.7403818666934967,
+        "median": 1.5776315215043724,
+        "min": 1.5209013754501939
+      },
+      "warmup_steps": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "sharing": {
+      "aggregate_effective_labels_per_second": 237595.52904825108,
+      "basis": {
+        "activation_checkpointing": "none",
+        "global_batch_size": 16,
+        "metrics_sha256": "5b6a57f95a14643430cbbdb181d85f09bbab85713cca77b85f5ffbf35cd42aaf",
+        "run": "$ARTIFACT_ROOT/C/a1_r0",
+        "runtime": {
+          "compute_capability": [
+            9,
+            0
+          ],
+          "cuda": "13.0",
+          "gpu_name": "NVIDIA H200",
+          "python": "3.12.15 (main, Oct  6 2026, 23:50:18) [GCC 15.3.0]",
+          "torch": "2.14.0+cu130"
+        },
+        "seq_len": 2048,
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "world_size": 4
+      },
+      "effective_labels_per_second": {
+        "max": 264628.42823433626,
+        "median": 256555.4218585065,
+        "min": 97978.7681464825
+      },
+      "measured_gpu_hours": 0.0030647789573089944,
+      "measured_steps": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "peak_allocated_gib": 4.997071266174316,
+      "peak_reserved_gib": 6.181640625,
+      "scope": "continuous native update window; process GPUHr separately includes initialization/validation/checkpoint",
+      "step_seconds": {
+        "max": 0.33443980384618044,
+        "median": 0.12772323610261083,
+        "min": 0.12382645439356565
+      },
+      "warmup_steps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "selected_arm": "a1_r0"
+    }
+  },
+  "scope": "v3_full_acceptance",
+  "sharing_grid": {
+    "I_AR": 0.00948476791381836,
+    "definition": "CE_AR-CE_A-CE_R+CE_B; one scale/budget/seed, descriptive only",
+    "raw_terminal_ce": {
+      "a0_r0": 5.16462516784668,
+      "a0_r1": 5.152528762817383,
+      "a1_r0": 5.105783939361572,
+      "a1_r1": 5.103172302246094
+    },
+    "updates_per_arm": 2048,
+    "parameter_deltas": {
+      "a0_r0": 0,
+      "a0_r1": 24576,
+      "a1_r0": 3932160,
+      "a1_r1": 3956736
+    },
+    "arms": {
+      "a0_r0": {
+        "cost": {
+          "calls": {
+            "attention": 8,
+            "backward_cells": 8,
+            "expert_assignments_per_input_token": 16,
+            "forward_cells": 8,
+            "head": 1,
+            "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent.",
+            "inference_cells": 8,
+            "recompute_cells": 0,
+            "router": 8
+          },
+          "flops": {
+            "activation_checkpointing": "none",
+            "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+            "attention_pairs_per_sequence": 4194304,
+            "backward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 20971520,
+              "attention_scores_values": 67108864,
+              "dense_ffn": 0,
+              "head": 310618112,
+              "input_adapter": 0,
+              "routed_experts": 100663296,
+              "router": 131072
+            },
+            "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+            "backward_per_token": 499492864,
+            "forward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 10485760,
+              "attention_scores_values": 33554432,
+              "dense_ffn": 0,
+              "head": 155309056,
+              "input_adapter": 0,
+              "routed_experts": 50331648,
+              "router": 65536
+            },
+            "forward_per_token": 249746432,
+            "mac_to_flops": 2,
+            "normalization": "per_padded_input_position",
+            "recompute_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 0,
+              "attention_scores_values": 0,
+              "dense_ffn": 0,
+              "head": 0,
+              "input_adapter": 0,
+              "routed_experts": 0,
+              "router": 0
+            },
+            "recompute_per_token": 0,
+            "training_per_forward_batch": 1534442078208,
+            "training_per_token": 749239296
+          },
+          "formula_version": "fixed_terminal_matrix_v1",
+          "kind": "analytical_matrix_estimate",
+          "kv": {
+            "bytes_at_context": 8388608,
+            "bytes_per_cached_token": 4096,
+            "bytes_per_element": 2,
+            "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead.",
+            "head_dim": 64,
+            "logical_slots": 8,
+            "num_kv_heads": 2,
+            "num_visits": 4
+          },
+          "parameters": {
+            "by_component": {
+              "always_on_ffn": 0,
+              "attention": 1310720,
+              "dense_ffn": 0,
+              "final_norm": 512,
+              "input_adapter": 0,
+              "input_embedding": 77654528,
+              "lm_head": 77654528,
+              "norms": 2048,
+              "routed_experts": 25165824,
+              "router": 8192
+            },
+            "by_region": {
+              "core": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 8,
+                "logical_calls": 8,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 2,
+                  "expert_banks": 2,
+                  "norm_pairs": 2,
+                  "router": 2
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 1310720,
+                  "dense_ffn": 0,
+                  "norms": 2048,
+                  "routed_experts": 25165824,
+                  "router": 8192
+                },
+                "physical_banks": 2,
+                "top_k": 2,
+                "unique_total": 26486784
+              },
+              "prefix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              },
+              "suffix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              }
+            },
+            "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+            "input_embedding": 77654528,
+            "lm_head": 77654528,
+            "non_input_embedding": 104141824,
+            "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+            "unique_non_embedding": 26487296,
+            "unique_total": 181796352,
+            "unique_trainable": 181796352
+          },
+          "schema_version": 1,
+          "tokens": {
+            "batch_size": 1,
+            "logical_cell_positions_per_forward": 16384,
+            "padded_positions_per_forward": 2048,
+            "seq_len": 2048,
+            "valid_input_tokens": null,
+            "valid_label_tokens": null
+          },
+          "unknown": {
+            "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+            "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+            "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+            "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+            "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV."
+          }
+        },
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "raw_sha256": {
+          "continuation_identity.json": "eb603da4d36b2c1a767e646335fa22c1abe328dc3c8a67bd6d20aa82d2724d8c",
+          "metrics.jsonl": "b10e9a308c0e1887b9df552911af9f6f4f00e4480589db50f3721a57576a377b",
+          "outcome.json": "5d7ee83000fd37405c4d299a31b5987c442d954429ade81db742c83ffdc4ec6b",
+          "request.json": "33f37d20279e9134861a65f6bb94670895d146980375d0e2698e5d4a760d150f",
+          "spec.json": "b992351f70d00687c259b1d25bfb536d3b136bb1631cb2e38420201c67aa7217",
+          "validation.jsonl": "3124ea6c43308f0c57d588baff41b83863a773b602a4dec55e804749ab7c86b3"
+        },
+        "native_gpu_hours": 0.44050545586480033,
+        "curve_points": 33
+      },
+      "a0_r1": {
+        "cost": {
+          "calls": {
+            "attention": 8,
+            "backward_cells": 8,
+            "expert_assignments_per_input_token": 16,
+            "forward_cells": 8,
+            "head": 1,
+            "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent.",
+            "inference_cells": 8,
+            "recompute_cells": 0,
+            "router": 8
+          },
+          "flops": {
+            "activation_checkpointing": "none",
+            "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+            "attention_pairs_per_sequence": 4194304,
+            "backward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 20971520,
+              "attention_scores_values": 67108864,
+              "dense_ffn": 0,
+              "head": 310618112,
+              "input_adapter": 0,
+              "routed_experts": 100663296,
+              "router": 131072
+            },
+            "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+            "backward_per_token": 499492864,
+            "forward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 10485760,
+              "attention_scores_values": 33554432,
+              "dense_ffn": 0,
+              "head": 155309056,
+              "input_adapter": 0,
+              "routed_experts": 50331648,
+              "router": 65536
+            },
+            "forward_per_token": 249746432,
+            "mac_to_flops": 2,
+            "normalization": "per_padded_input_position",
+            "recompute_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 0,
+              "attention_scores_values": 0,
+              "dense_ffn": 0,
+              "head": 0,
+              "input_adapter": 0,
+              "routed_experts": 0,
+              "router": 0
+            },
+            "recompute_per_token": 0,
+            "training_per_forward_batch": 1534442078208,
+            "training_per_token": 749239296
+          },
+          "formula_version": "fixed_terminal_matrix_v1",
+          "kind": "analytical_matrix_estimate",
+          "kv": {
+            "bytes_at_context": 8388608,
+            "bytes_per_cached_token": 4096,
+            "bytes_per_element": 2,
+            "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead.",
+            "head_dim": 64,
+            "logical_slots": 8,
+            "num_kv_heads": 2,
+            "num_visits": 4
+          },
+          "parameters": {
+            "by_component": {
+              "always_on_ffn": 0,
+              "attention": 1310720,
+              "dense_ffn": 0,
+              "final_norm": 512,
+              "input_adapter": 0,
+              "input_embedding": 77654528,
+              "lm_head": 77654528,
+              "norms": 2048,
+              "routed_experts": 25165824,
+              "router": 32768
+            },
+            "by_region": {
+              "core": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 8,
+                "logical_calls": 8,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 2,
+                  "expert_banks": 2,
+                  "norm_pairs": 2,
+                  "router": 8
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 1310720,
+                  "dense_ffn": 0,
+                  "norms": 2048,
+                  "routed_experts": 25165824,
+                  "router": 32768
+                },
+                "physical_banks": 2,
+                "top_k": 2,
+                "unique_total": 26511360
+              },
+              "prefix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              },
+              "suffix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              }
+            },
+            "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+            "input_embedding": 77654528,
+            "lm_head": 77654528,
+            "non_input_embedding": 104166400,
+            "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+            "unique_non_embedding": 26511872,
+            "unique_total": 181820928,
+            "unique_trainable": 181820928
+          },
+          "schema_version": 1,
+          "tokens": {
+            "batch_size": 1,
+            "logical_cell_positions_per_forward": 16384,
+            "padded_positions_per_forward": 2048,
+            "seq_len": 2048,
+            "valid_input_tokens": null,
+            "valid_label_tokens": null
+          },
+          "unknown": {
+            "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+            "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+            "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+            "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+            "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV."
+          }
+        },
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "raw_sha256": {
+          "continuation_identity.json": "ce1fadc622d33c392b500578ddc7ea1aa0e6eeea69f0fe7feec11e9bb8858b2b",
+          "metrics.jsonl": "d60bec7528d34fcffcd40cbd5409fb994777dcf15625e563e07da2c1963f224d",
+          "outcome.json": "5ca570729db8bbff05bf40102461d7a5ab220d8076eb6a143d323f06c0159cd5",
+          "request.json": "d76473e6c2b67195a5fa87f60d6568914260fe6ee491effbe1800ed11ca7f69d",
+          "spec.json": "0d6af52f8293d516863a972dca5d4fde69b2be0a1e4e9cfc9c54baf60c43b045",
+          "validation.jsonl": "9c33905a5192a55cf36d1b4973f40c1b1cb3bf517aa7fd3c618ae2f0a7c2956c"
+        },
+        "native_gpu_hours": 0.4317449320687188,
+        "curve_points": 33
+      },
+      "a1_r0": {
+        "cost": {
+          "calls": {
+            "attention": 8,
+            "backward_cells": 8,
+            "expert_assignments_per_input_token": 16,
+            "forward_cells": 8,
+            "head": 1,
+            "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent.",
+            "inference_cells": 8,
+            "recompute_cells": 0,
+            "router": 8
+          },
+          "flops": {
+            "activation_checkpointing": "none",
+            "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+            "attention_pairs_per_sequence": 4194304,
+            "backward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 20971520,
+              "attention_scores_values": 67108864,
+              "dense_ffn": 0,
+              "head": 310618112,
+              "input_adapter": 0,
+              "routed_experts": 100663296,
+              "router": 131072
+            },
+            "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+            "backward_per_token": 499492864,
+            "forward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 10485760,
+              "attention_scores_values": 33554432,
+              "dense_ffn": 0,
+              "head": 155309056,
+              "input_adapter": 0,
+              "routed_experts": 50331648,
+              "router": 65536
+            },
+            "forward_per_token": 249746432,
+            "mac_to_flops": 2,
+            "normalization": "per_padded_input_position",
+            "recompute_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 0,
+              "attention_scores_values": 0,
+              "dense_ffn": 0,
+              "head": 0,
+              "input_adapter": 0,
+              "routed_experts": 0,
+              "router": 0
+            },
+            "recompute_per_token": 0,
+            "training_per_forward_batch": 1534442078208,
+            "training_per_token": 749239296
+          },
+          "formula_version": "fixed_terminal_matrix_v1",
+          "kind": "analytical_matrix_estimate",
+          "kv": {
+            "bytes_at_context": 8388608,
+            "bytes_per_cached_token": 4096,
+            "bytes_per_element": 2,
+            "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead.",
+            "head_dim": 64,
+            "logical_slots": 8,
+            "num_kv_heads": 2,
+            "num_visits": 4
+          },
+          "parameters": {
+            "by_component": {
+              "always_on_ffn": 0,
+              "attention": 5242880,
+              "dense_ffn": 0,
+              "final_norm": 512,
+              "input_adapter": 0,
+              "input_embedding": 77654528,
+              "lm_head": 77654528,
+              "norms": 2048,
+              "routed_experts": 25165824,
+              "router": 8192
+            },
+            "by_region": {
+              "core": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 8,
+                "logical_calls": 8,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 8,
+                  "expert_banks": 2,
+                  "norm_pairs": 2,
+                  "router": 2
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 5242880,
+                  "dense_ffn": 0,
+                  "norms": 2048,
+                  "routed_experts": 25165824,
+                  "router": 8192
+                },
+                "physical_banks": 2,
+                "top_k": 2,
+                "unique_total": 30418944
+              },
+              "prefix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              },
+              "suffix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              }
+            },
+            "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+            "input_embedding": 77654528,
+            "lm_head": 77654528,
+            "non_input_embedding": 108073984,
+            "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+            "unique_non_embedding": 30419456,
+            "unique_total": 185728512,
+            "unique_trainable": 185728512
+          },
+          "schema_version": 1,
+          "tokens": {
+            "batch_size": 1,
+            "logical_cell_positions_per_forward": 16384,
+            "padded_positions_per_forward": 2048,
+            "seq_len": 2048,
+            "valid_input_tokens": null,
+            "valid_label_tokens": null
+          },
+          "unknown": {
+            "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+            "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+            "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+            "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+            "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV."
+          }
+        },
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "raw_sha256": {
+          "continuation_identity.json": "6fbbf4f46d6ebc01f9d00f7f00414485a2bba1ddf059748f6362e7d4d243a5b7",
+          "metrics.jsonl": "5b6a57f95a14643430cbbdb181d85f09bbab85713cca77b85f5ffbf35cd42aaf",
+          "outcome.json": "96f6bc6fc3743774b1d1a048ae872b092100774e2fd9bd84d805e3598e78e7d5",
+          "request.json": "650d4ca3a56d0d54f30221b1982fdebf922bac3f48b01011bb063e56876bb27e",
+          "spec.json": "4c7f2504ba22337de76320d299b1a028af02488a3ccdac16b82ca1c0b60a9eb3",
+          "validation.jsonl": "32d7751190432732db6fa21dc9f118d722bb6f35f1f1b6162f7f4ea8e9157e1d"
+        },
+        "native_gpu_hours": 0.452284562587738,
+        "curve_points": 33
+      },
+      "a1_r1": {
+        "cost": {
+          "calls": {
+            "attention": 8,
+            "backward_cells": 8,
+            "expert_assignments_per_input_token": 16,
+            "forward_cells": 8,
+            "head": 1,
+            "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent.",
+            "inference_cells": 8,
+            "recompute_cells": 0,
+            "router": 8
+          },
+          "flops": {
+            "activation_checkpointing": "none",
+            "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+            "attention_pairs_per_sequence": 4194304,
+            "backward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 20971520,
+              "attention_scores_values": 67108864,
+              "dense_ffn": 0,
+              "head": 310618112,
+              "input_adapter": 0,
+              "routed_experts": 100663296,
+              "router": 131072
+            },
+            "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+            "backward_per_token": 499492864,
+            "forward_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 10485760,
+              "attention_scores_values": 33554432,
+              "dense_ffn": 0,
+              "head": 155309056,
+              "input_adapter": 0,
+              "routed_experts": 50331648,
+              "router": 65536
+            },
+            "forward_per_token": 249746432,
+            "mac_to_flops": 2,
+            "normalization": "per_padded_input_position",
+            "recompute_components": {
+              "always_on_ffn": 0,
+              "attention_projections": 0,
+              "attention_scores_values": 0,
+              "dense_ffn": 0,
+              "head": 0,
+              "input_adapter": 0,
+              "routed_experts": 0,
+              "router": 0
+            },
+            "recompute_per_token": 0,
+            "training_per_forward_batch": 1534442078208,
+            "training_per_token": 749239296
+          },
+          "formula_version": "fixed_terminal_matrix_v1",
+          "kind": "analytical_matrix_estimate",
+          "kv": {
+            "bytes_at_context": 8388608,
+            "bytes_per_cached_token": 4096,
+            "bytes_per_element": 2,
+            "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead.",
+            "head_dim": 64,
+            "logical_slots": 8,
+            "num_kv_heads": 2,
+            "num_visits": 4
+          },
+          "parameters": {
+            "by_component": {
+              "always_on_ffn": 0,
+              "attention": 5242880,
+              "dense_ffn": 0,
+              "final_norm": 512,
+              "input_adapter": 0,
+              "input_embedding": 77654528,
+              "lm_head": 77654528,
+              "norms": 2048,
+              "routed_experts": 25165824,
+              "router": 32768
+            },
+            "by_region": {
+              "core": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 8,
+                "logical_calls": 8,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 8,
+                  "expert_banks": 2,
+                  "norm_pairs": 2,
+                  "router": 8
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 5242880,
+                  "dense_ffn": 0,
+                  "norms": 2048,
+                  "routed_experts": 25165824,
+                  "router": 32768
+                },
+                "physical_banks": 2,
+                "top_k": 2,
+                "unique_total": 30443520
+              },
+              "prefix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              },
+              "suffix": {
+                "hidden_dim": 1024,
+                "inference_logical_calls": 0,
+                "logical_calls": 0,
+                "num_experts": 8,
+                "owners": {
+                  "attention": 0,
+                  "expert_banks": 0,
+                  "norm_pairs": 0,
+                  "router": 0
+                },
+                "parameters": {
+                  "always_on_ffn": 0,
+                  "attention": 0,
+                  "dense_ffn": 0,
+                  "norms": 0,
+                  "routed_experts": 0,
+                  "router": 0
+                },
+                "physical_banks": 0,
+                "top_k": 2,
+                "unique_total": 0
+              }
+            },
+            "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+            "input_embedding": 77654528,
+            "lm_head": 77654528,
+            "non_input_embedding": 108098560,
+            "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+            "unique_non_embedding": 30444032,
+            "unique_total": 185753088,
+            "unique_trainable": 185753088
+          },
+          "schema_version": 1,
+          "tokens": {
+            "batch_size": 1,
+            "logical_cell_positions_per_forward": 16384,
+            "padded_positions_per_forward": 2048,
+            "seq_len": 2048,
+            "valid_input_tokens": null,
+            "valid_label_tokens": null
+          },
+          "unknown": {
+            "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+            "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+            "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+            "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+            "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV."
+          }
+        },
+        "source": {
+          "commit": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+          "dirty": false,
+          "files": {
+            "scripts/check_release.py": "47dd530a234dda51b8bcbe60f5bc48f92661ed19bdd6d572fdc0bb342ffab5c9",
+            "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+            "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+            "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+            "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+            "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+            "scripts/recipe_delivery.py": "661bc69d3fd2de21d267e8992053549bc75605a1c4727b03c81533d9321ca47a",
+            "scripts/recipe_experiments.py": "f5b9e74da7b15a2a9ec31cf05e00ae102f41bf4c83b5e2a75baf7af6d5acde37",
+            "scripts/recipe_qualification.py": "8faf8640feeb8ca836873c6c3c4dfcf2ba54ba54c39ace1588d2b140fd89e127",
+            "scripts/recipe_release.py": "d24968b28be40543375f1fb49cb84a58984d864a87345ff3e1b35803c3117dfe",
+            "scripts/recipe_report.py": "3225d51089c31f1282c575d85d276ed381ca47571363a21d9c3a4e9fcecb2c9f",
+            "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+            "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "src/moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+            "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+            "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+            "src/moeloop/evaluate.py": "d2d5ae9125b7857e54a98e11c5ac70f16252c4dc46788889ecb877ef42186437",
+            "src/moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+            "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+            "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+            "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+            "src/moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+            "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+            "src/moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+            "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+            "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+            "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049"
+          }
+        },
+        "raw_sha256": {
+          "continuation_identity.json": "6a0e28efca0bfeb57820d8aaa8117194af7563f7f0056a7f185523e902ef5979",
+          "metrics.jsonl": "17c57d3a8df4a73216e865b90e21d50ddbe3ca7911bdefde1a6914884f7d6e29",
+          "outcome.json": "e25d5415bd475ac1b3dc99afcda4ef660ab9ca6be4a49131e6d4f3e0d292fda1",
+          "request.json": "035e4db9708558507635388844f2654fe9868e31ab4153d8e79ad3941e1e7643",
+          "spec.json": "c968293d4ef9e98dd4ac9318e85b24ab30fc561c7029caf6a89998dce195b47d",
+          "validation.jsonl": "361f83a54aeeedcf41d61649661dd51d19cc7615202f44be11c9da186dcee5de"
+        },
+        "native_gpu_hours": 0.459742251502143,
+        "curve_points": 33
+      }
+    },
+    "performance_representative": "a1_r0",
+    "comparison_scope": "Same shape/expert pool, different attention/router owners; not iso-parameter."
+  },
+  "stage": "v3",
+  "status": "passed",
+  "schema_version": 1,
+  "kind": "v3_pre_release_qualification",
+  "release_version": "1.0.0rc1",
+  "verification": {
+    "source_commit": "d94c268dd5d74c668f079e1b8d468c7a7989822f",
+    "checker_sha256": "4a9f0d6000a0e2679ba9dd42af7d0e244a6dc4cb30050902ce9f2000fef3d105",
+    "assembler_sha256": "3d1380664d378246465afc2510d0eb109d8e78ca1ba40fc16acdfebbb91b4f8e",
+    "raw_release_check_sha256": "3a8afa1576f209dc02118545aee2e76369f81ddc5a232c7477ca93ca39870ffb",
+    "independent_cli_report_sha256": "12d3ed05876490541a93d2af3fbb5282dd156040cd21571fcd0cf3e6fae6896d",
+    "commands": {
+      "assembler.process.json": {
+        "returncode": 0,
+        "receipt_sha256": "9d3b910c3d7e47dc334a0a63bb85b9de367ff7803587d9f8cb95874fa4cacea8"
+      },
+      "stagev3-cli.process.json": {
+        "returncode": 0,
+        "receipt_sha256": "d938f773aa5b890c8954d12ae31f4ba790afae7683e21b4a4047f8fc5f12715e"
+      },
+      "verified-exports.process.json": {
+        "returncode": 0,
+        "receipt_sha256": "20005aa3de564729d29beb3627dccfebc0ce4cb95ada58c155d32fb5bba511a3"
+      }
+    },
+    "raw_evidence_retained": true
+  },
+  "inherited_publications": {
+    "P1": {
+      "path": "p1.json",
+      "sha256": "b62d875ea7cc22b593e1341ee00740c331c9078800670d8d3f3dd8991bd3f322"
+    },
+    "V2": {
+      "path": "recipes-v2.json",
+      "sha256": "3bb1212e355a61d7c7e71c12dd9feb87ef0975bd279e6e2875859c0b04168b9b"
+    }
+  },
+  "source_boundaries": {
+    "P1": "1bea4d6d2c539e3ae02517aaeede5f9ab68271a7",
+    "P2_and_C": "17d51e4df9e807f81c5d31301441daba9ce527b2",
+    "installed_wheel": "97f4348678ae0213965c60d25a280777c878a51c",
+    "verification": "d94c268dd5d74c668f079e1b8d468c7a7989822f",
+    "later_documentation_commits_do_not_relabel_training": true
+  },
+  "training_seed": 42,
+  "data_publication": {
+    "path": "p1-data-manifest.json",
+    "sha256": "e0c607ecee9d95485f7475ba0101c1ac927483346e0fb7fdce7d682cf2279a8e"
+  },
+  "downstream": {
+    "harness": "lm_eval[hf]==0.4.13",
+    "harness_receipt_sha256": "5e6fdb07c1020dee4e8523f4665388015e8219cb2f43f5cbe85a5ea62af01cb7",
+    "tasks": {
+      "arc_easy": {
+        "split": "test",
+        "samples": 2376
+      },
+      "hellaswag": {
+        "split": "validation",
+        "samples": 10042
+      }
+    },
+    "num_fewshot": 0,
+    "dtype": "float32",
+    "batch_policy": "auto:4",
+    "all_task_hashes_and_harness_match": true,
+    "native_task_hashes": {
+      "arc_easy": "dce0d9b0f0cecd55bf2ac264042c5e45487df708d13123af3ae9e67bbbefdeb1",
+      "hellaswag": "edcc7edd27a555d3f7cbca0641152b2c5e4eb6eb79c5e62d7fe5887f47814323"
+    },
+    "combined_receipt_sha256": "34e8f12f39feb65c1e18c9994d90ffa16a7629269922364a8a72184a104f6bd5",
+    "models": {
+      "p1_moe": {
+        "actual_batch_sizes": [
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "foreground_cost": {
+          "costs_available": 0,
+          "foreground_reserved_gpu_hours": 0.04441306397758631,
+          "gpu_count": 1,
+          "native_receipt_count": 0
+        },
+        "mlflow_run_id": "7dfab3c329d74da698fc106fa755622f",
+        "n_samples": {
+          "arc_easy": {
+            "effective": 2376,
+            "original": 2376
+          },
+          "hellaswag": {
+            "effective": 10042,
+            "original": 10042
+          }
+        },
+        "n_shot": {
+          "arc_easy": 0,
+          "hellaswag": 0
+        },
+        "results": {
+          "arc_easy": {
+            "acc,none": 0.5475589225589226,
+            "acc_norm,none": 0.5008417508417509,
+            "acc_norm_stderr,none": 0.010259768981815288,
+            "acc_stderr,none": 0.010213265860171308,
+            "alias": "arc_easy",
+            "name": "arc_easy",
+            "sample_len": 2376
+          },
+          "hellaswag": {
+            "acc,none": 0.33519219279028084,
+            "acc_norm,none": 0.3963353913563035,
+            "acc_norm_stderr,none": 0.004881359589148987,
+            "acc_stderr,none": 0.004710928569985669,
+            "alias": "hellaswag",
+            "name": "hellaswag",
+            "sample_len": 10042
+          }
+        },
+        "task_hashes": {
+          "arc_easy": "dce0d9b0f0cecd55bf2ac264042c5e45487df708d13123af3ae9e67bbbefdeb1",
+          "hellaswag": "edcc7edd27a555d3f7cbca0641152b2c5e4eb6eb79c5e62d7fe5887f47814323"
+        },
+        "dtype": "float32",
+        "limit": null,
+        "num_fewshot": 0,
+        "num_visits": 1,
+        "readout": "terminal",
+        "readout_basis": "legacy_moeloop_schema_2_without_exit_gate",
+        "model": {
+          "files": {
+            "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "chat_template.jinja": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "config.json": "1d3dcb907fa00191183437dbebd14b0f351856e8cffd9e3b5318f5960df68183",
+            "export_provenance.json": "1f66ffef012775f44dcbd743119caf45abfe666fdaeea8b259a951e033995929",
+            "generation_config.json": "688fc28cbc08b8ec3c9078e595dfdde89eb7774b40176130cf31a6aff6f921a4",
+            "hf.py": "8f6849d141941600af5625095cba8d31e0d80286500e6b69d665d8820546d23e",
+            "model.py": "afbea636de1d5b5aaefc0f0d0ac7a214b926bfd844ecbb2bf1e377ecee0eaa1d",
+            "model.safetensors": "43da5db06f9c4ab52bc8cfde5c14b8d7f9f850c875cd8f424f77473d3b8fea61",
+            "moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "tokenizer.json": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+            "tokenizer_config.json": "abf803ee0d500a6496ea7cbb82ca1d0fb3efbdd917f2389d01003f222fe1a98b"
+          },
+          "path": "$ARTIFACT_ROOT/P1/reference/hf",
+          "sha256": "9a0607a022a57206f07d52d03cd80b4b2914df8a3788b666859664cedfc3b001"
+        },
+        "export_provenance": {
+          "path": "$ARTIFACT_ROOT/P1/reference/hf/export_provenance.json",
+          "sha256": "1f66ffef012775f44dcbd743119caf45abfe666fdaeea8b259a951e033995929"
+        },
+        "result_sha256": "b01a12fe80da35dcef446a0681d6261316b3e194d9ce12ecbab9c83764fde1e6",
+        "sample_log_sha256": {
+          "arc_easy": "f9d30d574b4dde921d072314d87936555dd538e971f90a8b16f94af2a14a45b2",
+          "hellaswag": "d8572c5f6a9b4c13719702b27fc69b89e9179f9b2246bc631e9964a21ed6bead"
+        }
+      },
+      "p1_smelt": {
+        "actual_batch_sizes": [
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "foreground_cost": {
+          "costs_available": 0,
+          "foreground_reserved_gpu_hours": 0.06258872736529965,
+          "gpu_count": 1,
+          "native_receipt_count": 0
+        },
+        "mlflow_run_id": "3a673be62fe04b529b1aaf6fbb78eb88",
+        "n_samples": {
+          "arc_easy": {
+            "effective": 2376,
+            "original": 2376
+          },
+          "hellaswag": {
+            "effective": 10042,
+            "original": 10042
+          }
+        },
+        "n_shot": {
+          "arc_easy": 0,
+          "hellaswag": 0
+        },
+        "results": {
+          "arc_easy": {
+            "acc,none": 0.5622895622895623,
+            "acc_norm,none": 0.49957912457912457,
+            "acc_norm_stderr,none": 0.01025977988609441,
+            "acc_stderr,none": 0.010179856486006797,
+            "alias": "arc_easy",
+            "name": "arc_easy",
+            "sample_len": 2376
+          },
+          "hellaswag": {
+            "acc,none": 0.34027086237801235,
+            "acc_norm,none": 0.4043019318860785,
+            "acc_norm_stderr,none": 0.004897534686686395,
+            "acc_stderr,none": 0.004728318577835281,
+            "alias": "hellaswag",
+            "name": "hellaswag",
+            "sample_len": 10042
+          }
+        },
+        "task_hashes": {
+          "arc_easy": "dce0d9b0f0cecd55bf2ac264042c5e45487df708d13123af3ae9e67bbbefdeb1",
+          "hellaswag": "edcc7edd27a555d3f7cbca0641152b2c5e4eb6eb79c5e62d7fe5887f47814323"
+        },
+        "dtype": "float32",
+        "limit": null,
+        "num_fewshot": 0,
+        "num_visits": 2,
+        "readout": "terminal",
+        "readout_basis": "legacy_moeloop_schema_2_without_exit_gate",
+        "model": {
+          "files": {
+            "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "chat_template.jinja": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "config.json": "b1556f392eb82aa1ee0372e5221b433c9128b0ba6d15d7e65084981acdfb8645",
+            "export_provenance.json": "cad7aed4a9109365c76380308141aaa3299b942183b9c58cdd6cf57680f546d9",
+            "generation_config.json": "688fc28cbc08b8ec3c9078e595dfdde89eb7774b40176130cf31a6aff6f921a4",
+            "hf.py": "8f6849d141941600af5625095cba8d31e0d80286500e6b69d665d8820546d23e",
+            "model.py": "afbea636de1d5b5aaefc0f0d0ac7a214b926bfd844ecbb2bf1e377ecee0eaa1d",
+            "model.safetensors": "a3255496faf4866a76dd1ccaf02efc01866961e3850cd533c3200b67f91f9247",
+            "moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "tokenizer.json": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+            "tokenizer_config.json": "abf803ee0d500a6496ea7cbb82ca1d0fb3efbdd917f2389d01003f222fe1a98b"
+          },
+          "path": "$ARTIFACT_ROOT/P1/candidate/hf",
+          "sha256": "1d542023b647aac4523f86893f8c82993cefa6990ca9ac7ef902332b031a901c"
+        },
+        "export_provenance": {
+          "path": "$ARTIFACT_ROOT/P1/candidate/hf/export_provenance.json",
+          "sha256": "cad7aed4a9109365c76380308141aaa3299b942183b9c58cdd6cf57680f546d9"
+        },
+        "result_sha256": "885628dce8e7335463b6ecf1c00758fa0b3a52e34687061aa665a23c2ed6c16c",
+        "sample_log_sha256": {
+          "arc_easy": "18d7b674f9192caa9ee14c314e0a47ba57a53cbbf9c89e3d5f9bf0f6c6607c7a",
+          "hellaswag": "6097ab857555d5f0c2bfc232b800e7e294f28fa48c47cf8f8d9bbd25b9a37087"
+        }
+      },
+      "p2_moe": {
+        "actual_batch_sizes": [
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "foreground_cost": {
+          "costs_available": 0,
+          "foreground_reserved_gpu_hours": 0.05664104968516363,
+          "gpu_count": 1,
+          "native_receipt_count": 0
+        },
+        "mlflow_run_id": "218cd5fc7625469f95f4fc43e62a4d2d",
+        "n_samples": {
+          "arc_easy": {
+            "effective": 2376,
+            "original": 2376
+          },
+          "hellaswag": {
+            "effective": 10042,
+            "original": 10042
+          }
+        },
+        "n_shot": {
+          "arc_easy": 0,
+          "hellaswag": 0
+        },
+        "results": {
+          "arc_easy": {
+            "acc,none": 0.5862794612794613,
+            "acc_norm,none": 0.5214646464646465,
+            "acc_norm_stderr,none": 0.010250325159456578,
+            "acc_stderr,none": 0.010105878530238066,
+            "alias": "arc_easy",
+            "name": "arc_easy",
+            "sample_len": 2376
+          },
+          "hellaswag": {
+            "acc,none": 0.36387173869747064,
+            "acc_norm,none": 0.4531965743875722,
+            "acc_norm_stderr,none": 0.004967872475383635,
+            "acc_stderr,none": 0.004801290954386898,
+            "alias": "hellaswag",
+            "name": "hellaswag",
+            "sample_len": 10042
+          }
+        },
+        "task_hashes": {
+          "arc_easy": "dce0d9b0f0cecd55bf2ac264042c5e45487df708d13123af3ae9e67bbbefdeb1",
+          "hellaswag": "edcc7edd27a555d3f7cbca0641152b2c5e4eb6eb79c5e62d7fe5887f47814323"
+        },
+        "dtype": "float32",
+        "limit": null,
+        "num_fewshot": 0,
+        "num_visits": 1,
+        "readout": "terminal",
+        "readout_basis": "explicit_terminal_ce",
+        "model": {
+          "files": {
+            "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "chat_template.jinja": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "config.json": "52d2abe033cefc68d7ada6115a9a8a89a1df4e1729c643549101f1fa0c9a8070",
+            "export_provenance.json": "bd865132645e787bc092ad88e1a73dc470ca36f952ddde194e676c778c3a3a95",
+            "generation_config.json": "688fc28cbc08b8ec3c9078e595dfdde89eb7774b40176130cf31a6aff6f921a4",
+            "hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "model.safetensors": "09ddb237f226a9a749085dbbbbacf0d6b2e618821267217c8bb91577ef705ff1",
+            "moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "tokenizer.json": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+            "tokenizer_config.json": "abf803ee0d500a6496ea7cbb82ca1d0fb3efbdd917f2389d01003f222fe1a98b"
+          },
+          "path": "$ARTIFACT_ROOT/P2/reference/hf",
+          "sha256": "cdce521503ce11458d16832d94ef22f4d3887b1ca44cd0c5fb42ef13762f34e7"
+        },
+        "export_provenance": {
+          "path": "$ARTIFACT_ROOT/P2/reference/hf/export_provenance.json",
+          "sha256": "bd865132645e787bc092ad88e1a73dc470ca36f952ddde194e676c778c3a3a95"
+        },
+        "result_sha256": "4ea6265254122743fe670afd492e801abab69806145e563cf1e85a0a1e2f0be3",
+        "sample_log_sha256": {
+          "arc_easy": "3da8e9a39344d6cae5b1f8ac9cc2c84f754405b23c9747ebf3e2d424e1b286a4",
+          "hellaswag": "d9e795d48f23dc0cbe1570a9d97ce17eb11f81781bdf9ee84422386097e2fada"
+        }
+      },
+      "p2_smelt": {
+        "actual_batch_sizes": [
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "foreground_cost": {
+          "costs_available": 0,
+          "foreground_reserved_gpu_hours": 0.07498141501486923,
+          "gpu_count": 1,
+          "native_receipt_count": 0
+        },
+        "mlflow_run_id": "fe39f98426ad4d248f1db933788b672e",
+        "n_samples": {
+          "arc_easy": {
+            "effective": 2376,
+            "original": 2376
+          },
+          "hellaswag": {
+            "effective": 10042,
+            "original": 10042
+          }
+        },
+        "n_shot": {
+          "arc_easy": 0,
+          "hellaswag": 0
+        },
+        "results": {
+          "arc_easy": {
+            "acc,none": 0.5837542087542088,
+            "acc_norm,none": 0.5252525252525253,
+            "acc_norm_stderr,none": 0.010246690042583878,
+            "acc_stderr,none": 0.010114819404500796,
+            "alias": "arc_easy",
+            "name": "arc_easy",
+            "sample_len": 2376
+          },
+          "hellaswag": {
+            "acc,none": 0.37114120693089026,
+            "acc_norm,none": 0.4638518223461462,
+            "acc_norm_stderr,none": 0.0049767241248505605,
+            "acc_stderr,none": 0.004821228034624959,
+            "alias": "hellaswag",
+            "name": "hellaswag",
+            "sample_len": 10042
+          }
+        },
+        "task_hashes": {
+          "arc_easy": "dce0d9b0f0cecd55bf2ac264042c5e45487df708d13123af3ae9e67bbbefdeb1",
+          "hellaswag": "edcc7edd27a555d3f7cbca0641152b2c5e4eb6eb79c5e62d7fe5887f47814323"
+        },
+        "dtype": "float32",
+        "limit": null,
+        "num_fewshot": 0,
+        "num_visits": 2,
+        "readout": "terminal",
+        "readout_basis": "explicit_terminal_ce",
+        "model": {
+          "files": {
+            "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+            "chat_template.jinja": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "config.json": "879d5409ac80441869e80a6b6bab8d84166527cc42218024ea482e96678cc4e0",
+            "export_provenance.json": "74d73e592bcc0fb0355c0915513e3c0bbfff43c36be0e589688dfcbe5ef0f9ed",
+            "generation_config.json": "688fc28cbc08b8ec3c9078e595dfdde89eb7774b40176130cf31a6aff6f921a4",
+            "hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+            "latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+            "memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+            "model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+            "model.safetensors": "702634fb2040412216101f97d86cd92b0d39c8fca127fff02be69e6f4c36d2a1",
+            "moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+            "tokenizer.json": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+            "tokenizer_config.json": "abf803ee0d500a6496ea7cbb82ca1d0fb3efbdd917f2389d01003f222fe1a98b"
+          },
+          "path": "$ARTIFACT_ROOT/P2/candidate/hf",
+          "sha256": "676d34026d46a6ec0d3340658389b88ec6a03082b874c2e52db127d935a74829"
+        },
+        "export_provenance": {
+          "path": "$ARTIFACT_ROOT/P2/candidate/hf/export_provenance.json",
+          "sha256": "74d73e592bcc0fb0355c0915513e3c0bbfff43c36be0e589688dfcbe5ef0f9ed"
+        },
+        "result_sha256": "2ac5b516d6211b95f5927a7d3c3027e74b57dfb8c107a4c89be72c64ffc14368",
+        "sample_log_sha256": {
+          "arc_easy": "ce0299c166e57c8dd13e2f7fcaf9ecb53b2b11553b6b87ec578aae9c1f9d3406",
+          "hellaswag": "a92a3d8bce61bbf08b694d10c4ef828edbff4922ed62978b4da51258c01499b6"
+        }
+      }
+    },
+    "model_scoring_foreground_reserved_gpu_hours": 0.23862425604291881,
+    "collection_foreground_reserved_gpu_hours": 0.00767063714331016,
+    "cost_scope": "Recorded foreground command walltime times assigned1GPU; not GPU busy time. Collection uses no GPU compute; not added to native pretraining cost."
+  },
+  "installed_journey": {
+    "status": "actual_journey_complete",
+    "source_release_commit": "97f4348678ae0213965c60d25a280777c878a51c",
+    "source_boundary": "actual demo trains installed source97 wheel; scientific P2 remains frozen17; TT upstream code is clean pin086 normally installed; no public helper changes",
+    "installed_versions": {
+      "moeloop-lab": "1.0.0rc1",
+      "safetensors": "0.8.0",
+      "tokenizers": "0.23.3",
+      "torch": "2.14.0",
+      "torchtitan": "0.3.0",
+      "transformers": "5.20.2"
+    },
+    "stop": {
+      "completed_updates": 4,
+      "continuation_fingerprint": "6bd35d551e393e68e8e47fdfdf078c60ff05a03c5b982e86a8629f4adac7a2d1",
+      "full_checkpoint": "$ARTIFACT_ROOT/installed-journey/native/checkpoint/step-4",
+      "global_progress": {
+        "completed_updates": 4,
+        "input_tokens": 2048,
+        "label_tokens": 2048,
+        "padded_positions": 2048,
+        "recursive_input_tokens": 4096
+      },
+      "global_source_counts": {
+        "wikitext2_public_install_demo": {
+          "blocks": 16,
+          "documents": 27,
+          "input_tokens": 2048,
+          "label_tokens": 2048
+        }
+      },
+      "status": "completed"
+    },
+    "final": {
+      "completed_updates": 8,
+      "continuation_fingerprint": "6bd35d551e393e68e8e47fdfdf078c60ff05a03c5b982e86a8629f4adac7a2d1",
+      "full_checkpoint": "$ARTIFACT_ROOT/installed-journey/native/checkpoint/step-8",
+      "global_progress": {
+        "completed_updates": 8,
+        "input_tokens": 4096,
+        "label_tokens": 4096,
+        "padded_positions": 4096,
+        "recursive_input_tokens": 8192
+      },
+      "global_source_counts": {
+        "wikitext2_public_install_demo": {
+          "blocks": 32,
+          "documents": 70,
+          "input_tokens": 4096,
+          "label_tokens": 4096
+        }
+      },
+      "status": "completed"
+    },
+    "checkpoints": {
+      "final": {
+        "files": {
+          ".metadata": "17f3ff3eeb2e2660a93d863a12244acc2db0d7a7b586b65c203aff4fde33b8d5",
+          "__0_0.distcp": "85569aa6a560341de8f17334059b6457267e4083d28492141f25bdbd934c59d8"
+        },
+        "path": "$ARTIFACT_ROOT/installed-journey/native/checkpoint/step-8",
+        "sha256": "d7944bf3bb6e620f396a18a275e82f632635be15b15ff6f348741730957275b8"
+      },
+      "stop": {
+        "files": {
+          ".metadata": "e3fe7959ea3b556f9c3d073a0091fc5b1e60ed3b772219f213a94009a8662c3d",
+          "__0_0.distcp": "e54f76144dec3284f2aa83d4939f1c81a28b20e80c1652b44300eaf485c6a160"
+        },
+        "path": "$ARTIFACT_ROOT/installed-journey/native/checkpoint/step-4",
+        "sha256": "5adaa552f32f0712eb9482e2394cd9a460c9e58d64b0fb0041ea5dece9d256de"
+      }
+    },
+    "cost_metrics": {
+      "costs_available": 0,
+      "foreground_reserved_gpu_hours": 0.01886348720200153,
+      "gpu_count": 1,
+      "native_receipt_count": 0
+    },
+    "failed_attempts_preserved": [
+      {
+        "attempt": 1,
+        "foreground_reserved_gpu_hours": 5.599362775683403e-05,
+        "run_id": "daf3e324963b4a778aa9b7e170c25300",
+        "status": "FAILED"
+      },
+      {
+        "attempt": 2,
+        "foreground_reserved_gpu_hours": 0.00016824502368561095,
+        "run_id": "4eab7d33ee044eefba7d0e4cf2389655",
+        "status": "FAILED"
+      },
+      {
+        "attempt": 3,
+        "foreground_reserved_gpu_hours": 0.00016793856759452159,
+        "run_id": "238ee2ad21b7463993844cf0c2420ddf",
+        "status": "FAILED"
+      }
+    ],
+    "heldout": {
+      "ce": 10.678343921711448,
+      "ce_sum": 21965.35344696045,
+      "valid_tokens": 2057,
+      "seq_len": 128,
+      "split": "validation",
+      "num_visits": 2,
+      "complete_split": true,
+      "max_batches": null,
+      "manifest_fingerprint": "619ee916df5ae7e0f0e39fb2877892b23aaa15db36b6284490e6cef4cadb49fe"
+    },
+    "standalone": {
+      "offline": true,
+      "repository_package_imported": false,
+      "training_services_available": false,
+      "deterministic_greedy": true,
+      "readout": "terminal",
+      "num_visits": 2,
+      "input_ids": [
+        50256,
+        464,
+        2746
+      ],
+      "generated_ids": [
+        [
+          50256,
+          464,
+          2746,
+          30931,
+          3267
+        ]
+      ]
+    },
+    "mlflow_run_id": "1b8624bb6cd346beafd6532464345b2c",
+    "scope": "Actual cached public WikiText2-mini/GPT2 installation demo, not a model-quality panel.",
+    "torch_free_base_import": true,
+    "build": {
+      "sdist_sha256": "ae38e804e9fd4be2d99ecfb10f64e6e53a51fb3683f2862e8af3fa0b2eea12c9",
+      "wheel_sha256": "03329aee50b080a153887ce35de77104dfcfa50195a704c19a98b93f8150080c",
+      "original_build_receipt_sha256": "31c211ae56663963bab2015eb3b9395bfa4fbfa696d4bed1c2d121a7c959fc74",
+      "public_module_count": 23,
+      "wheel_modules": {
+        "moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+        "moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+        "moeloop/comparison.py": "84802b59c76c4f3078fbb21836684cddb7ec18454e27c2cb34ce44e6f6354aa5",
+        "moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+        "moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+        "moeloop/evaluate.py": "720dd3fffeee3fa868c50daf33da34c89658919d032a0dac4bca66481b978309",
+        "moeloop/experiment.py": "b0bc5b63f9f04e1b23058ac9b23d36a57db5464352d6a90ef1c5859e34dad3e4",
+        "moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+        "moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+        "moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+        "moeloop/hf.py": "4ad460cecd848b3fedb81f7677a393ce2e02c94a811afa0fc7f2b5198d9cc154",
+        "moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+        "moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+        "moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+        "moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+        "moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+        "moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+        "moeloop/recipes.py": "0eebdb425ff2b35d04172ff971bedadfc0fd67491e9a86b78225b5d2bddc6676",
+        "moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+        "moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+        "moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049",
+        "moeloop_lab/__init__.py": "6a90613578c849e55f91b7f71b9c2ff832bfeaa48a3708ec5d6f61ebc6cefe1d",
+        "moeloop_lab/protocol.py": "201aa53be58536bc7ea2840e138a753c98478c4b046112406f8b66d8d5432cad"
+      },
+      "torch_free_base_import_proof_sha256": "4a97403952485769289366cb881e5b1ce29599bf93189b68804eca463ed8cdea"
+    }
+  },
+  "limits": [
+    "One predeclared seed42; no scaling-law inference or extrapolation.",
+    "Analytical matrix FLOPs use padded positions; measured native GPUHr includes compile, validation and checkpoint.",
+    "Common-compute CE is locally linearly interpolated inside observed brackets; weights and raw endpoints are retained.",
+    "C is a same-shape component panel, not an iso-parameter comparison or full Foil/LOOM reproduction.",
+    "Native curves use the fixed approximately1M-label slice; complete10M-label HF endpoints are separate.",
+    "Each anchor matches non-embedding parameters, document-aware analytical compute and logical KV within reported residuals. This does not isolate a universal causal Loop effect.",
+    "Measured native walltime/GPUHr, analytical model FLOPs and reserved foreground time are separate quantities.",
+    "The original P1 strict full-network BF16-gradient comparison failure remains in inherited evidence; this gate does not relabel it passed.",
+    "Validated model-training geometry reaches two nodes/16H200/HSDP2x8. No claim of32-rank model training or EP/TP qualification.",
+    "No statistical significance, original private-paper reproduction, guaranteed SOTA or final winning recipe is established."
+  ],
+  "performance_memory_scope": "Observed native global-rank0 allocator peaks, not inferred all-rank maxima.",
+  "public_artifacts": [
+    {
+      "path": "v3/anchor-endpoints.csv",
+      "sha256": "c4f38a859d870c688449c1aee6907259a8607a04458ee849cd59f4dc10278514"
+    },
+    {
+      "path": "v3/native-curves.csv",
+      "sha256": "bc780547ee8d6f288fdef7126dc10ee4a759cf65aca7ce126f06cbee9d17e5dd"
+    },
+    {
+      "path": "v3/common-compute.csv",
+      "sha256": "0331157c018c89b6e4655d7fab06b56ce477b23e87503b007250a5da1bca8a3b"
+    },
+    {
+      "path": "v3/sharing-endpoints.csv",
+      "sha256": "8ca66e37833ffe3ebec7bef05b4ab6b9cf6f2e610f17ff9a11dce78d616d24b1"
+    },
+    {
+      "path": "v3/performance.csv",
+      "sha256": "1432a13fe5714ffdb8f3b5bca5bf340b7b7e97ee431aa615d7da647532ebb631"
+    },
+    {
+      "path": "v3/compute-basis.json",
+      "sha256": "01a706cc5ee340c00a74e09e71822ecdbc0f5c867d088861ba684e7c01f4643d"
+    },
+    {
+      "path": "v3/sharing-interaction.json",
+      "sha256": "2a5e6276ade229381ee83caa5d7d36fd39a65b5e0bc2e266806ee561fa6ac28a"
+    },
+    {
+      "path": "v3/native-curves.png",
+      "sha256": "e3fca5dce6f6cb3e0dcf548e2782f123b1598b27073c7af7cd2439f6aaad61df"
+    },
+    {
+      "path": "v3/native-curves.svg",
+      "sha256": "c62aae307853f8c96571cecdc9e31d0c78fae2362b96bcb06af75c34def90dd5"
+    },
+    {
+      "path": "v3/native-curves.pdf",
+      "sha256": "c6625148ba45f17dc886f8ed48ab8217faa2be74112a98cd73e25f81bd8a89ac"
+    },
+    {
+      "path": "v3/native-contrasts.pdf",
+      "sha256": "536b7518ac661e1a8b16041409a0815586bc0d3eb4731c489d92c6a63e43d56e"
+    },
+    {
+      "path": "v3/native-contrasts.png",
+      "sha256": "1f72527274dadd8ad4ee44b32460400815d0271f534525e77756b9d904ce4a83"
+    },
+    {
+      "path": "v3/native-contrasts.svg",
+      "sha256": "55a1030fcf78a14a56e29a26926e3c394de9c7b3a9295b32c8f3577a57b1e992"
+    }
+  ],
+  "plotting": {
+    "source_commit": "216755c97acbdf2e7de7c62d8b72705c37c27662",
+    "script": "scripts/recipe_report.py",
+    "script_sha256": "662aa8869658b010c169b5bc82853046c50c3dc30eae267bcc0212326686ea3b",
+    "detail_from_step": 10000,
+    "scope": "Only observed P1/P2 final-phase contrasts and existing common-compute interpolation; C uses all four independent terminal values. Full overview retained."
+  },
+  "publication_format": "CSV uses LF line endings; values and interpolation brackets/weights are unchanged from verified exports."
+}

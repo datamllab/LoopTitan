@@ -1,0 +1,148 @@
+{
+  "name": "shape-m0i-adamw",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 1280,
+    "hidden_dim": 432,
+    "num_heads": 10,
+    "num_kv_heads": 1,
+    "num_experts": 64,
+    "top_k": 8,
+    "num_cells": 6,
+    "num_visits": 1,
+    "visit_capacity": null,
+    "prefix_cells": 3,
+    "suffix_cells": 3,
+    "order": "stack",
+    "attention_per_visit": false,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "lora_attention_rank": 0,
+    "lora_ffn_rank": 0,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "injection_dt": 0.8047189562170501,
+    "injection_decay": 1.0,
+    "injection_eps": 1e-06,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": false,
+    "init_std": 0.02,
+    "schema_version": 4,
+    "prefix": null,
+    "core": {
+      "hidden_dim": null,
+      "num_experts": null,
+      "top_k": null,
+      "always_on_hidden_dim": null,
+      "residual_scale": 1.0,
+      "output_init_scale": 0.5
+    },
+    "suffix": null
+  },
+  "training": {
+    "num_visits": 1,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.01,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "terminal_ce",
+    "entropy_coeff": 0.0
+  },
+  "source": {
+    "kind": "phase1_arm",
+    "version": 1,
+    "arm": "m0",
+    "base_recipe": "recipes/p2_moe.json"
+  },
+  "preserved": [
+    "M0's shape with only the init of the middle 6 layers' branch output projections (attention out_proj, expert down projections) scaled by 0.5. Under Adam, M0R's residual x 0.5 is this init change plus LR x 0.5 (weight decay x 2) on the same projections; this arm keeps only the init change, to test whether M0R's gain comes from the init."
+  ],
+  "adaptations": [
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "Physical active counts name one traversal of unique cells; repeated core calls still incur compute.",
+    "P2 public-stack intermediate/head geometry is selected by a predeclared 32-shape analytical budget screen, without quality observations.",
+    "SMELT expert count (default E88 instead of the paper's E96) is an explicit resource-matching adaptation; expert pool and head dimensions differ, so this is a recipe comparison, not a pure loop ablation.",
+    "Matrix initialization std=.02, unit norm scales and aux coefficient .01 are P2's; the schedule (95-update linear warmup, constant peak, last 20% linear to 0) and the AdamW or Muon settings are Track P2's."
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "base_lr": 0.0012,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "expert_lr_scope": "core",
+    "weight_decay_compensation": false,
+    "max_norm": 1.0
+  },
+  "inference": {
+    "num_visits": 1,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": []
+  },
+  "run": {
+    "seq_len": 4096,
+    "global_batch_positions": 1048576,
+    "successful_updates": 4769,
+    "schedule_total_steps": 4769,
+    "validation_interval": 477,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "objective": "terminal_ce_plus_router_aux",
+    "manifest_identity": null,
+    "schedule": {
+      "name": "warmup_stable_decay",
+      "coordinate": "successful_optimizer_updates",
+      "total_steps": 4769,
+      "warmup_steps": 95,
+      "decay_ratio": 0.2,
+      "decay_type": "linear",
+      "min_lr_factor": 0.0
+    },
+    "data_infinite": false,
+    "master_dtype": "float32",
+    "reduce_dtype": "float32",
+    "validation_label_tokens": 1000000,
+    "validation_infinite": false,
+    "checkpoint_interval": 477,
+    "training_seeds": [
+      42
+    ],
+    "activation_checkpointing": "none",
+    "panel": "phase1",
+    "local_batch_size": 16,
+    "keep_latest_k": 0
+  },
+  "evidence": [],
+  "schema_version": 1
+}

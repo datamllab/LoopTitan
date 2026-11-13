@@ -1,0 +1,173 @@
+{
+  "name": "p2_moe",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 1280,
+    "hidden_dim": 432,
+    "num_heads": 10,
+    "num_kv_heads": 1,
+    "num_experts": 64,
+    "top_k": 8,
+    "num_cells": 12,
+    "num_visits": 1,
+    "visit_capacity": null,
+    "prefix_cells": 0,
+    "suffix_cells": 0,
+    "order": "stack",
+    "attention_per_visit": false,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": false,
+    "init_std": 0.02,
+    "schema_version": 3,
+    "prefix": null,
+    "core": null,
+    "suffix": null
+  },
+  "training": {
+    "num_visits": 1,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.01,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "terminal_ce",
+    "entropy_coeff": 0.0
+  },
+  "source": {
+    "kind": "component",
+    "version": 1,
+    "anchor": "P2",
+    "paper_reference": {
+      "url": "https://arxiv.org/html/2609.01343v3",
+      "sections": [
+        "3.1",
+        "Appendix A",
+        "Appendix B"
+      ],
+      "baseline_active_tier": "200M",
+      "non_embedding_unique_tier": "1.32B",
+      "private_stack_reproduction": false
+    }
+  },
+  "preserved": [
+    "Every logical layer has independently owned attention, router, norms and experts."
+  ],
+  "adaptations": [
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "Normal matrix initialization std=.02, unit norm scales, aux coefficient .01, 20M-label linear warmup and final LR factor .1 are public-stack adaptations requiring the bounded stability pilot.",
+    "Physical active counts name one traversal of unique cells; repeated core calls still incur compute.",
+    "P2 public-stack intermediate/head geometry is selected by a predeclared 32-shape analytical budget screen, without quality observations.",
+    "SMELT expert count (default E88 instead of the paper's E96) is an explicit resource-matching adaptation; expert pool and head dimensions differ, so this is a recipe comparison, not a pure loop ablation.",
+    "P1 initialization, AdamW, auxiliary reduction and full WSD controls are inherited; formal P2 source/data/evaluation identities must be frozen independently."
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "base_lr": 0.0003,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "expert_lr_scope": "core",
+    "weight_decay_compensation": false,
+    "max_norm": 1.0
+  },
+  "inference": {
+    "num_visits": 1,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": []
+  },
+  "run": {
+    "seq_len": 4096,
+    "global_batch_positions": 1048576,
+    "successful_updates": 19537,
+    "schedule_total_steps": 19537,
+    "validation_interval": 477,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "objective": "terminal_ce_plus_router_aux",
+    "manifest_identity": null,
+    "anchor": "P2",
+    "schedule": {
+      "name": "warmup_stable_cosine_decay",
+      "coordinate": "successful_optimizer_updates",
+      "requested_coordinate": "global_valid_label_tokens",
+      "target_label_tokens": 20485760000,
+      "warmup_label_tokens": 20000000,
+      "stable_end_label_tokens": 10485760000,
+      "decay_label_tokens": 10000000000,
+      "total_steps": 19537,
+      "warmup_steps": 20,
+      "stable_end_steps": 10000,
+      "decay_steps": 9537,
+      "decay_ratio": 0.48815068843732407,
+      "decay_type": "cosine",
+      "min_lr_factor": 0.1,
+      "rounded_nominal_positions": 20486029312,
+      "rounding": "ceil(requested labels / nominal global positions per update); actual labels must be reported separately",
+      "native_step_convention": "Pinned TorchTitan LambdaLR: first update uses index 0; virtual final stable step keeps index 10000 at peak and index 19537 at min_lr_factor.",
+      "label_position_policy": "Fresh document packing normally fills every position; padding is not a label. Verify actual endpoint labels and report any shortfall, never infer labels from step count.",
+      "maximum_endpoint_rounding_positions": 1048576
+    },
+    "data_infinite": false,
+    "master_dtype": "float32",
+    "reduce_dtype": "float32",
+    "validation_label_tokens": 1000000,
+    "validation_infinite": false,
+    "final_validation_label_tokens": 10000000,
+    "final_test_label_tokens": 10000000,
+    "checkpoint_interval": 477,
+    "diagnostic_updates": [
+      954,
+      4769,
+      10000
+    ],
+    "lr_trial_peak_lrs": [
+      0.0003,
+      0.0001
+    ],
+    "lr_trial_max_label_tokens": 100000000,
+    "lr_trial_max_updates": 95,
+    "training_seeds": [
+      42
+    ],
+    "activation_checkpointing": "none",
+    "formal_identity_status": "requires frozen data/evaluation/source identities and target-shape runtime qualification",
+    "panel": "P2",
+    "local_batch_size": 16
+  },
+  "evidence": [],
+  "schema_version": 1
+}

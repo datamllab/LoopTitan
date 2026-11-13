@@ -1,0 +1,412 @@
+{
+  "schema_version": 1,
+  "reference": "Transformers official Qwen3MoeForCausalLM; unmodified forward; eager attention",
+  "torch_version": "2.14.0+cpu",
+  "transformers_version": "5.20.2",
+  "python_version": "3.12.3",
+  "device": "cpu",
+  "dtype": "float32",
+  "official_source_sha256": "58387f2cc22a706e7e4c7dabe6cf05cb1e9c9fe48c57e2f2a0fc5cbdb2132f4f",
+  "source_url": "https://github.com/huggingface/transformers/blob/v5.20.2/src/transformers/models/qwen3_moe/modeling_qwen3_moe.py",
+  "scope": "parameter-mapped numerical/gradient/update check, not paper reproduction or pretraining-quality evidence",
+  "auxiliary_losses": "disabled in both objectives; aggregation semantics intentionally tested separately",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.003,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.01,
+    "foreach": false,
+    "fused": false
+  },
+  "tolerances": {
+    "logits_and_cached_logits": {
+      "atol": 3e-05,
+      "rtol": 0.0003
+    },
+    "loss": {
+      "atol": 3e-06,
+      "rtol": 3e-05
+    },
+    "gradient": {
+      "atol": 3e-06,
+      "rtol": 0.0005
+    },
+    "updated_parameter": {
+      "atol": 0.0001,
+      "rtol": 0.0005
+    }
+  },
+  "elapsed_seconds": 0.9875661809928715,
+  "cases": {
+    "ordinary_moe": {
+      "config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 1,
+        "visit_capacity": null,
+        "prefix_cells": 1,
+        "suffix_cells": 1,
+        "order": "stack",
+        "attention_per_visit": false,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.08,
+        "schema_version": 1
+      },
+      "updates": 4,
+      "losses": [
+        3.824244260787964,
+        3.358268976211548,
+        3.130387306213379,
+        2.906397581100464
+      ],
+      "reference_losses": [
+        3.824244260787964,
+        3.358269453048706,
+        3.130387306213379,
+        2.906397581100464
+      ],
+      "max_absolute_errors": {
+        "logits": 5.953013896942139e-06,
+        "loss": 4.76837158203125e-07,
+        "gradient": 2.168118953704834e-06,
+        "updated_parameter": 4.8130517825484276e-05
+      },
+      "worst_gradient_owner": "embedding.weight",
+      "mapped_parameter_tensors": 51,
+      "physical_parameter_elements": 46488,
+      "reference_physical_parameter_elements": 46488,
+      "logical_decoder_calls": 4,
+      "cache": {
+        "logits_max_absolute_error": 5.837529897689819e-06,
+        "full_prefix_max_absolute_error": 4.172325134277344e-07,
+        "logical_slots": 4,
+        "cached_columns": 7
+      }
+    },
+    "shared_stack": {
+      "config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 3,
+        "visit_capacity": null,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "stack",
+        "attention_per_visit": false,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.08,
+        "schema_version": 1
+      },
+      "updates": 4,
+      "losses": [
+        3.9669246673583984,
+        3.561231851577759,
+        3.332515001296997,
+        3.1368722915649414
+      ],
+      "reference_losses": [
+        3.9669246673583984,
+        3.561231851577759,
+        3.332514524459839,
+        3.1368722915649414
+      ],
+      "max_absolute_errors": {
+        "logits": 8.046627044677734e-07,
+        "loss": 4.76837158203125e-07,
+        "gradient": 9.164214134216309e-07,
+        "updated_parameter": 1.1622905731201172e-06
+      },
+      "worst_gradient_owner": "embedding.weight",
+      "mapped_parameter_tensors": 27,
+      "physical_parameter_elements": 24288,
+      "reference_physical_parameter_elements": 24288,
+      "logical_decoder_calls": 6,
+      "cache": {
+        "logits_max_absolute_error": 6.854534149169922e-07,
+        "full_prefix_max_absolute_error": 4.172325134277344e-07,
+        "logical_slots": 6,
+        "cached_columns": 7
+      }
+    },
+    "shared_layer": {
+      "config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 3,
+        "visit_capacity": null,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "layer",
+        "attention_per_visit": false,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.08,
+        "schema_version": 1
+      },
+      "updates": 4,
+      "losses": [
+        3.915173292160034,
+        3.4695632457733154,
+        3.199279546737671,
+        2.9858129024505615
+      ],
+      "reference_losses": [
+        3.915173292160034,
+        3.4695632457733154,
+        3.199279546737671,
+        2.9858131408691406
+      ],
+      "max_absolute_errors": {
+        "logits": 1.519918441772461e-06,
+        "loss": 2.384185791015625e-07,
+        "gradient": 9.387731552124023e-07,
+        "updated_parameter": 1.8067657947540283e-06
+      },
+      "worst_gradient_owner": "embedding.weight",
+      "mapped_parameter_tensors": 27,
+      "physical_parameter_elements": 24288,
+      "reference_physical_parameter_elements": 24288,
+      "logical_decoder_calls": 6,
+      "cache": {
+        "logits_max_absolute_error": 1.385807991027832e-06,
+        "full_prefix_max_absolute_error": 3.8743019104003906e-07,
+        "logical_slots": 6,
+        "cached_columns": 7
+      }
+    },
+    "partial_attention": {
+      "config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 3,
+        "visit_capacity": 3,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "stack",
+        "attention_per_visit": true,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.08,
+        "schema_version": 1
+      },
+      "updates": 4,
+      "losses": [
+        3.903245687484741,
+        3.4669086933135986,
+        3.1960694789886475,
+        2.9439172744750977
+      ],
+      "reference_losses": [
+        3.903245687484741,
+        3.4669086933135986,
+        3.1960694789886475,
+        2.9439172744750977
+      ],
+      "max_absolute_errors": {
+        "logits": 7.152557373046875e-07,
+        "loss": 0.0,
+        "gradient": 3.8929283618927e-07,
+        "updated_parameter": 2.4586915969848633e-06
+      },
+      "worst_gradient_owner": "embedding.weight",
+      "mapped_parameter_tensors": 51,
+      "physical_parameter_elements": 31248,
+      "reference_physical_parameter_elements": 31248,
+      "logical_decoder_calls": 6,
+      "cache": {
+        "logits_max_absolute_error": 9.98377799987793e-07,
+        "full_prefix_max_absolute_error": 4.172325134277344e-07,
+        "logical_slots": 6,
+        "cached_columns": 7
+      }
+    },
+    "partial_router": {
+      "config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 3,
+        "visit_capacity": 3,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "stack",
+        "attention_per_visit": false,
+        "router_per_visit": true,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.08,
+        "schema_version": 1
+      },
+      "updates": 4,
+      "losses": [
+        3.7067859172821045,
+        3.3990886211395264,
+        3.2187535762786865,
+        3.0580203533172607
+      ],
+      "reference_losses": [
+        3.7067859172821045,
+        3.3990886211395264,
+        3.2187535762786865,
+        3.0580203533172607
+      ],
+      "max_absolute_errors": {
+        "logits": 3.5762786865234375e-07,
+        "loss": 0.0,
+        "gradient": 2.5331974029541016e-07,
+        "updated_parameter": 4.200264811515808e-07
+      },
+      "worst_gradient_owner": "embedding.weight",
+      "mapped_parameter_tensors": 31,
+      "physical_parameter_elements": 24672,
+      "reference_physical_parameter_elements": 24672,
+      "logical_decoder_calls": 6,
+      "cache": {
+        "logits_max_absolute_error": 4.76837158203125e-07,
+        "full_prefix_max_absolute_error": 2.980232238769531e-07,
+        "logical_slots": 6,
+        "cached_columns": 7
+      }
+    },
+    "expert_tying": {
+      "config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 3,
+        "visit_capacity": 3,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "layer",
+        "attention_per_visit": true,
+        "router_per_visit": true,
+        "norm_per_visit": true,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 32,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.08,
+        "schema_version": 1
+      },
+      "updates": 4,
+      "losses": [
+        3.9282124042510986,
+        3.3821070194244385,
+        3.0369608402252197,
+        2.766927719116211
+      ],
+      "reference_losses": [
+        3.928212881088257,
+        3.3821070194244385,
+        3.0369606018066406,
+        2.766927480697632
+      ],
+      "max_absolute_errors": {
+        "logits": 1.1920928955078125e-06,
+        "loss": 4.76837158203125e-07,
+        "gradient": 5.62518835067749e-07,
+        "updated_parameter": 1.893937587738037e-05
+      },
+      "worst_gradient_owner": "embedding.weight",
+      "mapped_parameter_tensors": 63,
+      "physical_parameter_elements": 31824,
+      "reference_physical_parameter_elements": 31824,
+      "logical_decoder_calls": 6,
+      "cache": {
+        "logits_max_absolute_error": 1.6391277313232422e-06,
+        "full_prefix_max_absolute_error": 3.5762786865234375e-07,
+        "logical_slots": 6,
+        "cached_columns": 7
+      }
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "kind": "prepared_public_dataset_summary",
+  "date": "2026-10-22",
+  "manifest_fingerprint": "1dd1c249342678f5d758bd30aa7e5944e151b12f76844dcfb45505202e7d446b",
+  "manifest_fingerprint_scope": "完整 moeloop-token-documents v1 manifest；包含全部 token/index/document identity shard hash，本文仅保留摘要。",
+  "format": {
+    "name": "moeloop-token-documents",
+    "version": 1,
+    "document_rules": {
+      "add_bos": true,
+      "append_eos": true,
+      "label_shift": "within_document",
+      "padding": "explicit_input_mask",
+      "positions": "block_document_segment_zero"
+    }
+  },
+  "source": {
+    "dataset_id": "mlfoundations/dclm-baseline-1.0-parquet",
+    "family_url": "https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0",
+    "license": {
+      "basis": "upstream_family_dataset_card",
+      "id": "CC-BY-4.0",
+      "url": "https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0"
+    },
+    "revision": "sha256:5fd90fa85b9d308c46a0ceb754e1fd9be0072ba8223ef7a8f873405dfb3c4080",
+    "revision_definition": "sha256(sorted compact JSON of exactly manifest_sha256, chunks, tokenizer_json_sha256)",
+    "manifest_sha256": "daa23af5ee6f51ee5712ae3e654f44162deb5cb2c701d1f5764ea18aeb16f5c5",
+    "chunks": [
+      {
+        "dochash_sha256": "49c0f8f06df250071aaec1765f8e5d17db9a107ff9cea3462f34c56935458766",
+        "docs": 210701,
+        "docs_sha256": "52ef6b05983d2da641f66a49f03d4e652b52573da99f5d74d37a5f64322555ba",
+        "name": "train-00000",
+        "tokens": 268440678,
+        "tokens_sha256": "418a086191065f1088c3c129a8519e94afdb89f894bc92f50e351ac9918efc54"
+      },
+      {
+        "dochash_sha256": "35363384b8fc0947747a22d0d16a8de2f4c2825b886193885f1525b0686e05f2",
+        "docs": 212648,
+        "docs_sha256": "e1ebb03ded587990d8a4bcca2b421e5ed19043f0bfd0c6eb3d42bc148d2184a2",
+        "name": "train-00001",
+        "tokens": 268437577,
+        "tokens_sha256": "bc6e4b801884e7d583641e0c1a0c2f4cbf265cc9803c98fc4c1f6da733789bf3"
+      }
+    ],
+    "tokenizer_json_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "upstream_revision": null,
+    "upstream_revision_note": "已有源副本的上游下载 commit 未知；不以当前公开仓库 HEAD 或其他观测的 commit 替代。",
+    "exact_pretokenized_binary_chunks_publication": "not_published",
+    "availability_note": "公开 DCLM 家族与本次实际使用的预分词二进制副本分别标识；精确 parent chunks 尚未公开发布，SHA 标识内容，不构成公开下载入口。"
+  },
+  "tokenizer": {
+    "id": "Qwen/Qwen3-30B-A3B",
+    "revision": "ae659febe817e4b3ebd7355f47792725801204c9",
+    "vocab_size": 151669,
+    "source_bos_token_id": null,
+    "bos_token_id": 151645,
+    "eos_token_id": 151645,
+    "pad_token_id": 151645,
+    "role_adaptation": "prepend_source_eos_id_as_bos_keep_existing_terminal_eos",
+    "source_files": {
+      "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "normalized_files": {
+      "tokenizer/merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "tokenizer/special_tokens_map.json": "fcf9d46fd7374d49338e4a22c2b454eec94ca363744ff19611b1e33257ea6370",
+      "tokenizer/tokenizer.json": "a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794",
+      "tokenizer/tokenizer_config.json": "e79b8ea9cc55f61ca0aa41ad9cd62102f806edb7f7e04edee9a496422ab0ce58",
+      "tokenizer/vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "adaptation_note": "不 decode/reencode。保留原 uint32 token 文档及末尾 EOS，只前加本库显式 BOS；源 tokenizer 文件和规范化角色资产分别记录 SHA，词表 ID 映射不变。"
+  },
+  "selection": {
+    "actual_label_tokens": {
+      "test": 1000504,
+      "train": 300002777,
+      "validation": 1000401
+    },
+    "algorithm": "sha256-u32le-token-document-first8-big-endian-mod100-v1",
+    "buckets": {
+      "test": [
+        0
+      ],
+      "train": [
+        2,
+        99
+      ],
+      "validation": [
+        1
+      ]
+    },
+    "deduplication": "first_exact_source_token_sha256_global",
+    "duplicate_documents": 33,
+    "empty_documents": 0,
+    "scanned_documents": 239025,
+    "stop": "minimum_shifted_labels_per_split_at_whole_document_boundary",
+    "target_label_tokens": {
+      "test": 1000000,
+      "train": 300000000,
+      "validation": 1000000
+    }
+  },
+  "document_definition": "whole_parent_token_document_including_source_eos_no_decode_reencode",
+  "document_identity_scope": "local_parent_chunk_and_ordinal_not_original_hf_id",
+  "splits": {
+    "test": {
+      "documents": 875,
+      "stored_tokens": 1001379,
+      "valid_label_tokens": 1000504
+    },
+    "train": {
+      "documents": 234327,
+      "stored_tokens": 300237104,
+      "valid_label_tokens": 300002777
+    },
+    "validation": {
+      "documents": 711,
+      "stored_tokens": 1001112,
+      "valid_label_tokens": 1000401
+    }
+  },
+  "isolation_check": {
+    "scope": "全部选中输出文档的 identity sidecars",
+    "hash_field": "token_sha256",
+    "hash_definition": "SHA256(source document uint32 little-endian bytes including its original EOS, before prepended BOS)",
+    "documents_checked": 235913,
+    "duplicate_or_cross_split_tokensha256": 0,
+    "within_split_duplicate_counts": {
+      "train": 0,
+      "validation": 0,
+      "test": 0
+    },
+    "cross_split_intersection_sizes": {
+      "train_validation": 0,
+      "train_test": 0,
+      "validation_test": 0
+    },
+    "result_basis": "准备记录对三 split 所有选中文档统一扫描 token SHA，重复或跨 split 重复总数为0；各 split 内重复数与两两交集为0由该全局结果推出，并非额外独立扫描。"
+  },
+  "qualification_report": "../validation.md",
+  "qualification_note": "本报告只记录实际数据准备与隔离事实；四方法训练、恢复和 HF 资格见 qualification_report。"
+}

@@ -1,0 +1,488 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "source_commit": "6f5893daa5d5b337af1818a7862cb21312885d1d",
+  "torchtitan_commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+  "qualification_utc_date": "2026-10-20",
+  "scope": "short engineering qualification on an offline generated text fixture; no pretrained models or pretraining-quality claim",
+  "environment": {
+    "python": "3.12.15",
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "nccl": [
+      2,
+      30,
+      7
+    ],
+    "transformers": "5.19.0"
+  },
+  "hardware": {
+    "gpu_model": "NVIDIA H200",
+    "gpus": 4,
+    "nodes": 1
+  },
+  "training": {
+    "parallelism": "native TorchTitan FSDP2 across four GPUs",
+    "parameter_precision": "bfloat16",
+    "master_parameter_dtype": "float32",
+    "gradient_reduce_dtype": "float32",
+    "gradient_accumulation": 2,
+    "attention": "document-causal FlexAttention with GQA and QK normalization",
+    "moe_execution": "native TorchTitan grouped experts; EP disabled",
+    "cuda_graphs": false,
+    "optimizer": "AdamW",
+    "variants": {
+      "shared": {
+        "status": "passed",
+        "completed_updates": 4,
+        "training_ce": [
+          4.164300918579102,
+          4.083355903625488,
+          4.036182880401611,
+          3.98451566696167
+        ],
+        "depth_per_update": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "differentiated_visits_per_update": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "activation_checkpointing": "none",
+        "global_progress": {
+          "completed_updates": 4,
+          "padded_positions": 1024,
+          "input_tokens": 1024,
+          "label_tokens": 1024,
+          "recursive_input_tokens": 4096
+        },
+        "final_full_dcp_durable": true
+      },
+      "partial_attention": {
+        "status": "passed",
+        "completed_updates": 2,
+        "training_ce": [
+          4.1503448486328125,
+          4.043259620666504
+        ],
+        "depth_per_update": [
+          2,
+          2
+        ],
+        "differentiated_visits_per_update": [
+          2,
+          2
+        ],
+        "activation_checkpointing": "full",
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 2048
+        },
+        "final_full_dcp_durable": true
+      },
+      "partial_router": {
+        "status": "passed",
+        "completed_updates": 2,
+        "training_ce": [
+          4.210569858551025,
+          4.152334213256836
+        ],
+        "depth_per_update": [
+          2,
+          2
+        ],
+        "differentiated_visits_per_update": [
+          2,
+          2
+        ],
+        "activation_checkpointing": "none",
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 2048
+        },
+        "final_full_dcp_durable": true
+      },
+      "expert_tying": {
+        "status": "passed",
+        "completed_updates": 2,
+        "training_ce": [
+          4.179313659667969,
+          4.076704978942871
+        ],
+        "depth_per_update": [
+          2,
+          2
+        ],
+        "differentiated_visits_per_update": [
+          2,
+          2
+        ],
+        "activation_checkpointing": "none",
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 2048
+        },
+        "final_full_dcp_durable": true
+      },
+      "injected": {
+        "status": "passed",
+        "completed_updates": 2,
+        "training_ce": [
+          4.16112756729126,
+          4.134891510009766
+        ],
+        "depth_per_update": [
+          3,
+          2
+        ],
+        "differentiated_visits_per_update": [
+          1,
+          1
+        ],
+        "activation_checkpointing": "full",
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 3584
+        },
+        "final_full_dcp_durable": true
+      },
+      "dense": {
+        "status": "passed",
+        "completed_updates": 2,
+        "training_ce": [
+          4.171873569488525,
+          4.108328342437744
+        ],
+        "depth_per_update": [
+          2,
+          2
+        ],
+        "differentiated_visits_per_update": [
+          2,
+          2
+        ],
+        "activation_checkpointing": "none",
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 2048
+        },
+        "final_full_dcp_durable": true
+      }
+    }
+  },
+  "strict_resume": {
+    "status": "passed",
+    "expected_steps": 4,
+    "model_tensor_count": 27,
+    "model_elements": 230272,
+    "max_absolute_model_error": 0.0,
+    "atol": 2e-05,
+    "rtol": 0.0002,
+    "training_rank_count": 4,
+    "data_rank_count": 4,
+    "global_progress": {
+      "completed_updates": 4,
+      "padded_positions": 1024,
+      "input_tokens": 1024,
+      "label_tokens": 1024,
+      "recursive_input_tokens": 4096
+    },
+    "trajectory": "uninterrupted four updates versus two updates, full-state restore, then two updates",
+    "exact_discrete_state": [
+      "all four rank-qualified Python/NumPy/Torch CPU/current CUDA RNG states",
+      "all four data-parallel cursors, generator state, source counts",
+      "completed progress and learning-rate scheduler state"
+    ],
+    "checkpoint_retains_optimizer": true
+  },
+  "export": {
+    "status": "passed",
+    "source": "actual four-update native full DCP checkpoint",
+    "weights_dtype": "float32",
+    "artifact_files": [
+      "cache.py",
+      "config.json",
+      "generation_config.json",
+      "hf.py",
+      "model.py",
+      "model.safetensors",
+      "moe.py",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "portable_auto_map": {
+      "AutoConfig": "hf.MoeloopConfig",
+      "AutoModelForCausalLM": "hf.MoeloopForCausalLM"
+    },
+    "tokenizer_roles": {
+      "bos_token_id": 1,
+      "eos_token_id": 2,
+      "pad_token_id": 0
+    },
+    "heldout": {
+      "ce": 3.9105058908462524,
+      "ce_sum": 250.27237701416016,
+      "valid_tokens": 64,
+      "input_tokens": 64,
+      "batches": 2,
+      "num_visits": 2,
+      "complete_split": false,
+      "label_contract": "already_aligned_document_internal_next_token"
+    },
+    "greedy_generation_new_tokens": 4,
+    "standalone_hf_without_project_or_torchtitan_path": {
+      "status": "passed",
+      "generated_tokens": [
+        [
+          1,
+          34,
+          27,
+          16,
+          19,
+          42,
+          19
+        ]
+      ],
+      "standalone": true
+    }
+  },
+  "independent_baseline": {
+    "reference": "Transformers official Qwen3MoeForCausalLM; unmodified forward; eager attention",
+    "python_version": "3.12.15",
+    "torch_version": "2.14.0+cu130",
+    "transformers_version": "5.19.0",
+    "device": "cuda",
+    "dtype": "float32",
+    "official_source_sha256": "58387f2cc22a706e7e4c7dabe6cf05cb1e9c9fe48c57e2f2a0fc5cbdb2132f4f",
+    "source_url": "https://github.com/huggingface/transformers/blob/v5.19.0/src/transformers/models/qwen3_moe/modeling_qwen3_moe.py",
+    "scope": "parameter-mapped numerical/gradient/update check, not paper reproduction or pretraining-quality evidence",
+    "auxiliary_losses": "disabled in both objectives; aggregation semantics intentionally tested separately",
+    "optimizer": {
+      "name": "AdamW",
+      "lr": 0.003,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.01,
+      "foreach": false,
+      "fused": false
+    },
+    "tolerances": {
+      "logits_and_cached_logits": {
+        "atol": 3e-05,
+        "rtol": 0.0003
+      },
+      "loss": {
+        "atol": 3e-06,
+        "rtol": 3e-05
+      },
+      "gradient": {
+        "atol": 3e-06,
+        "rtol": 0.0005
+      },
+      "updated_parameter": {
+        "atol": 0.0001,
+        "rtol": 0.0005
+      }
+    },
+    "elapsed_seconds": 2.9576867390424013,
+    "cases": {
+      "ordinary_moe": {
+        "updates": 2,
+        "losses": [
+          3.824244260787964,
+          3.3582687377929688
+        ],
+        "reference_losses": [
+          3.824244260787964,
+          3.358268976211548
+        ],
+        "max_absolute_errors": {
+          "logits": 2.4437904357910156e-06,
+          "loss": 2.384185791015625e-07,
+          "gradient": 5.154870450496674e-07,
+          "updated_parameter": 5.053449422121048e-05
+        },
+        "mapped_parameter_tensors": 51,
+        "physical_parameter_elements": 46488,
+        "reference_physical_parameter_elements": 46488,
+        "logical_decoder_calls": 4,
+        "cache": {
+          "logits_max_absolute_error": 6.064772605895996e-06,
+          "full_prefix_max_absolute_error": 2.384185791015625e-07,
+          "logical_slots": 4,
+          "cached_columns": 7
+        }
+      },
+      "shared_stack": {
+        "updates": 2,
+        "losses": [
+          3.9669246673583984,
+          3.561231851577759
+        ],
+        "reference_losses": [
+          3.9669246673583984,
+          3.561231851577759
+        ],
+        "max_absolute_errors": {
+          "logits": 2.8312206268310547e-07,
+          "loss": 0.0,
+          "gradient": 3.2782554626464844e-07,
+          "updated_parameter": 2.4810433387756348e-06
+        },
+        "mapped_parameter_tensors": 27,
+        "physical_parameter_elements": 24288,
+        "reference_physical_parameter_elements": 24288,
+        "logical_decoder_calls": 6,
+        "cache": {
+          "logits_max_absolute_error": 3.948807716369629e-07,
+          "full_prefix_max_absolute_error": 1.7881393432617188e-07,
+          "logical_slots": 6,
+          "cached_columns": 7
+        }
+      },
+      "shared_layer": {
+        "updates": 2,
+        "losses": [
+          3.915172576904297,
+          3.469562530517578
+        ],
+        "reference_losses": [
+          3.915172576904297,
+          3.4695627689361572
+        ],
+        "max_absolute_errors": {
+          "logits": 3.5762786865234375e-07,
+          "loss": 2.384185791015625e-07,
+          "gradient": 2.980232238769531e-07,
+          "updated_parameter": 1.0207295417785645e-06
+        },
+        "mapped_parameter_tensors": 27,
+        "physical_parameter_elements": 24288,
+        "reference_physical_parameter_elements": 24288,
+        "logical_decoder_calls": 6,
+        "cache": {
+          "logits_max_absolute_error": 7.450580596923828e-07,
+          "full_prefix_max_absolute_error": 2.384185791015625e-07,
+          "logical_slots": 6,
+          "cached_columns": 7
+        }
+      },
+      "partial_attention": {
+        "updates": 2,
+        "losses": [
+          3.903245210647583,
+          3.4669086933135986
+        ],
+        "reference_losses": [
+          3.903245210647583,
+          3.4669086933135986
+        ],
+        "max_absolute_errors": {
+          "logits": 8.344650268554688e-07,
+          "loss": 0.0,
+          "gradient": 2.989545464515686e-07,
+          "updated_parameter": 5.550682544708252e-06
+        },
+        "mapped_parameter_tensors": 51,
+        "physical_parameter_elements": 31248,
+        "reference_physical_parameter_elements": 31248,
+        "logical_decoder_calls": 6,
+        "cache": {
+          "logits_max_absolute_error": 6.854534149169922e-07,
+          "full_prefix_max_absolute_error": 2.384185791015625e-07,
+          "logical_slots": 6,
+          "cached_columns": 7
+        }
+      },
+      "partial_router": {
+        "updates": 2,
+        "losses": [
+          3.7067859172821045,
+          3.3990886211395264
+        ],
+        "reference_losses": [
+          3.7067859172821045,
+          3.3990886211395264
+        ],
+        "max_absolute_errors": {
+          "logits": 2.775341272354126e-07,
+          "loss": 0.0,
+          "gradient": 1.7881393432617188e-07,
+          "updated_parameter": 3.1478703022003174e-07
+        },
+        "mapped_parameter_tensors": 31,
+        "physical_parameter_elements": 24672,
+        "reference_physical_parameter_elements": 24672,
+        "logical_decoder_calls": 6,
+        "cache": {
+          "logits_max_absolute_error": 3.5762786865234375e-07,
+          "full_prefix_max_absolute_error": 2.384185791015625e-07,
+          "logical_slots": 6,
+          "cached_columns": 7
+        }
+      },
+      "expert_tying": {
+        "updates": 2,
+        "losses": [
+          3.928212881088257,
+          3.3821067810058594
+        ],
+        "reference_losses": [
+          3.928212881088257,
+          3.3821067810058594
+        ],
+        "max_absolute_errors": {
+          "logits": 7.227063179016113e-07,
+          "loss": 0.0,
+          "gradient": 4.023313522338867e-07,
+          "updated_parameter": 2.2292137145996094e-05
+        },
+        "mapped_parameter_tensors": 63,
+        "physical_parameter_elements": 31824,
+        "reference_physical_parameter_elements": 31824,
+        "logical_decoder_calls": 6,
+        "cache": {
+          "logits_max_absolute_error": 1.0728836059570312e-06,
+          "full_prefix_max_absolute_error": 2.384185791015625e-07,
+          "logical_slots": 6,
+          "cached_columns": 7
+        }
+      }
+    }
+  },
+  "resource_budget": {
+    "initial_budget_gpu_hours": 2,
+    "this_batch_pod_lifetime_seconds": 236.0,
+    "this_batch_conservative_gpu_hours": 0.26222222222222225,
+    "prior_failed_batch_conservative_gpu_hours": 0.13555555555555557,
+    "cumulative_conservative_gpu_hours": 0.3977777777777778,
+    "per_job_hard_limit_seconds": 900,
+    "terminal_status": "Succeeded",
+    "restart_count": 0,
+    "resources_released": true,
+    "release_verification": "terminal native replica, explicit job deletion, no remaining native replicas or job status"
+  }
+}

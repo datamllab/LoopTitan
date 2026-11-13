@@ -1,0 +1,762 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "single_node_8rank_fsdp_timing_with_native_precision_and_wrapping_differences",
+  "qualification_utc_date": "2026-10-22",
+  "reproduction_script": {
+    "path": "scripts/recipe_benchmark_fsdp8.py",
+    "sha256": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+    "byte_identical_to_executed_script": true
+  },
+  "source": {
+    "matching_git_commit": "3db652c673c3882a27d821684bd0c34b2736b9ee",
+    "matching_commit_scope": "the four recorded source files; raw report identifies source by file hashes",
+    "files": {
+      "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+      "src/moeloop/model.py": "afbea636de1d5b5aaefc0f0d0ac7a214b926bfd844ecbb2bf1e377ecee0eaa1d",
+      "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+      "src/moeloop/titan.py": "68e739c1d995e3128b8faba6560be59676ece0bddf6dd1087df45b2f57fcc201"
+    },
+    "torchtitan_commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+    "public_parallelize_sha256": "9b4da49b888341b6af223e10e4f8a7ea8c635797d7261490e31d84352575e007",
+    "public_fsdp_sha256": "0a0c2d99897ad94ec687416db61d1e7906679c08482a0798e5691dbd70e9cbf7"
+  },
+  "raw_artifacts": {
+    "report": {
+      "artifact": "bench-fsdp8-v2.json",
+      "sha256": "404a01f83888fed64bac4b0aa9b5ff2daca2e8264e121f3f1e7d1fb3b0000513"
+    },
+    "log": {
+      "artifact": "p1-benchmark-fsdp8-v2.log",
+      "sha256": "d83ffc73174e319335d0866575ecc2600bb0bf1306d1490d60b3560e32bc452c"
+    }
+  },
+  "runtime": {
+    "python": "3.12.15",
+    "packages": {
+      "torch": "2.14.0",
+      "torchtitan": null,
+      "transformers": "5.19.0"
+    },
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0"
+  },
+  "hardware": {
+    "nodes": 1,
+    "gpus": 8,
+    "gpu_model": "NVIDIA H200"
+  },
+  "model_config": {
+    "vocab_size": 151669,
+    "dim": 672,
+    "hidden_dim": 544,
+    "num_heads": 7,
+    "num_kv_heads": 1,
+    "num_experts": 64,
+    "top_k": 8,
+    "num_cells": 10,
+    "num_visits": 1,
+    "visit_capacity": null,
+    "prefix_cells": 0,
+    "suffix_cells": 0,
+    "order": "stack",
+    "attention_per_visit": false,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "residual_scale": 1.0,
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "initial_state": "input",
+    "init_std": 0.02,
+    "schema_version": 2,
+    "prefix": null,
+    "core": null,
+    "suffix": null
+  },
+  "initial_weights_sha256": "0b5a7a7fc9a409bf26cdd650317609695eca34525f846148772ec4cdd0802433",
+  "initial_weights_identical_across_arms_and_ranks": true,
+  "conditions": {
+    "world_size": 8,
+    "shard": 8,
+    "replicate": 1,
+    "local_batch": 16,
+    "seq_len": 4096,
+    "accumulation": 2,
+    "global_batch": 256,
+    "head_chunks": 8,
+    "activation_checkpoint": "none",
+    "model_compile": false,
+    "parameter_master_dtype": "float32",
+    "fsdp_parameter_dtype": "bfloat16",
+    "fsdp_reduce_dtype": "float32",
+    "optimizer": {
+      "lr": 0.0003,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.1,
+      "foreach": null,
+      "fused": true
+    },
+    "clip_max_norm": 1.0,
+    "auxiliary_coefficients": 0,
+    "seed": 42,
+    "timed_routing": "natural_unmodified_router_outputs",
+    "timing": "barrier outside; synchronized full update; maximum rank wall time per step",
+    "timed_steps": 10,
+    "warmup_updates": 4,
+    "excluded": [
+      "data IO",
+      "mask construction",
+      "compilation/warmup",
+      "checkpoint/eval",
+      "first-update safety checks"
+    ],
+    "data": "rank-distinct resident synthetic shifted tokens; seed42 + rank; same batches in both arms; all labels valid",
+    "global_valid_labels_per_update": 1048576,
+    "measurement_order": [
+      "candidate",
+      "reference"
+    ]
+  },
+  "performance": {
+    "arms": {
+      "candidate": {
+        "full_step_seconds": {
+          "median": 1.6504059042781591,
+          "min": 1.648487995378673,
+          "max": 1.65212435554713,
+          "mad": 0.000895173754543066,
+          "p10": 1.6490381449460982,
+          "p90": 1.6519818715751171
+        },
+        "full_step_seconds_max_rank_raw": [
+          1.6519660400226712,
+          1.651188699528575,
+          1.65212435554713,
+          1.6506595695391297,
+          1.6501522390171885,
+          1.6493983520194888,
+          1.6490992726758122,
+          1.6509802509099245,
+          1.648487995378673,
+          1.649864268489182
+        ],
+        "global_labels_per_second": 635344.3097130809,
+        "peak_memory_allocated_bytes": 83328334336
+      },
+      "reference": {
+        "full_step_seconds": {
+          "median": 1.618799949530512,
+          "min": 1.6170655209571123,
+          "max": 1.6192900585010648,
+          "mad": 0.00046152388677001,
+          "p10": 1.617274270579219,
+          "p90": 1.6192386053502559
+        },
+        "full_step_seconds_max_rank_raw": [
+          1.6187670473009348,
+          1.6192900585010648,
+          1.6192328883334994,
+          1.6182817770168185,
+          1.61889508087188,
+          1.6188328517600894,
+          1.618930240161717,
+          1.6172974649816751,
+          1.6173542579635978,
+          1.6170655209571123
+        ],
+        "global_labels_per_second": 647748.970034321,
+        "peak_memory_allocated_bytes": 82478874112
+      }
+    },
+    "candidate_reference_step_ratio": 1.0195243116710089
+  },
+  "lag_policy": {
+    "max_step_ratio": 1.2,
+    "action": "investigate a >20% median full-step gap; no universal performance guarantee"
+  },
+  "runtime_controls_passed": true,
+  "runtime_router_observation": {
+    "all_eight_ranks_equal": true,
+    "logical_calls_per_arm_per_rank": 20,
+    "input_dtype": "float32",
+    "materialized_gate_weight_dtype": "bfloat16",
+    "candidate_score_policy": "explicit FP32 F.linear/softmax in unchanged Router; score dtype is a code annotation in raw hook",
+    "reference_score_dtype_observed": "float32",
+    "correction": "The raw predeclared note about official BF16 input is superseded by actual FP32 input/score observations; kernel-level precision equivalence was not established."
+  },
+  "preserved_native_differences": [
+    "ours uses an explicit FP32 router path; public router forward is unchanged",
+    "ours shards final norm/head separately and reshards head; public FSDP groups norm/head and retains them after forward",
+    "Flex internal autotune off for ours, on for public; compilation excluded"
+  ],
+  "mathematics_evidence": {
+    "single_gpu": {
+      "artifact": "bench-p1-moe-b2-tt-component.json",
+      "sha256": "094b51bf952f3f12fc73f1625f1ce6dc3ebd52f4f105764416659752ed016570",
+      "mathematics_scope": "component_equivalence_with_observed_end_to_end_bf16_route_divergence",
+      "strict_full_network_status": "failed",
+      "settings": {
+        "mode": "benchmark",
+        "reference": "torchtitan",
+        "candidate": "native",
+        "attention": "flex",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "batch_size": 2,
+        "seq_len": 4096,
+        "head_chunks": 8,
+        "activation_checkpoint": "none",
+        "warmup": 5,
+        "steps": 20,
+        "component_math": true
+      },
+      "physical_parameter_tensors": 103,
+      "all_parameter_gradients_checked": true,
+      "optimizer_updates": 1,
+      "component_math_status": "passed",
+      "tolerances_predeclared": {
+        "relative_l2": 0.03,
+        "peak_factor": 0.015625,
+        "floor": 1e-06,
+        "loss_atol": 0.005,
+        "loss_rtol": 0.01
+      },
+      "strict_failures": [
+        "hidden states exceeds the predeclared vector or peak-scale bound",
+        "gradient core.1.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.2.attentions.0.k_proj.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.2.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.2.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.2.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.2.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.2.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.3.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.3.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.3.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.3.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.3.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.4.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.4.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.4.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.4.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.4.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.5.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.5.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.5.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.5.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.5.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.6.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.6.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.6.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.6.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.6.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.7.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.7.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.7.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.7.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.7.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.8.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.8.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.8.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.8.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.8.experts.w2_EDF exceeds the predeclared vector or peak-scale bound",
+        "gradient core.9.ffn_norms.0.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.9.routers.0.gate.weight exceeds the predeclared vector or peak-scale bound",
+        "gradient core.9.experts.w1_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.9.experts.w3_EFD exceeds the predeclared vector or peak-scale bound",
+        "gradient core.9.experts.w2_EDF exceeds the predeclared vector or peak-scale bound"
+      ],
+      "observed_full_network_changed_route_fraction": 0.02572021484375
+    },
+    "hf_fp32": {
+      "artifact": "hf-fp32-math.json",
+      "sha256": "fb374e929ad575e5f29a85cf57e819edc7a22d7b559d3455e8ae83ad5fa43930",
+      "mathematics_scope": "strict_full_network_parity",
+      "strict_full_network_status": "passed",
+      "settings": {
+        "mode": "sanity",
+        "reference": "transformers",
+        "candidate": "plain",
+        "attention": "sdpa",
+        "device": "cpu",
+        "dtype": "float32",
+        "batch_size": 2,
+        "seq_len": 8,
+        "head_chunks": 2,
+        "activation_checkpoint": "none",
+        "warmup": 5,
+        "steps": 20,
+        "component_math": false
+      },
+      "physical_parameter_tensors": 27,
+      "all_parameter_gradients_checked": true,
+      "optimizer_updates": 1,
+      "model_config": {
+        "vocab_size": 43,
+        "dim": 24,
+        "hidden_dim": 32,
+        "num_heads": 4,
+        "num_kv_heads": 2,
+        "num_experts": 4,
+        "top_k": 2,
+        "num_cells": 2,
+        "num_visits": 2,
+        "visit_capacity": null,
+        "prefix_cells": 0,
+        "suffix_cells": 0,
+        "order": "stack",
+        "attention_per_visit": false,
+        "router_per_visit": false,
+        "norm_per_visit": false,
+        "residual_scale": 1.0,
+        "rms_eps": 1e-06,
+        "rope_theta": 10000.0,
+        "max_seq_len": 16,
+        "qk_norm": true,
+        "always_on_hidden_dim": 0,
+        "input_injection": "none",
+        "injection_scale": 1.0,
+        "initial_state": "input",
+        "init_std": 0.02,
+        "schema_version": 2,
+        "prefix": null,
+        "core": null,
+        "suffix": null
+      }
+    }
+  },
+  "strict_distributed_bf16_gradient_parity": "not_claimed",
+  "runtime_control_scope": "all parameter gradients and updated parameters checked finite on first untimed update; timed losses/grad norms finite; no distributed gradient-equivalence test",
+  "per_rank": [
+    {
+      "rank": 0,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.6519484976306558,
+            1.6511859390884638,
+            1.6521092019975185,
+            1.6506548933684826,
+            1.6501459637656808,
+            1.6493758391588926,
+            1.649092698469758,
+            1.6509696673601866,
+            1.6484766816720366,
+            1.6498556127771735
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187620544806123,
+            1.6192867439240217,
+            1.6192328883334994,
+            1.6182730458676815,
+            1.6188930245116353,
+            1.6188300242647529,
+            1.6189172742888331,
+            1.6172974649816751,
+            1.6173508800566196,
+            1.6170548340305686
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 1,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.651952711865306,
+            1.6511862771585584,
+            1.652105724439025,
+            1.6506534004583955,
+            1.6501453379169106,
+            1.6493932930752635,
+            1.6490827053785324,
+            1.6509733255952597,
+            1.6484774015843868,
+            1.6498490618541837
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187649676576257,
+            1.6192831126973033,
+            1.6192242661491036,
+            1.6182767432183027,
+            1.6188880829140544,
+            1.6188279036432505,
+            1.6189269861206412,
+            1.617293108254671,
+            1.6173542579635978,
+            1.6170512456446886
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.6519660400226712,
+            1.651185450144112,
+            1.6521232118830085,
+            1.6506591150537133,
+            1.6501396941021085,
+            1.6493981890380383,
+            1.6490992726758122,
+            1.6509765265509486,
+            1.648487078025937,
+            1.649864268489182
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187614612281322,
+            1.6192900585010648,
+            1.6192243872210383,
+            1.6182817770168185,
+            1.618892746977508,
+            1.6188282631337643,
+            1.618919632397592,
+            1.6172956824302673,
+            1.6173508474603295,
+            1.6170545313507318
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.651958229020238,
+            1.6511864364147186,
+            1.6521172048524022,
+            1.6506595695391297,
+            1.650130414403975,
+            1.6493983520194888,
+            1.6490932451561093,
+            1.6509791482239962,
+            1.648487995378673,
+            1.6498590968549252
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187636693939567,
+            1.6192840104922652,
+            1.619231080636382,
+            1.6182590052485466,
+            1.618892677128315,
+            1.6188328517600894,
+            1.6189234526827931,
+            1.6172937816008925,
+            1.6173494188115,
+            1.6170568009838462
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 4,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.651961451396346,
+            1.651188699528575,
+            1.65212435554713,
+            1.6506552137434483,
+            1.6501522390171885,
+            1.6493758903816342,
+            1.649094108492136,
+            1.6509802509099245,
+            1.6484823320060968,
+            1.6498603885993361
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187642961740494,
+            1.6192878792062402,
+            1.6192311439663172,
+            1.6182772926986217,
+            1.61889508087188,
+            1.61882761772722,
+            1.618930240161717,
+            1.6172947464510798,
+            1.617351472377777,
+            1.6170655209571123
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 5,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.6519562443718314,
+            1.651184607297182,
+            1.6521163387224078,
+            1.6506489217281342,
+            1.65014145988971,
+            1.6493894178420305,
+            1.6490914123132825,
+            1.6509755635634065,
+            1.6484875911846757,
+            1.6498402850702405
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187670473009348,
+            1.6192623414099216,
+            1.619225975126028,
+            1.6182715110480785,
+            1.6188895152881742,
+            1.6188248917460442,
+            1.6189165767282248,
+            1.6172896111384034,
+            1.6173474751412868,
+            1.6170484628528357
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 6,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.6519490648061037,
+            1.651180618442595,
+            1.6521074837073684,
+            1.6506510358303785,
+            1.6501382673159242,
+            1.6493837386369705,
+            1.6490860460326076,
+            1.6509730210527778,
+            1.6484670406207442,
+            1.6498597348108888
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328334336
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187624018639326,
+            1.6192859327420592,
+            1.6192296026274562,
+            1.61827542912215,
+            1.6188901718705893,
+            1.6188265513628721,
+            1.6189244743436575,
+            1.617293487302959,
+            1.6173500316217542,
+            1.6170476591214538
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478874112
+        }
+      }
+    },
+    {
+      "rank": 7,
+      "arms": {
+        "candidate": {
+          "full_step_seconds_raw": [
+            1.651954671368003,
+            1.6511783320456743,
+            1.6521179536357522,
+            1.6506520444527268,
+            1.650133753195405,
+            1.6493855323642492,
+            1.6490872977301478,
+            1.6509710410609841,
+            1.6484757997095585,
+            1.6498564379289746
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063186645507812,
+            "grad_norm": 0.0891210287809372
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 83328309760
+        },
+        "reference": {
+          "full_step_seconds_raw": [
+            1.6187601704150438,
+            1.6192861441522837,
+            1.6192244412377477,
+            1.6182589726522565,
+            1.6188903413712978,
+            1.6188277760520577,
+            1.6189183834940195,
+            1.6172865219414234,
+            1.6173456870019436,
+            1.6170454313978553
+          ],
+          "first_untimed_update": {
+            "all_gradients_present_and_finite": true,
+            "all_updated_parameters_finite": true,
+            "optimizer_updates": 1,
+            "global_ce": 12.063180923461914,
+            "grad_norm": 0.0891263484954834
+          },
+          "measured_loss_and_grad_norm_finite": true,
+          "peak_memory_allocated_bytes": 82478857728
+        }
+      }
+    }
+  ],
+  "earlier_attempt": {
+    "status": "failed_before_distributed_init",
+    "error": "FileNotFoundError: hf-fp32-math.json",
+    "timing_measured": false,
+    "artifact": "p1-benchmark-fsdp8.log",
+    "log_sha256": "936e90d1d2c9cb25c22df7bbf3ac5b3996ec0a2fd1577e29739e2ca5393d1182"
+  },
+  "limitations": [
+    "single node only; no two-node official comparison or scaling claim",
+    "resident synthetic data, causal unpadded rows, CE only; no data pipeline/checkpoint/evaluation or pretraining-quality claim",
+    "sequential candidate/reference measurements, ten timed updates per arm; not a repeated-run confidence interval",
+    "original single-GPU full BF16 gradient failure and original 3%/20% thresholds retained"
+  ]
+}

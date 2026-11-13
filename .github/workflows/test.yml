@@ -1,0 +1,66 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install uv==0.13.1
+      - run: uv sync --frozen
+      - run: uv run --frozen python -m pytest -q
+
+  model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install uv==0.13.1
+      - run: uv sync --frozen
+      - run: uv pip install 'torch==2.14.0' --index-url https://download.pytorch.org/whl/cpu
+      - run: uv pip install -e '.[data,hf,train,report]' 'triton==3.8.0'
+      - run: .venv/bin/python -m pytest -q tests/model tests/data tests/training tests/hf tests/delivery tests/reference tests/qualification tests/comparison tests/setup
+
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install uv==0.13.1
+      # uv builds the sdist first, then the wheel from that sdist, so both are exercised.
+      - run: uv build --out-dir dist
+      - run: uvx --from twine==7.0.0 twine check --strict dist/*
+      # Install the wheel into an empty venv and import it from outside the checkout (-I, other cwd),
+      # so a missing file or an undeclared dependency fails here; torch must stay absent.
+      - run: uv venv "$RUNNER_TEMP/clean" && uv pip install --python "$RUNNER_TEMP/clean/bin/python" dist/*.whl
+      - working-directory: ${{ runner.temp }}
+        run: |
+          clean/bin/python -I - <<'PY'
+          import importlib.metadata, importlib.util, sys
+          import moeloop, moeloop_lab
+          print(moeloop.__file__, importlib.metadata.version("moeloop-lab"))
+          assert importlib.util.find_spec("torch") is None and "torch" not in sys.modules
+          PY

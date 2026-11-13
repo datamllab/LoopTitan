@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, cite the repository and the exact source commit. Method papers are listed separately in docs/method-map.md."
+type: software
+title: "LoopTitan"
+authors:
+  - name: "doem97"
+repository-code: "https://github.com/datamllab/LoopTitan"
+url: "https://github.com/datamllab/LoopTitan"
+version: "1.0.0rc1"
+license: Apache-2.0
+abstract: "LoopTitan is an open-source PyTorch library for training and comparing looped Mixture-of-Experts language models. Nine published recipes share one explicit model, in which a few physical blocks run several times."

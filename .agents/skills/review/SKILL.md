@@ -1,0 +1,120 @@
+---
+name: review
+description: Use in a fresh session whose only input is a PR number, to review that PR against its issue and post one comment whose first line is the Verdict.
+---
+
+# review
+
+Review one PR in a fresh session. The only input is the PR number. Read the PR, its diff, the
+issue it closes with its comments, the Decisions on that issue's parent and, if the parent is a
+study, its spec; never the implementer's session or summaries. Change no code; the only write
+is one PR comment.
+
+## 1. Read
+
+```
+gh pr view <PR> --json title,body,headRefOid,headRefName,files
+gh pr diff <PR>
+gh issue view N             # N from `Closes #N`: Goal, Scope, Acceptance, Merge; parent P
+gh issue view N --comments  # its Decisions
+gh issue view P --comments  # the parent's Decision: comments
+gh issue view P             # a study's spec: Arms, Controlled, Adaptable
+```
+
+Read AGENTS.md, the design doc in `docs/` if the project has one, and the code around the diff.
+To run the Acceptance commands or probe behavior, check out the head SHA in a scratch worktree
+from the main clone (not FETCH_HEAD, which a parallel review in the same clone can overwrite):
+
+```
+gh pr view <PR> --json headRefOid -q .headRefOid   # <sha>
+git fetch origin pull/<PR>/head
+git worktree add --detach ../worktrees/review-<PR> <sha>
+```
+
+## 2. Checklist (high-intelligence mode)
+
+1. Contract: the diff meets the issue's Goal and Acceptance, stays inside its Scope, and
+   follows the Decisions on the issue and its parent. If the parent is a study, the code holds
+   to its spec: every key of Arms, Controlled and Adaptable is set through config and written
+   to `$RUN_DIR/config.json`, and no change alters a Controlled setting or makes the arms
+   differ beyond Arms.
+2. Correctness on realistic inputs and error paths, assuming capable, cooperative agents and
+   users.
+3. Consistency with AGENTS.md, the design doc and the existing code.
+4. Tests that pin the contract, so a regression would fail them.
+5. Simplicity: a clear core and flat code; nothing the contract does not need. No avoidable new
+   concept, layer or single-use abstraction; no hard-to-explain tricks (fake modules, import-time
+   hacks, test stubs of internals); no hard-coded value that belongs in a spec, recipe or evidence
+   file; no defensive code beyond the dominant failure modes.
+
+Do not ask for defenses against malformed formats, forgery, outsiders or adversarial input
+unless the issue requires them.
+
+A finding is blocking when it breaks item 1, 2, 3 or 4, or adds a trick or hard-coded value
+that item 5 names. Everything else is minor.
+The verdict is `changes` only if at least one finding is blocking; otherwise `pass`.
+
+## 3. Post the comment
+
+Take the full head SHA right before posting. If it differs from the SHA you reviewed,
+review the new head first.
+
+```
+gh pr view <PR> --json headRefOid -q .headRefOid
+gh pr comment <PR> --body "$(cat <<'EOF'
+Verdict: pass @ <full head SHA>
+
+<findings in your own format and language; mark each non-blocking one as minor>
+EOF
+)"
+```
+
+- The first line is exactly `Verdict: pass @ <full head SHA>` or
+  `Verdict: changes @ <full head SHA>`.
+- Below it, the findings in the reviewing tool's own format and language, unedited and
+  untranslated. Point each at a file and line, with the reason and, when clear, the fix.
+- Post one comment per review. Do not approve, label, push or edit anything.
+- Remove the scratch worktree, if you made one: `git worktree remove --force ../worktrees/review-<PR>`.
+
+## 4. Starting a review (for the implementer)
+
+A PR review gets only the PR number. `codex exec` is sandboxed without network by default and
+`gh` needs it, hence `-s danger-full-access`.
+- Claude Code: a fresh subagent with the prompt "Follow `.agents/skills/review/SKILL.md` for PR #<PR>."
+- Codex: `codex exec -s danger-full-access "Follow .agents/skills/review/SKILL.md for PR #<PR>."`
+- Codex built-in review, in a checkout of the PR head. In Codex 0.163 `--base` cannot be
+  combined with instructions, so the instructions name the base. Pass the issue body, the
+  issue's Decisions, its parent's `Decision:` comments, the parent's spec if it is a study,
+  and the checklist above:
+
+```
+git fetch origin
+codex exec review "Review the changes of this branch against origin/main \
+(git diff origin/main...HEAD). Issue #N: <issue body>. Decisions on #N and its parent #P: \
+<their Decision: comments>. Spec of the study #P, if P is one: <its Arms, Controlled and \
+Adaptable sections>. Checklist: <section 2>." > ../codex-review-<PR>.md
+```
+
+  Its stdout, saved in that file, is the review: a summary and findings tagged `[P0]`–`[P3]`.
+  Any `[P0]` or `[P1]` finding means `changes`, otherwise `pass`. The session that ran it posts
+  the file verbatim under the Verdict line, with the reviewed SHA, in one shell call run in the
+  checkout Codex reviewed (agent shells may not keep variables between calls). The post and the
+  `rm` run only if the PR head still equals `$sha`; if the `test` fails, nothing is posted:
+  review the current head instead.
+
+```
+sha=$(git rev-parse HEAD)
+test "$(gh pr view <PR> --json headRefOid -q .headRefOid)" = "$sha" &&
+  { printf 'Verdict: %s @ %s\n\n' "<pass|changes>" "$sha"; cat ../codex-review-<PR>.md; } |
+  gh pr comment <PR> --body-file - && rm ../codex-review-<PR>.md
+```
+
+A pre-PR review in the implementer's inner loop gets only the issue number and the diff, uses
+the checklist above and posts nothing. Give a fresh subagent, or
+`codex exec -s danger-full-access "<prompt>"` in the worktree, this prompt:
+"Review `git diff origin/main...HEAD` in <worktree> against issue #N (`gh issue view N`, then
+`gh issue view N --comments`), the Decisions on its parent P (`gh issue view P --comments`) and,
+if P is a study, its spec (`gh issue view P`), with the checklist in
+`.agents/skills/review/SKILL.md`. Report blocking and minor findings here; post nothing to GitHub."
+
+A reviewer reports the comment link and the verdict, in Chinese, to the session that asked.

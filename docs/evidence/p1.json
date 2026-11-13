@@ -1,0 +1,668 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "completed_P1_evidence_for_one_public_recipe_pair",
+  "qualification_utc_date": "2026-10-22",
+  "training_source": {
+    "commit": "1bea4d6d2c539e3ae02517aaeede5f9ab68271a7",
+    "dirty": false,
+    "files": {
+      "scripts/check_release.py": "0a5ae28f32c71a67fa183a6ee53dbf1610d7bb71696417c462de6d9eee2f8abb",
+      "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f",
+      "scripts/recipe_anchor.py": "0f6c5499489106b5d20e65539a9c88631f2bacac75ee88f172388cd6a8ed1d4e",
+      "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+      "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+      "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+      "scripts/recipe_qualification.py": "0bdd3bb77470a814da73bf6819ed07fa1d93101a8b2e9b5bbc5c6975b7bde9b8",
+      "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+      "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+      "src/moeloop/comparison.py": "e5757be5b65f8d358bb546655785fedec9bc827c3b9b67ff09fed5b6ee7cf2f3",
+      "src/moeloop/costs.py": "09ee9bf87911cf3cbce09c909ac151c68a6a725268918b0288b3ded743fd07ed",
+      "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+      "src/moeloop/evaluate.py": "bc4c53b80376bce024b47ffdf53f057eee57466ed3e7f9de1c1905f6def4e45e",
+      "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+      "src/moeloop/generate.py": "8b267bca0a362001dfa163ec88d7f81196fb0cefd1648140ef0234d8bdc03fbb",
+      "src/moeloop/hf.py": "8f6849d141941600af5625095cba8d31e0d80286500e6b69d665d8820546d23e",
+      "src/moeloop/model.py": "afbea636de1d5b5aaefc0f0d0ac7a214b926bfd844ecbb2bf1e377ecee0eaa1d",
+      "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+      "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+      "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+      "src/moeloop/recipes.py": "eb66c0547185b452234e50d37365ad62db87c907e016adfbc9887ce847f4d258",
+      "src/moeloop/titan.py": "92457f71e05c47eaa173964b1de5c00ad1a92cf8ea835011ffb105dd2f66b03b",
+      "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+      "src/moeloop/training.py": "7058fdf584adf27eb2d8566d6cf69ef410e78ca79916cc86b963eab8d922b803"
+    }
+  },
+  "verification": {
+    "scope": "v1_full_acceptance",
+    "status": "passed",
+    "checker_commit": "ad1a21fab42ea391e319dd25f3ae16bb31c32aac",
+    "checker_file": "scripts/check_release.py",
+    "checker_sha256": "0c6823f4abdb19255c4371670e4b75f0742a109fd8bff64a2c3c97f53642708b",
+    "boundary_fix": "DCP identity retains Python tuples; compare at the sidecar/fingerprint JSON boundary. Training source and strict numeric/state tolerances are unchanged.",
+    "retained_raw_reports": {
+      "finalization.json": "9c4357413a5a7f04e4c610dcada95d5fe0ffd442c50eb764c3acd160a069de9e",
+      "release-check.json": "7d7f778ea8f8731ae4d24824dedb41fb25c57804e101779bdbc9996a5c58b939",
+      "numeric-summary.json": "ba3c186fdecc43483f4f9dedbe6bd6cdff7ebb6d372cd258bd3344aeaf7d2307"
+    },
+    "replay": "python scripts/check_release.py --stage v1 --evidence \"$MOELOOP_EVIDENCE\"",
+    "replay_assets": "Full checker requires the retained raw data, checkpoints, process logs and receipts; this public projection is not a substitute bundle."
+  },
+  "runtime": {
+    "native": {
+      "gradient_accumulation_steps": 1,
+      "local_batch_size": 16,
+      "parallelism": {
+        "data_parallel_replicate_degree": 2,
+        "data_parallel_shard_degree": 8
+      },
+      "runtime": {
+        "cuda": "13.0",
+        "python": "3.12.15 (main, Oct  6 2026, 23:50:18) [GCC 15.3.0]",
+        "torch": "2.14.0+cu130"
+      },
+      "runtime_identity_sha256": "5395f53a9df808cb6c3fe65b5ccbcd6f63834fcc671c1d52f97f38317d286095",
+      "source_identity_sha256": "dd94dd0f1ac174baf8b99fdc3662f04c988c61f5284a2cc7f71b28600565e59b",
+      "world_size": 16
+    },
+    "transformers": "5.19.0",
+    "torchtitan_commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840"
+  },
+  "data": {
+    "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+    "prepared_effective_labels": {
+      "train": 24000067249,
+      "validation": 10001497,
+      "test": 10009889
+    },
+    "raw_catalog_shards": 1024,
+    "raw_shards_consumed": 198,
+    "tokenizer_source_files": [
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "vocab.json",
+      "merges.txt"
+    ],
+    "training_prefix_attention_pairs_per_sequence": 4180216.9229844734
+  },
+  "hardware": {
+    "gpu_model": "NVIDIA H200",
+    "nodes": 2,
+    "gpus_per_node": 8,
+    "world_size": 16,
+    "dp_replicate": 2,
+    "dp_shard": 8
+  },
+  "pair": {
+    "retained_raw_sha256": "3d0c898ab1aba5871c053363e671f9eec64d5e19e65585ed55c23f553aa51f70",
+    "reference_recipe": "recipes/p1_moe.json",
+    "candidate_recipe": "recipes/p1_smelt.json"
+  },
+  "arms": {
+    "reference": {
+      "completed_updates": 19537,
+      "actual_valid_labels": 20486029312,
+      "padded_positions": 20486029312,
+      "analytical_model_training_flops": 2.6319576703686775e+19,
+      "terminal_training_ce": 3.0601673126220703,
+      "terminal_native_validation_ce": 2.948519706726074,
+      "native_validation_valid_labels": 1048576,
+      "actual_native_gpu_hours": 78.02285559389327,
+      "hf": {
+        "isolated_offline_consumer": true,
+        "repository_package_imported": false,
+        "fixed_depth": 1,
+        "cache": {
+          "compared_tokens": 3,
+          "max_absolute_error": 1.52587890625e-05,
+          "max_reference_absolute_value": 12.88215160369873,
+          "atol": 1e-05,
+          "rtol": 5e-05
+        },
+        "greedy_cached_uncached_ids_equal": true,
+        "export_provenance_sha256": "1f66ffef012775f44dcbd743119caf45abfe666fdaeea8b259a951e033995929",
+        "retained_hf_check_sha256": "68a2cc8f352a160cc7d0a32915dbce3b285e8d18414d5449064698687cccc128"
+      },
+      "full_heldout_provenance": {
+        "validation": {
+          "aggregate_sha256": "3d41c868c7971e3c2eeb361e0ba0f213c7eefa7855ea0e003e3d4ac443d1b141",
+          "document_losses_sha256": "1839782701aa6779a01c8a0fd70c755aa8bf25a142d0e1f8b0c03be14ed6b757"
+        },
+        "test": {
+          "aggregate_sha256": "18b2ec15909ea2ce0672f3d605a1bee6120b36cd6a91aa1acaa9cf73a28009a3",
+          "document_losses_sha256": "b9c53dc0f89a8efaae0fe94b82e8ceb20c87525053c62da02d783d7e4556f85b"
+        }
+      },
+      "retained_process_receipts": [
+        {
+          "logical_name": "p1-moe/process-1792665250857377479.json",
+          "sha256": "4c568f6b44ce447b238e133344b23da2cee19217f7093bb10c9eab0f5e9e0225"
+        },
+        {
+          "logical_name": "p1-moe/process-1792665251105227742.json",
+          "sha256": "eb57d8c21e3b287c66fd92b400a36eaf398aae2af7aa0b8b7498a16e860a2eab"
+        },
+        {
+          "logical_name": "p1-moe/process-1792665802653336701.json",
+          "sha256": "8fa369dbd90ed7bbad8fde2f1c287dab8f18aeee41ad1224e90ab14434e9cbf7"
+        },
+        {
+          "logical_name": "p1-moe/process-1792665803125149874.json",
+          "sha256": "eb3e93451e615b1e00f22e991bd6629f3e3e7a7cd0b8de162c024a955114fbed"
+        },
+        {
+          "logical_name": "p1-moe/process-1792667338833416762.json",
+          "sha256": "605f815b422c5b069701d3ef84b131e6b3956e1a53697d2f57c11f9bd1fc9dbd"
+        },
+        {
+          "logical_name": "p1-moe/process-1792667339488476297.json",
+          "sha256": "34acb9c350d6635bed143754c0915f07978b436b10610a6532f3b8008020ef47"
+        },
+        {
+          "logical_name": "p1-moe/process-1792672801842707394.json",
+          "sha256": "db3166c08bbfc98452370edd354538c42ab8c21a5ab7312a71a00705dfcdafa3"
+        },
+        {
+          "logical_name": "p1-moe/process-1792672802594546897.json",
+          "sha256": "7f69e07f218c064aab41ea47354cd20fca372c688a36e4930a8ed1eba9ba59b1"
+        },
+        {
+          "logical_name": "p1-moe/process-1792682408663573542.json",
+          "sha256": "458b51d338e6aa4312f43063af369e294b9c0478c2ed3d1e5b4413692ae97b9b"
+        },
+        {
+          "logical_name": "p1-moe/process-1792682408892484261.json",
+          "sha256": "44427fee3c2b5d89a5b19ce95e24cefb125050b0ab2ed4e5ac96e102e37ebac6"
+        },
+        {
+          "logical_name": "p1-moe/process-1792698139546392745.json",
+          "sha256": "433c97223a6ad519243c3d14beb29fc0503fb8f5d726e94ff529fe326819a1c4"
+        },
+        {
+          "logical_name": "p1-moe/process-1792698139652585130.json",
+          "sha256": "90bc48bcb6badb70b3936e1b399175e4a81e3af6e09d7db5aade1fb156a67b63"
+        },
+        {
+          "logical_name": "p1-moe/process-1792706571980868679.json",
+          "sha256": "ae5cafe3201065c95d75292746ae6935a4c0376d8f47408ed82b0bf4a986c048"
+        },
+        {
+          "logical_name": "p1-moe/process-1792706591155850803.json",
+          "sha256": "d7ba0d802f2dc66855de9b58d75464a100db4d820c6e8131001b66cb6942dbe5"
+        },
+        {
+          "logical_name": "p1-moe/process-1792706600788662557.json",
+          "sha256": "15916d748e689dc08459702da05b00a0d99349ce016ad74f0c5a21b479328007"
+        },
+        {
+          "logical_name": "p1-moe/process-1792706875338198803.json",
+          "sha256": "519a44cc3edfedee6c2c0b7803114c1887a36ef3bfcfd7c7b1b82856e0de4f62"
+        }
+      ]
+    },
+    "candidate": {
+      "completed_updates": 19537,
+      "actual_valid_labels": 20486029312,
+      "padded_positions": 20486029312,
+      "analytical_model_training_flops": 2.5581766134191145e+19,
+      "terminal_training_ce": 3.054368019104004,
+      "terminal_native_validation_ce": 2.9438328742980957,
+      "native_validation_valid_labels": 1048576,
+      "actual_native_gpu_hours": 103.43271062586042,
+      "hf": {
+        "isolated_offline_consumer": true,
+        "repository_package_imported": false,
+        "fixed_depth": 2,
+        "cache": {
+          "compared_tokens": 3,
+          "max_absolute_error": 1.3828277587890625e-05,
+          "max_reference_absolute_value": 14.22076416015625,
+          "atol": 1e-05,
+          "rtol": 5e-05
+        },
+        "greedy_cached_uncached_ids_equal": true,
+        "export_provenance_sha256": "cad7aed4a9109365c76380308141aaa3299b942183b9c58cdd6cf57680f546d9",
+        "retained_hf_check_sha256": "3beed9b1a02fd37664d824d77e4f8c998882c63b3978e62f1889027b25e6d807"
+      },
+      "full_heldout_provenance": {
+        "validation": {
+          "aggregate_sha256": "78bd54e97830c68215bcd548fa0e9449b1d5b8b4805bb1f2f790576739d70803",
+          "document_losses_sha256": "bb8104c3d0af9aeb5b2392f48fc8bb21fafc4331d68d2ba5f0960f3721e8484d"
+        },
+        "test": {
+          "aggregate_sha256": "685bf116382ffd71f1487014b0a3274c4800f5de9015bab8a07fb191a3eb67ee",
+          "document_losses_sha256": "14cd4b1d59efd7eab26b4aa853ec18fb2a5d1cf4a298f41f480a27ccf981b359"
+        }
+      },
+      "retained_process_receipts": [
+        {
+          "logical_name": "p1-smelt/process-1792664488260425532.json",
+          "sha256": "9b2e3b89b7111a5d5266579921d017fe97a2a56a55f00ae0e5f1b7f4ced2bc0e"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792664488613071981.json",
+          "sha256": "1f908e21fe510e69a421a482a3720fd60714e6f783376cad0e55897a77606fed"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792665511773275430.json",
+          "sha256": "316a238a2f97c5899c19deee80d1e2a7908d7425cfe6ee82197533b80810d1bd"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792665512620315412.json",
+          "sha256": "d282d323615402146350f61235d60f22f6b78abccadaeeb7cdb3fc66f6c742bc"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792666143256469310.json",
+          "sha256": "03cf9cf7e17a68b74323252b3d639028ee3c7fbf1bebe3a1b957a641f24aed09"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792666143788604049.json",
+          "sha256": "f06a8e674d9d89bceb8d162fadc76c8708cead7b32cab5761468858aefef4968"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792668222830819614.json",
+          "sha256": "b0cac93d6336de93b917817a227a91c36b091575034ac8e5e0375c13a27f0e7b"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792668222866502173.json",
+          "sha256": "d7171e65c79ef1018ff69841f80a634bd54443bae09ef87694139be7499a2896"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792676229905142094.json",
+          "sha256": "d1e7f89106e7cd49e8590252325ba178531a1c7b37461f1b819387f7e4c0747e"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792676230279824321.json",
+          "sha256": "ea81413ea66da1003172de33e70aa4d798c2ec1e1017f9ba00394f2dae140aa7"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792687056357280712.json",
+          "sha256": "2d6968b5305a74270ddfe87923e44ceaa28e5ed1db94874e495d555ecfa26e65"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792687057219035009.json",
+          "sha256": "6a5fc544cd7da495a0e64d0d6c300c05a4fe6d683e4c9d08f1e93372950af3c0"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792706571997154073.json",
+          "sha256": "8457b3eb0fcec1ec8f804b358b4a8227cdccf84438217321802540a18e6e737c"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792706593295114454.json",
+          "sha256": "ee22a2a10c3f9c50a388201591879b8f37a5c4b25e348d7e1125694e00dcc40c"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792706604483594091.json",
+          "sha256": "96b601b3bf2e76144d50ddfd4e6d6edeff0ab89d7507142fd4e6423a10b84e71"
+        },
+        {
+          "logical_name": "p1-smelt/process-1792706941173459938.json",
+          "sha256": "25ab990c002edfedfcd3b584a1b0305e56d77eec026baea58bc02bf1e1480c1b"
+        }
+      ]
+    }
+  },
+  "matched_analytical_budgets": [
+    {
+      "budget": "unique_non_embedding_parameters",
+      "reference": 712656672,
+      "candidate": 737845056,
+      "relative_difference": 0.03534434600789088,
+      "relative_tolerance": 0.05,
+      "basis": "analytical_estimate"
+    },
+    {
+      "budget": "training_flops_per_token",
+      "reference": 1284757348.671257,
+      "candidate": 1248742044.8630443,
+      "relative_difference": -0.028032767312412027,
+      "relative_tolerance": 0.05,
+      "basis": "analytical_estimate"
+    },
+    {
+      "budget": "logical_kv_bytes",
+      "reference": 15728640,
+      "candidate": 15728640,
+      "relative_difference": 0.0,
+      "relative_tolerance": 0.05,
+      "basis": "analytical_estimate"
+    }
+  ],
+  "same_D_full_HF_heldout": {
+    "validation": {
+      "same_training_D": 20486029312,
+      "documents": 8167,
+      "valid_labels": 10001497,
+      "reference_ce": 3.0144689284080113,
+      "candidate_ce": 3.0083626831157475,
+      "candidate_minus_reference_ce": -0.006106245292263779,
+      "paired_document_weighted_ce_difference": -0.006106245292263891,
+      "weighting": "each document weighted by its actual valid-label count; not an unweighted document mean"
+    },
+    "test": {
+      "same_training_D": 20486029312,
+      "documents": 8212,
+      "valid_labels": 10009889,
+      "reference_ce": 3.0092780095669243,
+      "candidate_ce": 3.003380423393232,
+      "candidate_minus_reference_ce": -0.005897586173692293,
+      "paired_document_weighted_ce_difference": -0.0058975861736921455,
+      "weighting": "each document weighted by its actual valid-label count; not an unweighted document mean"
+    }
+  },
+  "native_curves": {
+    "points_per_arm": 46,
+    "valid_labels_per_point": 1048576,
+    "interpolation": {
+      "D": {
+        "axis": "global_labels",
+        "shared_observed_minimum": 1048576,
+        "shared_observed_maximum": 20486029312,
+        "rule": "linear CE between adjacent native fixed-slice observations; no extrapolation",
+        "reference_observed_range": [
+          1048576,
+          20486029312
+        ],
+        "candidate_observed_range": [
+          1048576,
+          20486029312
+        ]
+      },
+      "C": {
+        "axis": "cumulative_model_flops_estimate",
+        "shared_observed_minimum": 1347165721640312.0,
+        "shared_observed_maximum": 2.5581766134191145e+19,
+        "rule": "linear CE between adjacent native fixed-slice observations; no extrapolation",
+        "reference_observed_range": [
+          1347165721640312.0,
+          2.6319576703686775e+19
+        ],
+        "candidate_observed_range": [
+          1309400938434311.5,
+          2.5581766134191145e+19
+        ]
+      },
+      "evaluation_scope": "only validation.jsonl's frozen ~1M-label slice; full ~10M HF heldout is excluded",
+      "C_basis": "actual cumulative padded positions times frozen analytical training FLOPs/position; not measured GPU FLOPs"
+    },
+    "same_D_endpoint": {
+      "global_labels": 20486029312,
+      "reference_ce": 2.948519706726074,
+      "reference_interpolated": false,
+      "reference_lower_step": 19537,
+      "reference_upper_step": 19537,
+      "reference_lower_coordinate": 20486029312,
+      "reference_upper_coordinate": 20486029312,
+      "reference_lower_global_labels": 20486029312,
+      "reference_upper_global_labels": 20486029312,
+      "reference_interpolation_weight": 0.0,
+      "candidate_ce": 2.9438328742980957,
+      "candidate_interpolated": false,
+      "candidate_lower_step": 19537,
+      "candidate_upper_step": 19537,
+      "candidate_lower_coordinate": 20486029312,
+      "candidate_upper_coordinate": 20486029312,
+      "candidate_lower_global_labels": 20486029312,
+      "candidate_upper_global_labels": 20486029312,
+      "candidate_interpolation_weight": 0.0,
+      "candidate_minus_reference_ce": -0.004686832427978516
+    },
+    "common_C_endpoint": {
+      "cumulative_model_flops_estimate": 2.5581766134191145e+19,
+      "reference_ce": 2.9511445361265416,
+      "reference_interpolated": true,
+      "reference_lower_step": 18603,
+      "reference_upper_step": 19080,
+      "reference_lower_coordinate": 2.5061323919674724e+19,
+      "reference_upper_coordinate": 2.570392196889715e+19,
+      "reference_lower_global_labels": 19506659328,
+      "reference_upper_global_labels": 20006830080,
+      "reference_interpolation_weight": 0.8099031971014847,
+      "candidate_ce": 2.9438328742980957,
+      "candidate_interpolated": false,
+      "candidate_lower_step": 19537,
+      "candidate_upper_step": 19537,
+      "candidate_lower_coordinate": 2.5581766134191145e+19,
+      "candidate_upper_coordinate": 2.5581766134191145e+19,
+      "candidate_lower_global_labels": 20486029312,
+      "candidate_upper_global_labels": 20486029312,
+      "candidate_interpolation_weight": 0.0,
+      "candidate_minus_reference_ce": -0.007311661828445892
+    },
+    "equal_ce_within_shared_C": {
+      "target_reference_ce": 2.9511445361265416,
+      "reference_analytical_C": 2.5581766134191145e+19,
+      "reference_interpolation": {
+        "reference_ce": 2.9511445361265416,
+        "reference_interpolated": true,
+        "reference_lower_step": 18603,
+        "reference_upper_step": 19080,
+        "reference_lower_coordinate": 2.5061323919674724e+19,
+        "reference_upper_coordinate": 2.570392196889715e+19,
+        "reference_lower_global_labels": 19506659328,
+        "reference_upper_global_labels": 20006830080,
+        "reference_interpolation_weight": 0.8099031971014847
+      },
+      "candidate_lower_step": 18126,
+      "candidate_upper_step": 18603,
+      "candidate_lower_ce": 2.9530601501464844,
+      "candidate_upper_ce": 2.9491333961486816,
+      "candidate_lower_C": 2.373420141006033e+19,
+      "candidate_upper_C": 2.4358785657693495e+19,
+      "candidate_interpolation_weight": 0.4878365237584748,
+      "candidate_C_at_equal_ce": 2.4038896418219995e+19,
+      "analytical_compute_saving": 0.06031130563378251,
+      "scope": "both crossings within shared observed C range; linear interpolation of native fixed ~1M-label validation only; not full HF heldout or cooled frontier"
+    }
+  },
+  "actual_native_gpu_hours_total": 181.45556621975368,
+  "gpu_hours_scope": "sum of actual native-process wall time * recorded local GPU count, including initialization/compile/native validation/checkpoint; HF postprocessing excluded",
+  "scientific_result": {
+    "classification": "clear_positive",
+    "classification_scope": "本次公开DCLM/共同模型栈、冻结MoE/SMELT配方pair、单seed42中，已观察到一致的小幅质量与解析模型计算收益；不是纯Loop因果或跨设置普适收益。",
+    "same_D_full_HF_heldout": {
+      "validation": {
+        "same_training_D": 20486029312,
+        "documents": 8167,
+        "valid_labels": 10001497,
+        "reference_ce": 3.0144689284080113,
+        "candidate_ce": 3.0083626831157475,
+        "candidate_minus_reference_ce": -0.006106245292263779,
+        "paired_document_weighted_ce_difference": -0.006106245292263891,
+        "weighting": "each document weighted by its actual valid-label count; not an unweighted document mean"
+      },
+      "test": {
+        "same_training_D": 20486029312,
+        "documents": 8212,
+        "valid_labels": 10009889,
+        "reference_ce": 3.0092780095669243,
+        "candidate_ce": 3.003380423393232,
+        "candidate_minus_reference_ce": -0.005897586173692293,
+        "paired_document_weighted_ce_difference": -0.0058975861736921455,
+        "weighting": "each document weighted by its actual valid-label count; not an unweighted document mean"
+      }
+    },
+    "common_C_native_validation_endpoint": {
+      "cumulative_model_flops_estimate": 2.5581766134191145e+19,
+      "reference_ce": 2.9511445361265416,
+      "reference_interpolated": true,
+      "reference_lower_step": 18603,
+      "reference_upper_step": 19080,
+      "reference_lower_coordinate": 2.5061323919674724e+19,
+      "reference_upper_coordinate": 2.570392196889715e+19,
+      "reference_lower_global_labels": 19506659328,
+      "reference_upper_global_labels": 20006830080,
+      "reference_interpolation_weight": 0.8099031971014847,
+      "candidate_ce": 2.9438328742980957,
+      "candidate_interpolated": false,
+      "candidate_lower_step": 19537,
+      "candidate_upper_step": 19537,
+      "candidate_lower_coordinate": 2.5581766134191145e+19,
+      "candidate_upper_coordinate": 2.5581766134191145e+19,
+      "candidate_lower_global_labels": 20486029312,
+      "candidate_upper_global_labels": 20486029312,
+      "candidate_interpolation_weight": 0.0,
+      "candidate_minus_reference_ce": -0.007311661828445892
+    },
+    "equal_native_ce_within_shared_C": {
+      "target_reference_ce": 2.9511445361265416,
+      "reference_analytical_C": 2.5581766134191145e+19,
+      "reference_interpolation": {
+        "reference_ce": 2.9511445361265416,
+        "reference_interpolated": true,
+        "reference_lower_step": 18603,
+        "reference_upper_step": 19080,
+        "reference_lower_coordinate": 2.5061323919674724e+19,
+        "reference_upper_coordinate": 2.570392196889715e+19,
+        "reference_lower_global_labels": 19506659328,
+        "reference_upper_global_labels": 20006830080,
+        "reference_interpolation_weight": 0.8099031971014847
+      },
+      "candidate_lower_step": 18126,
+      "candidate_upper_step": 18603,
+      "candidate_lower_ce": 2.9530601501464844,
+      "candidate_upper_ce": 2.9491333961486816,
+      "candidate_lower_C": 2.373420141006033e+19,
+      "candidate_upper_C": 2.4358785657693495e+19,
+      "candidate_interpolation_weight": 0.4878365237584748,
+      "candidate_C_at_equal_ce": 2.4038896418219995e+19,
+      "analytical_compute_saving": 0.06031130563378251,
+      "scope": "both crossings within shared observed C range; linear interpolation of native fixed ~1M-label validation only; not full HF heldout or cooled frontier"
+    },
+    "observed_native_late_direction": {
+      "same_D_start_labels": 6002049024,
+      "consecutive_lower_candidate_ce_points": 31,
+      "evaluation_valid_labels_per_point": 1048576,
+      "independent_training_repetitions": 1
+    },
+    "actual_native_gpu_hours": {
+      "reference": 78.02285559389327,
+      "candidate": 103.43271062586042
+    },
+    "limitations": [
+      "仅seed42，不估计训练随机性显著性或跨seed稳定性。",
+      "这是公开DCLM/共同模型栈适配，非SMELT私有语料、完整工程、绝对loss或缩放前沿复现。",
+      "候选unique non-embedding参数多3.5344%，解析计算/position少2.8033%，KV相同；已在预声明5%容差内，但容量与几何差异未被因果消除。",
+      "6.03113%来自共同C覆盖内约1M-label原生validation曲线的相邻点线性插值；不等于完整10M HF评价的计算节省、独立重复、实测GPU FLOPs或退火终点scaling frontier。",
+      "实际native GPUHr为MoE78.0229、SMELT103.4327（+32.5672%），未观察到实际GPU时间节省；含初始化/原生validation/checkpoint，不含HF后处理或试验pilot。",
+      "只覆盖本P1规模及已测2×8 HSDP/严格同拓扑恢复；不外推所有MoE、其他recipe、更多节点或任意compile/EP/TP组合。",
+      "公共TorchTitan数学资格为同输入组件与HF FP32更新oracle；完整网络BF16逐梯度检查原始失败保留。"
+    ],
+    "interpretation": "同D从6.002B起31个连续原生点候选CE较低，完整validation/test均同向，共同C覆盖内等原生CE约6.03%解析节省，支持本pair的有界正向观察。结构残差不能据百分比大小断言已消除或足以解释全部收益。更慢的实际训练是另一个明确结果；不以清楚正向分类宣称runtime效率更高或论文一般结论已复现。后续#7继承本P1，#8新增预定P2/组合。"
+  },
+  "public_performance_reference": "docs/evidence/performance-fsdp8.json",
+  "mathematics_scope": "component_equivalence_with_observed_end_to_end_bf16_route_divergence; independent HF FP32 complete-update oracle passed; strict full-network BF16 gradient parity failed and is retained",
+  "artifacts_relative_to": "repository_root",
+  "artifacts": [
+    {
+      "path": "recipes/p1_moe.json",
+      "sha256": "06700c2d4abb668b9fd0c1392273ec698633ae8ddee04797d756999bfe40d7d4"
+    },
+    {
+      "path": "recipes/p1_smelt.json",
+      "sha256": "8b9cf4becfa486a3a375f618cd8c87ade455d27f882ee98c345ab4740e04d5b2"
+    },
+    {
+      "path": "docs/evidence/p1-data-manifest.json",
+      "sha256": "e0c607ecee9d95485f7475ba0101c1ac927483346e0fb7fdce7d682cf2279a8e"
+    },
+    {
+      "path": "docs/evidence/p1-dclm-source.json",
+      "sha256": "01e723eb636284960fbbbd5305343d559eb15fcfd626732efa581eebb0e94fe4"
+    },
+    {
+      "path": "docs/evidence/p1-data-statistics.json",
+      "sha256": "bd2b6e2f063181214a7998eb6410379c9f5f2561ea0c2a1bf4f0924c5a850a97"
+    },
+    {
+      "path": "docs/evidence/p1-reference-curve.csv",
+      "sha256": "fc05d686da68448007d2122d3487c33bd903c0094094b1e1edfb0e92064c33fc",
+      "pre_publication_bytes_sha256": "24f2b5e6e30dea0f1b94a0c5a380c2c81d3e7b4ef5d4cb5578dbce67456d1b5b"
+    },
+    {
+      "path": "docs/evidence/p1-candidate-curve.csv",
+      "sha256": "1ff0a337f8c0ccaffb221650625ab1ea4c30c6f75badcbb0833b9dcec8f57461",
+      "pre_publication_bytes_sha256": "d7835ba6952291eebe7bfd685aa7f33c115121ad5e142f52aa766bae4ed9c8d9"
+    },
+    {
+      "path": "docs/evidence/p1-native-common-D.csv",
+      "sha256": "2ff683f4d01856013baf865cc6d051a4032ab35005392ee9888256c839104f67",
+      "pre_publication_bytes_sha256": "ac5edd15b7b736315425be6da97a94f0eef5ad8727598bf68dab0b74d33ade62"
+    },
+    {
+      "path": "docs/evidence/p1-native-common-C.csv",
+      "sha256": "f56e0d3a355bcb03c546d4edc0b2a0cd763d6f9753db964985b0769e108eb2c2",
+      "pre_publication_bytes_sha256": "611622edb92271934a3a87405e263a0e794abe8f469de6ce5e76265b6bc238df"
+    },
+    {
+      "path": "docs/evidence/p1-budgets.csv",
+      "sha256": "91388330a2c2ec4bf652b3e2fcaede471426627e2aceecf4e681ed359dc3d898",
+      "pre_publication_bytes_sha256": "bc8a8f3171a9c6bfd7d4da7d5a8d3f48d6482d4a45de378008818448580190b2"
+    },
+    {
+      "path": "docs/evidence/p1-endpoints.csv",
+      "sha256": "bc9d19ef07e0f378af79d84129dc3be07ac78c9b502f3a7ccdd75d997d92d5af",
+      "pre_publication_bytes_sha256": "6387cdc2ababde24326034b3a7df47eb276e93ec31c3107fe714a8c41f9adcfa"
+    },
+    {
+      "path": "docs/evidence/p1-native-curves.svg",
+      "sha256": "9a81da037bb543013092c52701e2a4011c5ece2c997a9d3395501830a41771ae",
+      "pre_publication_bytes_sha256": "73a0ee24bba755aeb5d408804e32e24950b3a4fb8edd116830de7b98370ba517"
+    },
+    {
+      "path": "docs/evidence/p1-native-curves.pdf",
+      "sha256": "dadcfac06b937b77cbae4cde5702dd8a62c301b1fee5e06d42c59381e73da6d0"
+    },
+    {
+      "path": "docs/evidence/p1-native-curves.png",
+      "sha256": "dc1792adab17a2c2b7bfa475cae5f85e2fd5e25ca2e24d553b18afb71643a428"
+    },
+    {
+      "path": "docs/evidence/p1-native-late-curves.svg",
+      "sha256": "ac77e51325e5333cb70b5c968d92febc26e146ddf3aa13a059c60a8bb65713b7",
+      "pre_publication_bytes_sha256": "ad41de021978ea244eb8aa52a5acd925ef2e12e1c95ac98fa2a9dc33c63f9013"
+    },
+    {
+      "path": "docs/evidence/p1-native-late-curves.pdf",
+      "sha256": "ae807f91d8048e45e497a473366a3cd3eba89ecc2ac3455d9cb3bfe3f942bd37"
+    },
+    {
+      "path": "docs/evidence/p1-native-late-curves.png",
+      "sha256": "d76f0a6724953a272f53aaeebb0bc369cb46199f9bf1b11bcfb4d123c18f40c2"
+    }
+  ],
+  "actual_P1_HSDP16_resume": {
+    "status": "passed",
+    "expected_steps": 8,
+    "model_tensor_count": 103,
+    "model_elements": 912567744,
+    "max_absolute_model_error": 0.0,
+    "atol": 2e-05,
+    "rtol": 0.0002,
+    "training_rank_count": 16,
+    "data_rank_count": 16,
+    "optimizer": {
+      "tensor_count": 309,
+      "state_key_count": 1545,
+      "max_absolute_error": 0.0,
+      "atol": 2e-05,
+      "rtol": 0.0002,
+      "scalar_hyperparameters": "exact"
+    },
+    "global_progress": {
+      "completed_updates": 8,
+      "padded_positions": 8388608,
+      "input_tokens": 8388608,
+      "label_tokens": 8388608,
+      "recursive_input_tokens": 125829120
+    },
+    "schedule_total_steps": 19537,
+    "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+    "retained_raw_sha256": "3a5ff442955bad87480a28e873d57fe3012a6e33aba2b8cd92642f3a8d898289",
+    "retention": "Original uninterrupted step8 full DCP is protected under its continuation/step-8; the original main run then continued to19537. Resumed proof branch remains at8."
+  },
+  "publication": {
+    "text_artifacts": "CSV line endings and SVG line-end whitespace normalized for Git; numeric CSV records unchanged. Original metadata manifest/source catalog and recipe JSON bytes are preserved.",
+    "raw_vs_public_hashes": "Artifact sha256 identifies published bytes; pre_publication_bytes_sha256 identifies original generated bytes where formatting was normalized."
+  }
+}

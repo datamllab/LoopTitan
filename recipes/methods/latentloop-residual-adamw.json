@@ -1,0 +1,152 @@
+{
+  "name": "method-latentloop-residual-adamw",
+  "model": {
+    "vocab_size": 151669,
+    "dim": 1056,
+    "hidden_dim": 384,
+    "num_heads": 12,
+    "num_kv_heads": 1,
+    "num_experts": 88,
+    "top_k": 8,
+    "num_cells": 6,
+    "num_visits": 2,
+    "visit_capacity": null,
+    "prefix_cells": 3,
+    "suffix_cells": 3,
+    "order": "stack",
+    "attention_per_visit": false,
+    "router_per_visit": false,
+    "norm_per_visit": false,
+    "lora_attention_rank": 0,
+    "lora_ffn_rank": 0,
+    "residual_scale": 1.0,
+    "visit_residual_scales": [
+      0.25,
+      1.0
+    ],
+    "rms_eps": 1e-06,
+    "rope_theta": 10000.0,
+    "max_seq_len": 4096,
+    "qk_norm": false,
+    "always_on_hidden_dim": 0,
+    "input_injection": "none",
+    "injection_scale": 1.0,
+    "injection_dt": 0.8047189562170501,
+    "injection_decay": 1.0,
+    "injection_eps": 1e-06,
+    "initial_state": "input",
+    "latent_init_std": 0.6324555320336759,
+    "latent_truncation": 3.0,
+    "state_update": "residual",
+    "memory_scale": 0.5,
+    "memory_beta": 0.5,
+    "exit_distribution": false,
+    "init_std": 0.02,
+    "schema_version": 4,
+    "prefix": null,
+    "core": null,
+    "suffix": null
+  },
+  "training": {
+    "num_visits": 2,
+    "sampled_visits": [],
+    "grad_visits": null,
+    "balance_coeff": 0.01,
+    "z_loss_coeff": 0.0,
+    "depth_seed": 0,
+    "depth_rule": "uniform_update_v1",
+    "aux_reduction": "local_micro_call_mean",
+    "depth_mean": 4.0,
+    "depth_log_std": 0.5,
+    "objective": "terminal_ce",
+    "entropy_coeff": 0.0
+  },
+  "source": {
+    "method": "LatentLoop",
+    "version": "v1",
+    "url": "https://arxiv.org/html/2610.19975v1",
+    "sections": [
+      "2.1",
+      "3.1",
+      "Figure 2",
+      "Table 5"
+    ],
+    "selected_path": "middle_half_R2_shared_fixed_asymmetric_residual_0.25_1",
+    "track": "P2",
+    "constructor": "latentloop_residual_spec"
+  },
+  "preserved": [
+    "Middle half of physical layers is executed twice with every core owner shared (attention, router, experts, norms): the paper's MoE Loop (Section 2.1).",
+    "Every core attention/FFN residual branch is scaled by 0.25 in the first visit and by 1 in the second; independent prelude/coda use 1. (0.25, 1) is the paper's best fixed pair at 1.3B and 3B, below (1, 1) and (0.5, 0.5) (Section 3.1, Figure 2b).",
+    "Fixed depth, full BPTT, terminal cross entropy."
+  ],
+  "adaptations": [
+    "This is LatentLoop Section 3.1's fixed (0.25, 1) per-visit residual finding on SMELT's loop, not the paper's final LatentLoop method. That method runs the first visit on a 2x mean-pooled sequence, writes it back through a learned scaled decoder and spends the saved compute on a wider model (Sections 3.2-3.4); it is not reproduced here because it needs sequence pooling, which the common model lacks.",
+    "Fixed (0.25, 1) instead of learned per-visit coefficients: the learned ones end near (0.27, 0.87) at 1.3B and (0.36, 1.09) at 3B, but the paper reports validation NLL only for fixed pairs (Section 3.1).",
+    "Attention stays shared across visits: at matched parameters, untying it in the full-resolution MoE Loop raised validation NLL from 2.0293 to 2.0319 (Table 5).",
+    "Track P2's AdamW, schedule and run settings replace the paper's training settings (AdamW, peak LR 1e-3 annealed to 1e-4 by 1-sqrt over the last 20%, 500 warmup updates, router aux 1e-3, FineWeb-Edu with the 32K TinyLlama tokenizer, 8 query and 2 KV heads with QK norm).",
+    "Publicly reconstructible DCLM replaces the original private corpus; the frozen manifest and tokenizer are separate comparison identities.",
+    "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+    "Track P2's AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim.",
+    "Geometry: M3's, unchanged, so this spec is LatentLoop Section 3.1's (0.25, 1) residual on M3: P2 SMELT's 12 physical layers as 3 prefix, 6 core layers run twice and 3 suffix (18 effective layers) at width 1056 (12 heads of 88), 88 experts of width 384, top-8, so LatentLoop-Residual - M3 differs only in the core residual scales, (0.25, 1) against SMELT's (0.5, 0.5), and parameters, training FLOPs and KV equal M3's; like the paper's MoE Loop against its Base (1184 against 1408 wide, 92 against 64 experts at 3B; Table 6), M3 is narrower than m0 with more experts (1056 against 1280, 88 against 64). M3 trains without activation checkpointing on 8 x H200 at local batch 16 (#180), and the residual scales change no activation, so neither does this.",
+    "Matrix initialization std=.02 and unit norm scales are P2's; seq 4096, 1,048,576 positions per update, the schedule (95-update linear warmup, constant peak, last 20% linear to 0) and the AdamW or Muon settings are Track P2's; the training recipe (objective, depth, aux coefficient, expert LR multiplier) is the constructor's."
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "base_lr": 0.0012,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.1,
+    "zero_weight_decay_roles": [
+      "norm",
+      "embedding",
+      "lm_head",
+      "router"
+    ],
+    "expert_group_size": 1,
+    "expert_lr_multiplier": 1.0,
+    "max_norm": 1.0
+  },
+  "inference": {
+    "num_visits": 2,
+    "readout": "terminal",
+    "generation": "fixed_depth",
+    "cache": "logical_visit_slots",
+    "qualification_evidence": []
+  },
+  "run": {
+    "seq_len": 4096,
+    "global_batch_positions": 1048576,
+    "successful_updates": 4769,
+    "schedule_total_steps": 4769,
+    "validation_interval": 477,
+    "seed": 42,
+    "mixed_precision_param": "bfloat16",
+    "manifest_identity": null,
+    "schedule": {
+      "name": "warmup_stable_decay",
+      "coordinate": "successful_optimizer_updates",
+      "total_steps": 4769,
+      "warmup_steps": 95,
+      "decay_ratio": 0.2,
+      "decay_type": "linear",
+      "min_lr_factor": 0.0
+    },
+    "data_infinite": false,
+    "validation_label_tokens": 1000000,
+    "validation_infinite": false,
+    "checkpoint_interval": 477,
+    "training_seeds": [
+      42
+    ],
+    "activation_checkpointing": "none",
+    "panel": "methods",
+    "local_batch_size": 16,
+    "keep_latest_k": 0
+  },
+  "evidence": [],
+  "schema_version": 1
+}

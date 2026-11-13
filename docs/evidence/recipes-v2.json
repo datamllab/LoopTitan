@@ -1,0 +1,3453 @@
+{
+  "schema_version": 1,
+  "kind": "v2_method_engineering_qualification",
+  "observed_at_utc": "2026-10-23T17:27:14.047512+00:00",
+  "status": "passed",
+  "scope": "v2_full_acceptance",
+  "methods": {
+    "huginn": {
+      "recipe": {
+        "name": "huginn",
+        "schema_version": 1,
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 4,
+          "visit_capacity": null,
+          "prefix_cells": 1,
+          "suffix_cells": 1,
+          "order": "stack",
+          "attention_per_visit": false,
+          "router_per_visit": false,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "linear",
+          "injection_scale": 1.0,
+          "initial_state": "random",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "residual",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 4,
+          "sampled_visits": [],
+          "grad_visits": 2,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 42,
+          "depth_rule": "poisson_lognormal_micro_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "preserved": [
+          "Independent prelude supplies a live anchor to every recurrent stack visit; independent coda reads the state.",
+          "Training starts from an independent truncated-normal latent, separate from parameter initialization.",
+          "Shifted Poisson-lognormal depth is sampled per microbatch without a hard cap; only the last min(k,r) visits differentiate."
+        ],
+        "adaptations": [
+          "Common pre-norm sparse cells replace the original dense sandwich/core-boundary normalization; original Dense performance is not claimed.",
+          "Mean depth, lognormal spread and gradient-tail length are explicit small-model adaptations.",
+          "Fixed-depth evaluation starts from zero deterministically; this is an evaluation adaptation, not the random training initial-state distribution.",
+          "The first delivery uses uncached fixed-depth generation.",
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ]
+      },
+      "inference": {
+        "num_visits": 4,
+        "readout": "terminal",
+        "generation": "fixed_depth",
+        "cache": "uncached",
+        "initial_state": "zero"
+      },
+      "paper_source": {
+        "method": "Huginn-inspired MoE",
+        "version": "v2",
+        "url": "https://arxiv.org/html/2502.05171v2",
+        "sections": [
+          "3",
+          "4.1"
+        ],
+        "selected_path": "random_latent_live_anchor_sampled_tail_gradients"
+      },
+      "training_source": {
+        "commit": "78d799dfa11c6be4130be63b252de9b91ae5aa8b",
+        "dirty": false,
+        "files": {
+          "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+          "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+          "src/moeloop/comparison.py": "cb90c8439304a3edbe79552dd3f385877f46f7ec66c4b6f8f72c7fe5848c0456",
+          "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+          "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+          "src/moeloop/evaluate.py": "bc4c53b80376bce024b47ffdf53f057eee57466ed3e7f9de1c1905f6def4e45e",
+          "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+          "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+          "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+          "src/moeloop/hf.py": "dcabc86b238787cf3cba27ad6ff2f8ebc3be97fab51a9fa3f89256ffef7dcfa3",
+          "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+          "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+          "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+          "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+          "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+          "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+          "src/moeloop/recipes.py": "9af8be8183444d3061ee54980a46ce09719ba9e399781b44a4f196afd14f318a",
+          "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+          "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+          "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049",
+          "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+          "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+          "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+          "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+          "scripts/recipe_qualification.py": "465fc083dc9d5d7454a0b4542b7df316789632f9c57c94a48a6d483c788fb3ce",
+          "scripts/check_release.py": "c26fe9bd299b39a4f8e28d00d5a26172ec36eb46efab48095e35b023992471bc",
+          "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f"
+        }
+      },
+      "runtime": {
+        "torch": "2.14.0+cu130",
+        "cuda": "13.0",
+        "python": "3.12.15"
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1,
+        "seq_len": 2048,
+        "precision": [
+          "float32",
+          "bfloat16",
+          "float32"
+        ]
+      },
+      "parallelism": {
+        "data_parallel_replicate_degree": 1,
+        "data_parallel_shard_degree": 2,
+        "tensor_parallel_degree": 1,
+        "expert_parallel_degree": 1
+      },
+      "global_batch_size": 16,
+      "seed": 42,
+      "completed_updates": 512,
+      "global_progress": {
+        "completed_updates": 512,
+        "padded_positions": 16777216,
+        "input_tokens": 16777216,
+        "label_tokens": 16777216,
+        "recursive_input_tokens": 170917888
+      },
+      "training_terminal_ce": {
+        "first": 11.953733444213867,
+        "last": 7.001308441162109
+      },
+      "native_validation": {
+        "points": 9,
+        "observations": [
+          {
+            "step": 1,
+            "ce": 11.968878746032715,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 64,
+            "ce": 9.341779708862305,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 128,
+            "ce": 7.957931995391846,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 192,
+            "ce": 7.624571800231934,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 256,
+            "ce": 7.437443733215332,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 320,
+            "ce": 7.28856086730957,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 384,
+            "ce": 7.187941551208496,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 448,
+            "ce": 7.129850387573242,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          },
+          {
+            "step": 512,
+            "ce": 7.093894004821777,
+            "valid_tokens": 65536,
+            "num_visits": 4,
+            "seq_len": 2048
+          }
+        ]
+      },
+      "dynamics": {
+        "depth_min": 1,
+        "depth_max": 19,
+        "microbatches": 512,
+        "gradient_tail": 2
+      },
+      "hf": {
+        "heldout": {
+          "ce": 6.5500147342681885,
+          "valid_tokens": 1024,
+          "seq_len": 256,
+          "split": "validation",
+          "num_visits": 4,
+          "complete_split": false
+        },
+        "scope": "recorded small validation subset; engineering delivery",
+        "repository_package_imported": false,
+        "cache": {
+          "supported": false,
+          "reason": "Selected fixed-depth HF path explicitly disables cache."
+        },
+        "generation": {
+          "input_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504
+            ]
+          ],
+          "uncached_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              11,
+              279,
+              220,
+              16
+            ]
+          ],
+          "recomputed_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              11,
+              279,
+              220,
+              16
+            ]
+          ],
+          "readout": "terminal",
+          "num_visits": 4
+        },
+        "export_provenance_sha256": "9067194d5a5681d5e5abfd25d6860266daa8efbf237231e7458150a7ebbabe1c"
+      },
+      "continuation": {
+        "status": "passed",
+        "expected_steps": 8,
+        "model_tensor_count": 45,
+        "model_elements": 40632704,
+        "max_absolute_model_error": 0.0,
+        "atol": 2e-05,
+        "rtol": 0.0002,
+        "training_rank_count": 2,
+        "data_rank_count": 2,
+        "optimizer": {
+          "tensor_count": 135,
+          "state_key_count": 675,
+          "max_absolute_error": 0.0,
+          "atol": 2e-05,
+          "rtol": 0.0002,
+          "scalar_hyperparameters": "exact"
+        },
+        "global_progress": {
+          "completed_updates": 8,
+          "padded_positions": 262144,
+          "input_tokens": 262144,
+          "label_tokens": 262144,
+          "recursive_input_tokens": 2228224
+        }
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 40632704,
+          "unique_trainable": 40632704,
+          "unique_non_embedding": 1805440,
+          "non_input_embedding": 21219072,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 196608,
+            "norms": 1024,
+            "router": 2048,
+            "routed_experts": 1572864,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 32768
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 1,
+              "logical_calls": 1,
+              "inference_logical_calls": 1,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 1,
+                "router": 1,
+                "norm_pairs": 1,
+                "expert_banks": 1
+              },
+              "parameters": {
+                "attention": 49152,
+                "norms": 256,
+                "router": 512,
+                "routed_experts": 393216,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 443136
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": null,
+              "inference_logical_calls": 8,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 2,
+                "router": 2,
+                "norm_pairs": 2,
+                "expert_banks": 2
+              },
+              "parameters": {
+                "attention": 98304,
+                "norms": 512,
+                "router": 1024,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 886272,
+              "nominal_logical_calls": 8
+            },
+            "suffix": {
+              "physical_banks": 1,
+              "logical_calls": 1,
+              "inference_logical_calls": 1,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 1,
+                "router": 1,
+                "norm_pairs": 1,
+                "expert_banks": 1
+              },
+              "parameters": {
+                "attention": 49152,
+                "norms": 256,
+                "router": 512,
+                "routed_experts": 393216,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 443136
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": null,
+          "backward_cells": null,
+          "inference_cells": 10,
+          "attention": null,
+          "router": null,
+          "head": 1,
+          "expert_assignments_per_input_token": null,
+          "recompute_cells": null,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent.",
+          "nominal": {
+            "forward_cells": 10,
+            "attention": 10,
+            "router": 10,
+            "head": 1,
+            "expert_assignments_per_input_token": 20
+          }
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": null,
+          "backward_components": null,
+          "recompute_components": null,
+          "forward_per_token": null,
+          "backward_per_token": null,
+          "recompute_per_token": null,
+          "training_per_token": null,
+          "training_per_forward_batch": null,
+          "activation_checkpointing": "none",
+          "nominal_forward_components": {
+            "attention_projections": 983040,
+            "attention_scores_values": 10485760,
+            "router": 10240,
+            "routed_experts": 3932160,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 262144,
+            "head": 38827264
+          },
+          "nominal_forward_per_token": 54500608
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": null,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 10,
+          "num_visits": 4,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 2560,
+          "bytes_at_context": 5242880,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+          "inference_cache": "KV is a logical geometry budget; the selected uncached path does not establish cache allocation or cache parity.",
+          "training_path": "Only a supported fixed-depth/full-BPTT path has a training estimate; sampled/truncated paths require actual execution counts.",
+          "training_depth": "Nominal depth illustrates one fixed forward, not the sampled process's expectation, bound or observed work."
+        }
+      },
+      "actual_native_gpu_cost": {
+        "successful_main": {
+          "recorded_gpu_hours": 0.09630372908380297,
+          "native_process_receipts": 1,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        },
+        "all_attempts_and_probes": {
+          "recorded_gpu_hours": 0.2734072890546587,
+          "native_process_receipts": 4,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        }
+      },
+      "retained_raw_sha256": {
+        "request.json": "6fdc696faefc720655ba1e99092f5bf0492ca010dfc1eb7df655811ad8cae4dc",
+        "spec.json": "61ab16fb066f427e1f4c90fd369adcab2ca028711128e7cb77dcf5997748504e",
+        "outcome.json": "aedbb60f1974d46b3c118f4efd443d8cae9be16f0308a9162ce7667306f6cf31",
+        "metrics.jsonl": "27e2f99726de453464747ed1eaddb0b4977170ce8f568435894b552065e36aab",
+        "validation.jsonl": "0afe1bf5c9f9362a7b29b5b844ae9174b5a7d3c53ca68c7108df10160bb604cd",
+        "hf_check.json": "5fbf82c067fe6d7a093106aad5037b66a967f7c3b0df90c20ae63e44c50170e4",
+        "heldout.json": "0a0fe448ff432c7dbda2401506c83b67f9866a65875e7429ee67dbd4fcadefa3",
+        "continuation_report": "b78f4e03623095f6488b80c187332c2f07bfe20e2784e2666e77ac70e2e4579c"
+      },
+      "training_curve": {
+        "path": "recipes-v2-huginn-training.csv",
+        "sha256": "b6ea83cbe45dffe4812bacba164dccf0ac95b883dcf18562cb7336bdf1e51409",
+        "rows": 512
+      }
+    },
+    "loom": {
+      "recipe": {
+        "name": "loom",
+        "schema_version": 1,
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 3,
+          "visit_capacity": 3,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": false,
+          "router_per_visit": true,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "ema",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 3,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "preserved": [
+          "Gamma=lambda/(H*sqrt(M)); later visits reinject embedding input with g_t=lambda/(t*sqrt(M)).",
+          "Global EMA spans layers and visits; local EMA resets per visit. Both read after their current attention write.",
+          "Attention write enters the two EMA numerators once; their normalized reads are added without division by two.",
+          "Routers are independent per visit; experts and norms are shared. Full BPTT retains both memory numerator gradients.",
+          "Every new forward starts with empty memory; no segment-wise detach or optimizer step."
+        ],
+        "adaptations": [
+          "The first delivery uses uncached fixed-depth generation; forward-local memory resets for every new forward.",
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ]
+      },
+      "inference": {
+        "num_visits": 3,
+        "readout": "terminal",
+        "generation": "fixed_depth",
+        "cache": "uncached"
+      },
+      "paper_source": {
+        "method": "LOOM",
+        "version": "v1",
+        "url": "https://arxiv.org/html/2610.01153v1",
+        "sections": [
+          "3",
+          "4.2.1"
+        ],
+        "selected_path": "full_BPTT_dual_EMA_per_visit_router",
+        "attention_per_visit": false
+      },
+      "training_source": {
+        "commit": "78d799dfa11c6be4130be63b252de9b91ae5aa8b",
+        "dirty": false,
+        "files": {
+          "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+          "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+          "src/moeloop/comparison.py": "cb90c8439304a3edbe79552dd3f385877f46f7ec66c4b6f8f72c7fe5848c0456",
+          "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+          "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+          "src/moeloop/evaluate.py": "bc4c53b80376bce024b47ffdf53f057eee57466ed3e7f9de1c1905f6def4e45e",
+          "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+          "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+          "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+          "src/moeloop/hf.py": "dcabc86b238787cf3cba27ad6ff2f8ebc3be97fab51a9fa3f89256ffef7dcfa3",
+          "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+          "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+          "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+          "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+          "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+          "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+          "src/moeloop/recipes.py": "9af8be8183444d3061ee54980a46ce09719ba9e399781b44a4f196afd14f318a",
+          "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+          "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+          "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049",
+          "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+          "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+          "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+          "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+          "scripts/recipe_qualification.py": "465fc083dc9d5d7454a0b4542b7df316789632f9c57c94a48a6d483c788fb3ce",
+          "scripts/check_release.py": "c26fe9bd299b39a4f8e28d00d5a26172ec36eb46efab48095e35b023992471bc",
+          "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f"
+        }
+      },
+      "runtime": {
+        "torch": "2.14.0+cu130",
+        "cuda": "13.0",
+        "python": "3.12.15"
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1,
+        "seq_len": 2048,
+        "precision": [
+          "float32",
+          "bfloat16",
+          "float32"
+        ]
+      },
+      "parallelism": {
+        "data_parallel_replicate_degree": 1,
+        "data_parallel_shard_degree": 2,
+        "tensor_parallel_degree": 1,
+        "expert_parallel_degree": 1
+      },
+      "global_batch_size": 16,
+      "seed": 42,
+      "completed_updates": 512,
+      "global_progress": {
+        "completed_updates": 512,
+        "padded_positions": 16777216,
+        "input_tokens": 16777216,
+        "label_tokens": 16777216,
+        "recursive_input_tokens": 100663296
+      },
+      "training_terminal_ce": {
+        "first": 11.95256233215332,
+        "last": 6.671546936035156
+      },
+      "native_validation": {
+        "points": 9,
+        "observations": [
+          {
+            "step": 1,
+            "ce": 11.944787979125977,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 64,
+            "ce": 9.246094703674316,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 128,
+            "ce": 7.84230375289917,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 192,
+            "ce": 7.380335330963135,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 256,
+            "ce": 7.107513427734375,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 320,
+            "ce": 6.938976764678955,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 384,
+            "ce": 6.847675800323486,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 448,
+            "ce": 6.80259895324707,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 512,
+            "ce": 6.772819519042969,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          }
+        ]
+      },
+      "dynamics": {
+        "state_update": "ema",
+        "visits": 3,
+        "cells": 2,
+        "memory_scale": 0.5,
+        "memory_beta": 0.5,
+        "differentiated_calls_per_microbatch": 6
+      },
+      "hf": {
+        "heldout": {
+          "ce": 6.237102270126343,
+          "valid_tokens": 1024,
+          "seq_len": 256,
+          "split": "validation",
+          "num_visits": 3,
+          "complete_split": false
+        },
+        "scope": "recorded small validation subset; engineering delivery",
+        "repository_package_imported": false,
+        "cache": {
+          "supported": false,
+          "reason": "Selected fixed-depth HF path explicitly disables cache."
+        },
+        "generation": {
+          "input_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504
+            ]
+          ],
+          "uncached_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              315,
+              279,
+              1852,
+              311
+            ]
+          ],
+          "recomputed_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              315,
+              279,
+              1852,
+              311
+            ]
+          ],
+          "readout": "terminal",
+          "num_visits": 3
+        },
+        "export_provenance_sha256": "e30dde9bb1e8a7e605906c59e3d8c38b225fdf80a12b19f1c43ee8105082a8ad"
+      },
+      "continuation": {
+        "status": "passed",
+        "expected_steps": 8,
+        "model_tensor_count": 29,
+        "model_elements": 39715968,
+        "max_absolute_model_error": 0.0,
+        "atol": 2e-05,
+        "rtol": 0.0002,
+        "training_rank_count": 2,
+        "data_rank_count": 2,
+        "optimizer": {
+          "tensor_count": 87,
+          "state_key_count": 435,
+          "max_absolute_error": 0.0,
+          "atol": 2e-05,
+          "rtol": 0.0002,
+          "scalar_hyperparameters": "exact"
+        },
+        "global_progress": {
+          "completed_updates": 8,
+          "padded_positions": 262144,
+          "input_tokens": 262144,
+          "label_tokens": 262144,
+          "recursive_input_tokens": 1572864
+        }
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 39715968,
+          "unique_trainable": 39715968,
+          "unique_non_embedding": 888704,
+          "non_input_embedding": 20302336,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 98304,
+            "norms": 768,
+            "router": 3072,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 6,
+              "inference_logical_calls": 6,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 2,
+                "router": 6,
+                "norm_pairs": 2,
+                "expert_banks": 2,
+                "ffn_output_norm": 2
+              },
+              "parameters": {
+                "attention": 98304,
+                "norms": 768,
+                "router": 3072,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 888576
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 6,
+          "backward_cells": 6,
+          "inference_cells": 6,
+          "attention": 6,
+          "router": 6,
+          "head": 1,
+          "expert_assignments_per_input_token": 12,
+          "recompute_cells": 0,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent."
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 589824,
+            "attention_scores_values": 6291456,
+            "router": 6144,
+            "routed_experts": 2359296,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 38827264
+          },
+          "backward_components": {
+            "attention_projections": 1179648,
+            "attention_scores_values": 12582912,
+            "router": 12288,
+            "routed_experts": 4718592,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 77654528
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 0
+          },
+          "forward_per_token": 48073984,
+          "backward_per_token": 96147968,
+          "recompute_per_token": 0,
+          "training_per_token": 144221952,
+          "training_per_forward_batch": 295366557696,
+          "activation_checkpointing": "none"
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 12288,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 6,
+          "num_visits": 3,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 1536,
+          "bytes_at_context": 3145728,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+          "ema_state": "Forward-local EMA updates, normalization and reinjection are non-matrix work, not included in FLOPs.",
+          "inference_cache": "KV is a logical geometry budget; the selected uncached path does not establish cache allocation or cache parity."
+        }
+      },
+      "actual_native_gpu_cost": {
+        "successful_main": {
+          "recorded_gpu_hours": 0.09265920069482592,
+          "native_process_receipts": 1,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        },
+        "all_attempts_and_probes": {
+          "recorded_gpu_hours": 0.26922115206718444,
+          "native_process_receipts": 4,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        }
+      },
+      "retained_raw_sha256": {
+        "request.json": "1cc9fc6d1c20ac0b3a43d83f76c9f5e95991fc63399548c1eeeffc91f0044dd1",
+        "spec.json": "b4dcb71a74c820715d03c538ae75cbff9c0ddcf5825f227ea11586fe5a6205ed",
+        "outcome.json": "90caf91ae5eac3c6ba25b1c6a9a513019956f330177baff350b484bcdb46a37c",
+        "metrics.jsonl": "7f290947b471805f3f6a71b957483f6ba651a95341b6d4a22aca6d70662f1012",
+        "validation.jsonl": "c3120c50761a7b07ba944bf8c0857a086cfacf58d1da03b80c88ae92f01ef91f",
+        "hf_check.json": "543697a6819d80d6caee44830c837e7a4d90f9052cf4e8ee14511123f58c5e7f",
+        "heldout.json": "b8b8e31090d2cbd15244b5b6ce80152bc98b387f36d150fcc2448c724bf66e1e",
+        "continuation_report": "74a90fe49488799c66b303ef13b1c7a77025432eeafc3121305d3eadea78b24a"
+      },
+      "training_curve": {
+        "path": "recipes-v2-loom-training.csv",
+        "sha256": "218743e31f0255d0b51b578d76e11a94559aefe60fe49cdd87a39cd3a1fffe87",
+        "rows": 512
+      }
+    },
+    "ouro": {
+      "recipe": {
+        "name": "ouro",
+        "schema_version": 1,
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 3,
+          "visit_capacity": null,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": false,
+          "router_per_visit": false,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "residual",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": true,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 3,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "expected_ce",
+          "entropy_coeff": 0.1
+        },
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "preserved": [
+          "A shared linear gate defines tokenwise conditional halting hazards; the final exit receives all remaining survival probability.",
+          "Training minimizes sum_r p_r*CE_r minus beta*H(p), with full gradients through the gate, backbone and unique head.",
+          "Every visit is executed; terminal logits provide common fixed-depth evaluation and generation."
+        ],
+        "adaptations": [
+          "Shared gate weights and bias start at zero; the entropy coefficient is an explicit public-stack choice.",
+          "Each visit reads through the common final norm and unique output head, with no independent coda.",
+          "Stage II, token-level early exit and missing-KV strategies are outside this selected path.",
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ]
+      },
+      "inference": {
+        "num_visits": 3,
+        "readout": "terminal",
+        "generation": "fixed_depth",
+        "cache": "logical_visit_slots"
+      },
+      "paper_source": {
+        "method": "Ouro",
+        "version": "v5",
+        "url": "https://arxiv.org/html/2510.25741v5",
+        "sections": [
+          "3.2",
+          "3.3",
+          "3.4"
+        ],
+        "selected_path": "stage_I_full_depth_tokenwise_expected_CE_entropy"
+      },
+      "training_source": {
+        "commit": "78d799dfa11c6be4130be63b252de9b91ae5aa8b",
+        "dirty": false,
+        "files": {
+          "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+          "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+          "src/moeloop/comparison.py": "cb90c8439304a3edbe79552dd3f385877f46f7ec66c4b6f8f72c7fe5848c0456",
+          "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+          "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+          "src/moeloop/evaluate.py": "bc4c53b80376bce024b47ffdf53f057eee57466ed3e7f9de1c1905f6def4e45e",
+          "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+          "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+          "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+          "src/moeloop/hf.py": "dcabc86b238787cf3cba27ad6ff2f8ebc3be97fab51a9fa3f89256ffef7dcfa3",
+          "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+          "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+          "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+          "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+          "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+          "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+          "src/moeloop/recipes.py": "9af8be8183444d3061ee54980a46ce09719ba9e399781b44a4f196afd14f318a",
+          "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+          "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+          "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049",
+          "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+          "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+          "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+          "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+          "scripts/recipe_qualification.py": "465fc083dc9d5d7454a0b4542b7df316789632f9c57c94a48a6d483c788fb3ce",
+          "scripts/check_release.py": "c26fe9bd299b39a4f8e28d00d5a26172ec36eb46efab48095e35b023992471bc",
+          "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f"
+        }
+      },
+      "runtime": {
+        "torch": "2.14.0+cu130",
+        "cuda": "13.0",
+        "python": "3.12.15"
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1,
+        "seq_len": 2048,
+        "precision": [
+          "float32",
+          "bfloat16",
+          "float32"
+        ]
+      },
+      "parallelism": {
+        "data_parallel_replicate_degree": 1,
+        "data_parallel_shard_degree": 2,
+        "tensor_parallel_degree": 1,
+        "expert_parallel_degree": 1
+      },
+      "global_batch_size": 16,
+      "seed": 42,
+      "completed_updates": 512,
+      "global_progress": {
+        "completed_updates": 512,
+        "padded_positions": 16777216,
+        "input_tokens": 16777216,
+        "label_tokens": 16777216,
+        "recursive_input_tokens": 100663296
+      },
+      "training_terminal_ce": {
+        "first": 11.960647583007812,
+        "last": 6.768622875213623
+      },
+      "native_validation": {
+        "points": 9,
+        "observations": [
+          {
+            "step": 1,
+            "ce": 11.948989868164062,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 64,
+            "ce": 9.222939491271973,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 128,
+            "ce": 7.888274192810059,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 192,
+            "ce": 7.5085062980651855,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 256,
+            "ce": 7.239564895629883,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 320,
+            "ce": 7.052261829376221,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 384,
+            "ce": 6.9453125,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 448,
+            "ce": 6.889313220977783,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 512,
+            "ce": 6.853518486022949,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          }
+        ]
+      },
+      "dynamics": {
+        "objective": "expected_ce",
+        "entropy_max": 1.078760027885437,
+        "terminal_readout": "standard_lm_ce",
+        "exit_probabilities_last": [
+          0.38773855566978455,
+          0.24259832501411438,
+          0.36966314911842346
+        ]
+      },
+      "hf": {
+        "heldout": {
+          "ce": 6.302900314331055,
+          "valid_tokens": 1024,
+          "seq_len": 256,
+          "split": "validation",
+          "num_visits": 3,
+          "complete_split": false
+        },
+        "scope": "recorded small validation subset; engineering delivery",
+        "repository_package_imported": false,
+        "cache": {
+          "compared_tokens": 3,
+          "max_absolute_error": 2.86102294921875e-06,
+          "max_reference_absolute_value": 8.768518447875977,
+          "atol": 1e-05,
+          "rtol": 5e-05
+        },
+        "generation": {
+          "input_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504
+            ]
+          ],
+          "cached_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              315,
+              279,
+              1852,
+              315
+            ]
+          ],
+          "uncached_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              315,
+              279,
+              1852,
+              315
+            ]
+          ],
+          "readout": "terminal",
+          "num_visits": 3
+        },
+        "export_provenance_sha256": "5ae6b5c683829898ec736ac2ef04b72d8654662479207aa20673fa7c07cb1c54"
+      },
+      "continuation": {
+        "status": "passed",
+        "expected_steps": 8,
+        "model_tensor_count": 25,
+        "model_elements": 39713793,
+        "max_absolute_model_error": 0.0,
+        "atol": 2e-05,
+        "rtol": 0.0002,
+        "training_rank_count": 2,
+        "data_rank_count": 2,
+        "optimizer": {
+          "tensor_count": 75,
+          "state_key_count": 375,
+          "max_absolute_error": 0.0,
+          "atol": 2e-05,
+          "rtol": 0.0002,
+          "scalar_hyperparameters": "exact"
+        },
+        "global_progress": {
+          "completed_updates": 8,
+          "padded_positions": 262144,
+          "input_tokens": 262144,
+          "label_tokens": 262144,
+          "recursive_input_tokens": 1572864
+        }
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_expected_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 39713793,
+          "unique_trainable": 39713793,
+          "unique_non_embedding": 886529,
+          "non_input_embedding": 20300161,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 98304,
+            "norms": 512,
+            "router": 1024,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "exit_gate": 129
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 6,
+              "inference_logical_calls": 6,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 2,
+                "router": 2,
+                "norm_pairs": 2,
+                "expert_banks": 2
+              },
+              "parameters": {
+                "attention": 98304,
+                "norms": 512,
+                "router": 1024,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 886272
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 6,
+          "backward_cells": 6,
+          "inference_cells": 6,
+          "attention": 6,
+          "router": 6,
+          "head": 3,
+          "expert_assignments_per_input_token": 12,
+          "recompute_cells": 0,
+          "head_definition": "One logical projection per training visit; fixed-depth inference uses only the terminal head. Chunk count is runtime dependent.",
+          "exit_gate": 3,
+          "recompute_head": 3,
+          "inference_head": 1
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 589824,
+            "attention_scores_values": 6291456,
+            "router": 6144,
+            "routed_experts": 2359296,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 116481792,
+            "exit_gate": 768
+          },
+          "backward_components": {
+            "attention_projections": 1179648,
+            "attention_scores_values": 12582912,
+            "router": 12288,
+            "routed_experts": 4718592,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 232963584,
+            "exit_gate": 1536
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 116481792,
+            "exit_gate": 0
+          },
+          "forward_per_token": 125729280,
+          "backward_per_token": 251458560,
+          "recompute_per_token": 116481792,
+          "training_per_token": 493669632,
+          "training_per_forward_batch": 1011035406336,
+          "activation_checkpointing": "none",
+          "objective_recompute_policy": "Expected CE uses nonreentrant head/CE checkpointing; one additional head matrix forward per visit."
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 12288,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 6,
+          "num_visits": 3,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 1536,
+          "bytes_at_context": 3145728,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted. Exit sigmoid, survival, entropy and loss weighting are also excluded.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions."
+        }
+      },
+      "actual_native_gpu_cost": {
+        "successful_main": {
+          "recorded_gpu_hours": 0.15901083019044665,
+          "native_process_receipts": 1,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        },
+        "all_attempts_and_probes": {
+          "recorded_gpu_hours": 0.3412758081489139,
+          "native_process_receipts": 4,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        }
+      },
+      "retained_raw_sha256": {
+        "request.json": "ea4a6bbe376027cf5e3b4cfe116930491528b6da0e3f6867ffe21647797db039",
+        "spec.json": "693804553504e3ed07b4777f3a3fbc0b875ebd7ba0bbeef7a34e1d4f07e8ad53",
+        "outcome.json": "081c604df60d65fcc833c36019f91e73b280d01223255a9c567ddc61a9b4c7de",
+        "metrics.jsonl": "9666e6967250feeefa3dfffba71210ae29e81b20d81e11dcd2269ac51f527a26",
+        "validation.jsonl": "233ac40b65734ca77f9fc3cb69f72221e228fcdc6c1a6189753e98ef2719aeda",
+        "hf_check.json": "3cb9a5e4133096256cc933946adb1fd0bb2b82827a7d16da4082bcd61ae44d4a",
+        "heldout.json": "b92f15305a52d43d29ad22c9bc6893f6592d0a33e506524ad3619978e757e7fc",
+        "continuation_report": "fe58c9cde9893e41868bf9fec37b3ca675ffbe55c789eb9b651f2967f6e36418"
+      },
+      "actual_optimizer_update_moments": {
+        "gate": {
+          "tensor_count": 2,
+          "nonzero_moment_elements": 129
+        },
+        "head": {
+          "tensor_count": 1,
+          "nonzero_moment_elements": 19413632
+        },
+        "backbone": {
+          "tensor_count": 14,
+          "nonzero_moment_elements": 884736
+        }
+      },
+      "training_curve": {
+        "path": "recipes-v2-ouro-training.csv",
+        "sha256": "89dcae4b7bccfddcfe2f3033a0d74a0fdc2b2cad5f2485efecba366462ddfa7a",
+        "rows": 512
+      }
+    },
+    "loom_attention": {
+      "recipe": {
+        "name": "loom_attention",
+        "schema_version": 1,
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 3,
+          "visit_capacity": 3,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": true,
+          "router_per_visit": true,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "ema",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 3,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "preserved": [
+          "Gamma=lambda/(H*sqrt(M)); later visits reinject embedding input with g_t=lambda/(t*sqrt(M)).",
+          "Global EMA spans layers and visits; local EMA resets per visit. Both read after their current attention write.",
+          "Attention write enters the two EMA numerators once; their normalized reads are added without division by two.",
+          "Routers are independent per visit; experts and norms are shared. Full BPTT retains both memory numerator gradients.",
+          "Every new forward starts with empty memory; no segment-wise detach or optimizer step."
+        ],
+        "adaptations": [
+          "The first delivery uses uncached fixed-depth generation; forward-local memory resets for every new forward.",
+          "Independent per-visit attention is an explicit structure-state hybrid; all memory and reinjection equations are retained.",
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ]
+      },
+      "inference": {
+        "num_visits": 3,
+        "readout": "terminal",
+        "generation": "fixed_depth",
+        "cache": "uncached"
+      },
+      "paper_source": {
+        "method": "LOOM",
+        "version": "v1",
+        "url": "https://arxiv.org/html/2610.01153v1",
+        "sections": [
+          "3",
+          "4.2.1"
+        ],
+        "selected_path": "full_BPTT_dual_EMA_per_visit_router",
+        "attention_per_visit": true
+      },
+      "training_source": {
+        "commit": "78d799dfa11c6be4130be63b252de9b91ae5aa8b",
+        "dirty": false,
+        "files": {
+          "src/moeloop/__init__.py": "449821cfe4bcb8c269628a3dfee81c430bb60d10b211c01b577cadd042731270",
+          "src/moeloop/cache.py": "3cbd10e9a6be0a925b966181fa5bcf30b71272ce3796d8b4194edfdb910e2c1a",
+          "src/moeloop/comparison.py": "cb90c8439304a3edbe79552dd3f385877f46f7ec66c4b6f8f72c7fe5848c0456",
+          "src/moeloop/costs.py": "3e18ba6fe36ec847dc50b244cc8259d0cdd3a58fb03cef39b81a6634108a39e1",
+          "src/moeloop/data.py": "c147af66e18fbc892cd23be7bb4a6635b41891e1cd39db3993af93ae4adabb55",
+          "src/moeloop/evaluate.py": "bc4c53b80376bce024b47ffdf53f057eee57466ed3e7f9de1c1905f6def4e45e",
+          "src/moeloop/export.py": "42592eea8b29e598595cd2216ada0477599fdc48b21a9198fcee5b5cf8e9ff15",
+          "src/moeloop/generate.py": "77cfc9b36ce451d51ab09e5dfe76ff67819ae6570c662a27663fcdd281baee6d",
+          "src/moeloop/halting.py": "a72e49bd016275c1a3fe3a0e72a0ede20d7a5f279300f8ff1ff82327e0b7a521",
+          "src/moeloop/hf.py": "dcabc86b238787cf3cba27ad6ff2f8ebc3be97fab51a9fa3f89256ffef7dcfa3",
+          "src/moeloop/latent.py": "ed98b68d5359631842eab287733f4d054acff950ec8509994c0eb9d0ec9c5de8",
+          "src/moeloop/memory.py": "1e4b5d7640aa960fe65484b586ada36b5a003aab977c3b7811850c13f2ba5c02",
+          "src/moeloop/model.py": "091b22dba432409a63e42b4063ca40758cdb50407adb697ded38ffa887e948c5",
+          "src/moeloop/moe.py": "77176d615438087bdda4fc5f357ff0b12f4ae82b676afa92edf22727b500cd87",
+          "src/moeloop/prepare.py": "8625fc6532aa67bb475fa0f0abdbc50af469285ce92c3e7deab189a07064eae9",
+          "src/moeloop/recipe_spec.py": "7aaca28b77ebac0fd02972b996fd734ac527bb4ab57a58584470978a1bc6d19b",
+          "src/moeloop/recipes.py": "9af8be8183444d3061ee54980a46ce09719ba9e399781b44a4f196afd14f318a",
+          "src/moeloop/titan.py": "4d565afea73eff6eb0e7d244f96164d4280a7bfc03cabc5774a5117abe796cdd",
+          "src/moeloop/train.py": "932fb106af2e306d5d9eea73d52b9602c391a2df6a887f5a7745ba8d4e7e74f3",
+          "src/moeloop/training.py": "aee979734548b69cece597e4b0cb95b61ed1c2c327b1c76dae3f3417967e1049",
+          "scripts/recipe_anchor.py": "07268715f97d934b87fd78e020bdfe42d0842812106ca100417a198402c07c99",
+          "scripts/recipe_benchmark.py": "9ad10c85a2290502350bcb0389c0866b0367b4007a7c517bd4626c5a57db761b",
+          "scripts/recipe_benchmark_fsdp8.py": "6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4",
+          "scripts/recipe_data.py": "314ccc4b966f9c9c64b97214b3e2aca8d87913afc6cda8c113ce3b9f35d8e999",
+          "scripts/recipe_qualification.py": "465fc083dc9d5d7454a0b4542b7df316789632f9c57c94a48a6d483c788fb3ce",
+          "scripts/check_release.py": "c26fe9bd299b39a4f8e28d00d5a26172ec36eb46efab48095e35b023992471bc",
+          "scripts/qualification.py": "b342b081eb7b32cde71e4c03a96fa28e09c158c526540573581aaa48c8cf6b6f"
+        }
+      },
+      "runtime": {
+        "torch": "2.14.0+cu130",
+        "cuda": "13.0",
+        "python": "3.12.15"
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1,
+        "seq_len": 2048,
+        "precision": [
+          "float32",
+          "bfloat16",
+          "float32"
+        ]
+      },
+      "parallelism": {
+        "data_parallel_replicate_degree": 1,
+        "data_parallel_shard_degree": 2,
+        "tensor_parallel_degree": 1,
+        "expert_parallel_degree": 1
+      },
+      "global_batch_size": 16,
+      "seed": 42,
+      "completed_updates": 512,
+      "global_progress": {
+        "completed_updates": 512,
+        "padded_positions": 16777216,
+        "input_tokens": 16777216,
+        "label_tokens": 16777216,
+        "recursive_input_tokens": 100663296
+      },
+      "training_terminal_ce": {
+        "first": 11.955982208251953,
+        "last": 6.670550346374512
+      },
+      "native_validation": {
+        "points": 9,
+        "observations": [
+          {
+            "step": 1,
+            "ce": 11.948453903198242,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 64,
+            "ce": 9.225078582763672,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 128,
+            "ce": 7.83323860168457,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 192,
+            "ce": 7.370092868804932,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 256,
+            "ce": 7.099058151245117,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 320,
+            "ce": 6.929691314697266,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 384,
+            "ce": 6.837912559509277,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 448,
+            "ce": 6.791250228881836,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          },
+          {
+            "step": 512,
+            "ce": 6.761012077331543,
+            "valid_tokens": 65536,
+            "num_visits": 3,
+            "seq_len": 2048
+          }
+        ]
+      },
+      "dynamics": {
+        "state_update": "ema",
+        "visits": 3,
+        "cells": 2,
+        "memory_scale": 0.5,
+        "memory_beta": 0.5,
+        "differentiated_calls_per_microbatch": 6
+      },
+      "hf": {
+        "heldout": {
+          "ce": 6.233232140541077,
+          "valid_tokens": 1024,
+          "seq_len": 256,
+          "split": "validation",
+          "num_visits": 3,
+          "complete_split": false
+        },
+        "scope": "recorded small validation subset; engineering delivery",
+        "repository_package_imported": false,
+        "cache": {
+          "supported": false,
+          "reason": "Selected fixed-depth HF path explicitly disables cache."
+        },
+        "generation": {
+          "input_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504
+            ]
+          ],
+          "uncached_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              11,
+              323,
+              279,
+              1852
+            ]
+          ],
+          "recomputed_ids": [
+            [
+              151645,
+              49512,
+              4119,
+              25978,
+              264,
+              2504,
+              11,
+              323,
+              279,
+              1852
+            ]
+          ],
+          "readout": "terminal",
+          "num_visits": 3
+        },
+        "export_provenance_sha256": "a779c0406dd4533134a5cd490adf3d5c7aeccb5291727800b9526fa7dfae2a79"
+      },
+      "continuation": {
+        "status": "passed",
+        "expected_steps": 8,
+        "model_tensor_count": 45,
+        "model_elements": 39912576,
+        "max_absolute_model_error": 0.0,
+        "atol": 2e-05,
+        "rtol": 0.0002,
+        "training_rank_count": 2,
+        "data_rank_count": 2,
+        "optimizer": {
+          "tensor_count": 135,
+          "state_key_count": 675,
+          "max_absolute_error": 0.0,
+          "atol": 2e-05,
+          "rtol": 0.0002,
+          "scalar_hyperparameters": "exact"
+        },
+        "global_progress": {
+          "completed_updates": 8,
+          "padded_positions": 262144,
+          "input_tokens": 262144,
+          "label_tokens": 262144,
+          "recursive_input_tokens": 1572864
+        }
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 39912576,
+          "unique_trainable": 39912576,
+          "unique_non_embedding": 1085312,
+          "non_input_embedding": 20498944,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 294912,
+            "norms": 768,
+            "router": 3072,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 6,
+              "inference_logical_calls": 6,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 6,
+                "router": 6,
+                "norm_pairs": 2,
+                "expert_banks": 2,
+                "ffn_output_norm": 2
+              },
+              "parameters": {
+                "attention": 294912,
+                "norms": 768,
+                "router": 3072,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 1085184
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 6,
+          "backward_cells": 6,
+          "inference_cells": 6,
+          "attention": 6,
+          "router": 6,
+          "head": 1,
+          "expert_assignments_per_input_token": 12,
+          "recompute_cells": 0,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent."
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 589824,
+            "attention_scores_values": 6291456,
+            "router": 6144,
+            "routed_experts": 2359296,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 38827264
+          },
+          "backward_components": {
+            "attention_projections": 1179648,
+            "attention_scores_values": 12582912,
+            "router": 12288,
+            "routed_experts": 4718592,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 77654528
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 0
+          },
+          "forward_per_token": 48073984,
+          "backward_per_token": 96147968,
+          "recompute_per_token": 0,
+          "training_per_token": 144221952,
+          "training_per_forward_batch": 295366557696,
+          "activation_checkpointing": "none"
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 12288,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 6,
+          "num_visits": 3,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 1536,
+          "bytes_at_context": 3145728,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions.",
+          "ema_state": "Forward-local EMA updates, normalization and reinjection are non-matrix work, not included in FLOPs.",
+          "inference_cache": "KV is a logical geometry budget; the selected uncached path does not establish cache allocation or cache parity."
+        }
+      },
+      "actual_native_gpu_cost": {
+        "successful_main": {
+          "recorded_gpu_hours": 0.09521448863877191,
+          "native_process_receipts": 1,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        },
+        "all_attempts_and_probes": {
+          "recorded_gpu_hours": 0.2720662409729428,
+          "native_process_receipts": 4,
+          "failed_native_process_receipts": 0,
+          "directories_without_native_receipts": 0
+        }
+      },
+      "retained_raw_sha256": {
+        "request.json": "235723e1080eacc61168ef5eb43b2ec89c23eb89ae5417309c47ad16982477ce",
+        "spec.json": "b8e05d47d9212d10d94cc99a990bb930a39b05911f1fa502e558171b9f082df8",
+        "outcome.json": "f53aad27e15cb392b99b36aada3f06314524832ae7f480f1598811abcdeaa34f",
+        "metrics.jsonl": "c9e3c97d9280ef4725c20ca18995496eaa5d5fcaf47856d335f96cfe3d98a0d7",
+        "validation.jsonl": "64f43e5f5704bd10d87064a3ac45eff2051eef2fb378b7ecd5b2a1b493137ddc",
+        "hf_check.json": "29d8377c26f64f0788fc78584458cab45d3f06c65a102b6ba1bd4ebe1efdeb92",
+        "heldout.json": "0e822c8e12972463aed91abddd33b9e302f3b17a116bd3b78a09dd4230dc85a9",
+        "continuation_report": "8f59a76971155cb62dc22305c6de2bda0aa7b695915973e91e81496d73ab6c01"
+      },
+      "training_curve": {
+        "path": "recipes-v2-loom_attention-training.csv",
+        "sha256": "d4d5c7213071e4f1c444431da9352d4d9fe560acdcc321d6c4dccd107b3a6348",
+        "rows": 512
+      }
+    }
+  },
+  "sharing_grid": {
+    "a0_r0": {
+      "spec": {
+        "name": "sharing_a0_r0",
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 4,
+          "visit_capacity": null,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": false,
+          "router_per_visit": false,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "residual",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 4,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "source": {
+          "kind": "attention_router_ownership_grid",
+          "attention_per_visit": false,
+          "router_per_visit": false
+        },
+        "preserved": [],
+        "adaptations": [
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ],
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "inference": {
+          "num_visits": 4,
+          "readout": "terminal",
+          "generation": "fixed_depth",
+          "cache": "logical_visit_slots",
+          "qualification_evidence": []
+        },
+        "run": {
+          "seq_len": 2048,
+          "global_batch_positions": 32768,
+          "successful_updates": 8,
+          "schedule_total_steps": 8,
+          "validation_interval": 8,
+          "seed": 42,
+          "mixed_precision_param": "bfloat16",
+          "objective": "terminal_ce_plus_router_aux",
+          "manifest_identity": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152"
+        },
+        "evidence": [],
+        "schema_version": 1
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 39713664,
+          "unique_trainable": 39713664,
+          "unique_non_embedding": 886400,
+          "non_input_embedding": 20300032,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 98304,
+            "norms": 512,
+            "router": 1024,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 8,
+              "inference_logical_calls": 8,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 2,
+                "router": 2,
+                "norm_pairs": 2,
+                "expert_banks": 2
+              },
+              "parameters": {
+                "attention": 98304,
+                "norms": 512,
+                "router": 1024,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 886272
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 8,
+          "backward_cells": 8,
+          "inference_cells": 8,
+          "attention": 8,
+          "router": 8,
+          "head": 1,
+          "expert_assignments_per_input_token": 16,
+          "recompute_cells": 0,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent."
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 786432,
+            "attention_scores_values": 8388608,
+            "router": 8192,
+            "routed_experts": 3145728,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 38827264
+          },
+          "backward_components": {
+            "attention_projections": 1572864,
+            "attention_scores_values": 16777216,
+            "router": 16384,
+            "routed_experts": 6291456,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 77654528
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 0
+          },
+          "forward_per_token": 51156224,
+          "backward_per_token": 102312448,
+          "recompute_per_token": 0,
+          "training_per_token": 153468672,
+          "training_per_forward_batch": 314303840256,
+          "activation_checkpointing": "none"
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 16384,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 8,
+          "num_visits": 4,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 2048,
+          "bytes_at_context": 4194304,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions."
+        }
+      },
+      "completed_updates": 8,
+      "global_progress": {
+        "completed_updates": 8,
+        "padded_positions": 262144,
+        "input_tokens": 262144,
+        "label_tokens": 262144,
+        "recursive_input_tokens": 2097152
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1
+      }
+    },
+    "a0_r1": {
+      "spec": {
+        "name": "sharing_a0_r1",
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 4,
+          "visit_capacity": 4,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": false,
+          "router_per_visit": true,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "residual",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 4,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "source": {
+          "kind": "attention_router_ownership_grid",
+          "attention_per_visit": false,
+          "router_per_visit": true
+        },
+        "preserved": [],
+        "adaptations": [
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ],
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "inference": {
+          "num_visits": 4,
+          "readout": "terminal",
+          "generation": "fixed_depth",
+          "cache": "logical_visit_slots",
+          "qualification_evidence": []
+        },
+        "run": {
+          "seq_len": 2048,
+          "global_batch_positions": 32768,
+          "successful_updates": 8,
+          "schedule_total_steps": 8,
+          "validation_interval": 8,
+          "seed": 42,
+          "mixed_precision_param": "bfloat16",
+          "objective": "terminal_ce_plus_router_aux",
+          "manifest_identity": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152"
+        },
+        "evidence": [],
+        "schema_version": 1
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 39716736,
+          "unique_trainable": 39716736,
+          "unique_non_embedding": 889472,
+          "non_input_embedding": 20303104,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 98304,
+            "norms": 512,
+            "router": 4096,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 8,
+              "inference_logical_calls": 8,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 2,
+                "router": 8,
+                "norm_pairs": 2,
+                "expert_banks": 2
+              },
+              "parameters": {
+                "attention": 98304,
+                "norms": 512,
+                "router": 4096,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 889344
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 8,
+          "backward_cells": 8,
+          "inference_cells": 8,
+          "attention": 8,
+          "router": 8,
+          "head": 1,
+          "expert_assignments_per_input_token": 16,
+          "recompute_cells": 0,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent."
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 786432,
+            "attention_scores_values": 8388608,
+            "router": 8192,
+            "routed_experts": 3145728,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 38827264
+          },
+          "backward_components": {
+            "attention_projections": 1572864,
+            "attention_scores_values": 16777216,
+            "router": 16384,
+            "routed_experts": 6291456,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 77654528
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 0
+          },
+          "forward_per_token": 51156224,
+          "backward_per_token": 102312448,
+          "recompute_per_token": 0,
+          "training_per_token": 153468672,
+          "training_per_forward_batch": 314303840256,
+          "activation_checkpointing": "none"
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 16384,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 8,
+          "num_visits": 4,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 2048,
+          "bytes_at_context": 4194304,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions."
+        }
+      },
+      "completed_updates": 8,
+      "global_progress": {
+        "completed_updates": 8,
+        "padded_positions": 262144,
+        "input_tokens": 262144,
+        "label_tokens": 262144,
+        "recursive_input_tokens": 2097152
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1
+      }
+    },
+    "a1_r0": {
+      "spec": {
+        "name": "sharing_a1_r0",
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 4,
+          "visit_capacity": 4,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": true,
+          "router_per_visit": false,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "residual",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 4,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "source": {
+          "kind": "attention_router_ownership_grid",
+          "attention_per_visit": true,
+          "router_per_visit": false
+        },
+        "preserved": [],
+        "adaptations": [
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ],
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "inference": {
+          "num_visits": 4,
+          "readout": "terminal",
+          "generation": "fixed_depth",
+          "cache": "logical_visit_slots",
+          "qualification_evidence": []
+        },
+        "run": {
+          "seq_len": 2048,
+          "global_batch_positions": 32768,
+          "successful_updates": 8,
+          "schedule_total_steps": 8,
+          "validation_interval": 8,
+          "seed": 42,
+          "mixed_precision_param": "bfloat16",
+          "objective": "terminal_ce_plus_router_aux",
+          "manifest_identity": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152"
+        },
+        "evidence": [],
+        "schema_version": 1
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 40008576,
+          "unique_trainable": 40008576,
+          "unique_non_embedding": 1181312,
+          "non_input_embedding": 20594944,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 393216,
+            "norms": 512,
+            "router": 1024,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 8,
+              "inference_logical_calls": 8,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 8,
+                "router": 2,
+                "norm_pairs": 2,
+                "expert_banks": 2
+              },
+              "parameters": {
+                "attention": 393216,
+                "norms": 512,
+                "router": 1024,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 1181184
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 8,
+          "backward_cells": 8,
+          "inference_cells": 8,
+          "attention": 8,
+          "router": 8,
+          "head": 1,
+          "expert_assignments_per_input_token": 16,
+          "recompute_cells": 0,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent."
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 786432,
+            "attention_scores_values": 8388608,
+            "router": 8192,
+            "routed_experts": 3145728,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 38827264
+          },
+          "backward_components": {
+            "attention_projections": 1572864,
+            "attention_scores_values": 16777216,
+            "router": 16384,
+            "routed_experts": 6291456,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 77654528
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 0
+          },
+          "forward_per_token": 51156224,
+          "backward_per_token": 102312448,
+          "recompute_per_token": 0,
+          "training_per_token": 153468672,
+          "training_per_forward_batch": 314303840256,
+          "activation_checkpointing": "none"
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 16384,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 8,
+          "num_visits": 4,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 2048,
+          "bytes_at_context": 4194304,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions."
+        }
+      },
+      "completed_updates": 8,
+      "global_progress": {
+        "completed_updates": 8,
+        "padded_positions": 262144,
+        "input_tokens": 262144,
+        "label_tokens": 262144,
+        "recursive_input_tokens": 2097152
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1
+      }
+    },
+    "a1_r1": {
+      "spec": {
+        "name": "sharing_a1_r1",
+        "model": {
+          "vocab_size": 151669,
+          "dim": 128,
+          "hidden_dim": 256,
+          "num_heads": 4,
+          "num_kv_heads": 2,
+          "num_experts": 4,
+          "top_k": 2,
+          "num_cells": 2,
+          "num_visits": 4,
+          "visit_capacity": 4,
+          "prefix_cells": 0,
+          "suffix_cells": 0,
+          "order": "stack",
+          "attention_per_visit": true,
+          "router_per_visit": true,
+          "norm_per_visit": false,
+          "residual_scale": 1.0,
+          "rms_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "max_seq_len": 2048,
+          "qk_norm": false,
+          "always_on_hidden_dim": 0,
+          "input_injection": "none",
+          "injection_scale": 1.0,
+          "initial_state": "input",
+          "latent_init_std": 0.6324555320336759,
+          "latent_truncation": 3.0,
+          "state_update": "residual",
+          "memory_scale": 0.5,
+          "memory_beta": 0.5,
+          "exit_distribution": false,
+          "init_std": 0.02,
+          "schema_version": 3,
+          "prefix": null,
+          "core": null,
+          "suffix": null
+        },
+        "training": {
+          "num_visits": 4,
+          "sampled_visits": [],
+          "grad_visits": null,
+          "balance_coeff": 0.01,
+          "z_loss_coeff": 0.0,
+          "depth_seed": 0,
+          "depth_rule": "uniform_update_v1",
+          "aux_reduction": "local_micro_call_mean",
+          "depth_mean": 4.0,
+          "depth_log_std": 0.5,
+          "objective": "terminal_ce",
+          "entropy_coeff": 0.0
+        },
+        "source": {
+          "kind": "attention_router_ownership_grid",
+          "attention_per_visit": true,
+          "router_per_visit": true
+        },
+        "preserved": [],
+        "adaptations": [
+          "Public prepared-text fixture replaces the original data/training stack; its manifest is a separate run identity.",
+          "Common RMSNorm/RoPE/SwiGLU cells, softmax top-k with selected-weight normalization and dropless dispatch.",
+          "Common AdamW and independently owned input embedding/output head; no original-paper quality or scaling claim."
+        ],
+        "optimizer": {
+          "name": "AdamW",
+          "base_lr": 0.0003,
+          "betas": [
+            0.9,
+            0.95
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.1,
+          "zero_weight_decay_roles": [
+            "norm",
+            "embedding",
+            "lm_head",
+            "router"
+          ],
+          "expert_group_size": 1,
+          "expert_lr_multiplier": 1.0,
+          "expert_lr_scope": "core",
+          "weight_decay_compensation": false
+        },
+        "inference": {
+          "num_visits": 4,
+          "readout": "terminal",
+          "generation": "fixed_depth",
+          "cache": "logical_visit_slots",
+          "qualification_evidence": []
+        },
+        "run": {
+          "seq_len": 2048,
+          "global_batch_positions": 32768,
+          "successful_updates": 8,
+          "schedule_total_steps": 8,
+          "validation_interval": 8,
+          "seed": 42,
+          "mixed_precision_param": "bfloat16",
+          "objective": "terminal_ce_plus_router_aux",
+          "manifest_identity": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152"
+        },
+        "evidence": [],
+        "schema_version": 1
+      },
+      "theoretical_cost": {
+        "schema_version": 1,
+        "formula_version": "fixed_terminal_matrix_v1",
+        "kind": "analytical_matrix_estimate",
+        "parameters": {
+          "unique_total": 40011648,
+          "unique_trainable": 40011648,
+          "unique_non_embedding": 1184384,
+          "non_input_embedding": 20598016,
+          "input_embedding": 19413632,
+          "lm_head": 19413632,
+          "definition": "unique_non_embedding excludes both independently owned input embedding and output head; all other owners counted once.",
+          "trainable_definition": "Current unfrozen model default; an externally frozen model needs actual parameter inspection.",
+          "by_component": {
+            "input_embedding": 19413632,
+            "lm_head": 19413632,
+            "final_norm": 128,
+            "attention": 393216,
+            "norms": 512,
+            "router": 4096,
+            "routed_experts": 786432,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0
+          },
+          "by_region": {
+            "prefix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            },
+            "core": {
+              "physical_banks": 2,
+              "logical_calls": 8,
+              "inference_logical_calls": 8,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 8,
+                "router": 8,
+                "norm_pairs": 2,
+                "expert_banks": 2
+              },
+              "parameters": {
+                "attention": 393216,
+                "norms": 512,
+                "router": 4096,
+                "routed_experts": 786432,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 1184256
+            },
+            "suffix": {
+              "physical_banks": 0,
+              "logical_calls": 0,
+              "inference_logical_calls": 0,
+              "num_experts": 4,
+              "top_k": 2,
+              "hidden_dim": 256,
+              "owners": {
+                "attention": 0,
+                "router": 0,
+                "norm_pairs": 0,
+                "expert_banks": 0
+              },
+              "parameters": {
+                "attention": 0,
+                "norms": 0,
+                "router": 0,
+                "routed_experts": 0,
+                "dense_ffn": 0,
+                "always_on_ffn": 0
+              },
+              "unique_total": 0
+            }
+          }
+        },
+        "calls": {
+          "forward_cells": 8,
+          "backward_cells": 8,
+          "inference_cells": 8,
+          "attention": 8,
+          "router": 8,
+          "head": 1,
+          "expert_assignments_per_input_token": 16,
+          "recompute_cells": 0,
+          "head_definition": "One terminal logical projection; chunked native head kernel-call count is runtime dependent."
+        },
+        "flops": {
+          "mac_to_flops": 2,
+          "normalization": "per_padded_input_position",
+          "attention_convention": "Two dense S-by-S matrix products; no causal-triangle or document-mask discount.",
+          "attention_pairs_per_sequence": 4194304,
+          "backward_convention": "Two backward matrix products per forward matrix product; full BPTT.",
+          "forward_components": {
+            "attention_projections": 786432,
+            "attention_scores_values": 8388608,
+            "router": 8192,
+            "routed_experts": 3145728,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 38827264
+          },
+          "backward_components": {
+            "attention_projections": 1572864,
+            "attention_scores_values": 16777216,
+            "router": 16384,
+            "routed_experts": 6291456,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 77654528
+          },
+          "recompute_components": {
+            "attention_projections": 0,
+            "attention_scores_values": 0,
+            "router": 0,
+            "routed_experts": 0,
+            "dense_ffn": 0,
+            "always_on_ffn": 0,
+            "input_adapter": 0,
+            "head": 0
+          },
+          "forward_per_token": 51156224,
+          "backward_per_token": 102312448,
+          "recompute_per_token": 0,
+          "training_per_token": 153468672,
+          "training_per_forward_batch": 314303840256,
+          "activation_checkpointing": "none"
+        },
+        "tokens": {
+          "batch_size": 1,
+          "seq_len": 2048,
+          "padded_positions_per_forward": 2048,
+          "logical_cell_positions_per_forward": 16384,
+          "valid_input_tokens": null,
+          "valid_label_tokens": null
+        },
+        "kv": {
+          "logical_slots": 8,
+          "num_visits": 4,
+          "num_kv_heads": 2,
+          "head_dim": 32,
+          "bytes_per_element": 2,
+          "bytes_per_cached_token": 2048,
+          "bytes_at_context": 4194304,
+          "definition": "K+V per logical call at the declared fixed inference depth; parameter sharing never merges cache slots. Excludes allocator overhead."
+        },
+        "unknown": {
+          "non_matmul_flops": "Norm/RoPE/softmax/top-k/CE/activations/residuals/dispatch are not counted.",
+          "optimizer_flops": "AdamW and distributed optimizer work are not estimated.",
+          "measured_flops": "Native kernels, masks, padding and hardware need runtime measurement.",
+          "runtime_memory": "Activation, allocator, optimizer-state and communication memory are not inferred from KV.",
+          "actual_tokens": "Supply run counts for valid input/labels and document masking; this report uses padded positions."
+        }
+      },
+      "completed_updates": 8,
+      "global_progress": {
+        "completed_updates": 8,
+        "padded_positions": 262144,
+        "input_tokens": 262144,
+        "label_tokens": 262144,
+        "recursive_input_tokens": 2097152
+      },
+      "actual_native": {
+        "world_size": 2,
+        "local_batch_size": 8,
+        "accumulation": 1
+      }
+    }
+  },
+  "verification": {
+    "stage": "v2",
+    "checker_sha256": "c26fe9bd299b39a4f8e28d00d5a26172ec36eb46efab48095e35b023992471bc",
+    "release_check_sha256": "a4756bc9664df757dbda7c52193c3757fe14a540e36dffdd74714a618ae24aae",
+    "finalizer_sha256": "671e73be285ee713f8f19502e1e7469a8305cfb2dd6b179657b76eb4180d73f4"
+  },
+  "inherited_v1": {
+    "publication": "p1.json",
+    "publication_sha256": "b62d875ea7cc22b593e1341ee00740c331c9078800670d8d3f3dd8991bd3f322",
+    "training_commit": "1bea4d6d2c539e3ae02517aaeede5f9ab68271a7",
+    "training_source_identity_sha256": "dd94dd0f1ac174baf8b99fdc3662f04c988c61f5284a2cc7f71b28600565e59b"
+  },
+  "data": {
+    "manifest_fingerprint": "e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152",
+    "dataset": {
+      "id": "mlfoundations/dclm-baseline-1.0-parquet",
+      "revision": "817d6752765f6a41261085171dd546b104f60626",
+      "license": {
+        "basis": "upstream_dataset_card",
+        "id": "CC-BY-4.0"
+      }
+    },
+    "tokenizer": {
+      "id": "Qwen/Qwen3-30B-A3B",
+      "revision": "ae659febe817e4b3ebd7355f47792725801204c9",
+      "vocab_size": 151669
+    },
+    "prepared_effective_labels": {
+      "train": 24000067249,
+      "validation": 10001497,
+      "test": 10009889
+    }
+  },
+  "limits": [
+    "Short fixed-geometry engineering learning/delivery trajectories, not a fair cross-method quality ranking or paper scaling reproduction.",
+    "Native GPU-hours sum recorded process wall time times recorded world size; initialization, validation and checkpoint are included. HF postprocessing and idle allocations are excluded. GPU busy time is not measured; directories without receipts are counted and leave total cost incomplete.",
+    "Theoretical work uses the frozen estimator and its declared matrix/attention conventions; dynamic or unestimated work remains unknown.",
+    "HF heldout is the recorded small engineering subset; cache support is stated per method. Full original data/checkpoints/process logs remain in durable storage."
+  ],
+  "actual_all_new_native_gpu_cost": {
+    "recorded_gpu_hours": 1.3824720329708526,
+    "native_process_receipts": 20,
+    "failed_native_process_receipts": 0,
+    "directories_without_native_receipts": 0
+  },
+  "artifacts_relative_to": "this_summary_directory"
+}

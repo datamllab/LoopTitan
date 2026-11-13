@@ -1,0 +1,405 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "Short native two-physical-host NCCL/FSDP correctness and full-state continuation qualification; engineering fixture only.",
+  "source_commit": "2fac1074fcd1e92cd3f08865e7b98851374611c2",
+  "torchtitan_commit": "086bf6c166ec85c1298eb5596fa9bf95f6a2d840",
+  "training_library_identical_to_commit": "6f5893daa5d5b337af1818a7862cb21312885d1d",
+  "hardware": {
+    "physical_nodes": 2,
+    "gpu_per_node": 1,
+    "total_gpus": 2,
+    "gpu_model": "NVIDIA H200",
+    "driver": "595.71.05",
+    "visible_gpus_in_each_container": [
+      1,
+      1
+    ]
+  },
+  "request_per_node": {
+    "gpus": 1,
+    "cpu": 4,
+    "memory_mib": 64000,
+    "exclusive_node_requested": false
+  },
+  "native_topology_verified": {
+    "distinct_actual_physical_node_names": true,
+    "gang_min_member": 2,
+    "hard_hostname_anti_affinity": true,
+    "actual_node_admission_before_payload": true
+  },
+  "environment_per_node": [
+    {
+      "python": "3.12.15",
+      "torch": "2.14.0+cu130",
+      "cuda": "13.0",
+      "nccl": [
+        2,
+        30,
+        7
+      ],
+      "transformers": "5.19.0",
+      "gpu_count": 1
+    },
+    {
+      "python": "3.12.15",
+      "torch": "2.14.0+cu130",
+      "cuda": "13.0",
+      "nccl": [
+        2,
+        30,
+        7
+      ],
+      "transformers": "5.19.0",
+      "gpu_count": 1
+    }
+  ],
+  "nccl": {
+    "status": "passed",
+    "world_size": 2,
+    "backend": "nccl",
+    "all_reduce_bfloat16_result_per_rank": [
+      [
+        3.0,
+        5.0
+      ],
+      [
+        3.0,
+        5.0
+      ]
+    ],
+    "actual_transport": "TCP Socket",
+    "native_NET_Socket_send_receive_logs_verified": true,
+    "interface": "eth0",
+    "NCCL_IB_DISABLE": "1",
+    "rdma_or_performance_claim": false
+  },
+  "training": {
+    "native_fsdp_shard_world_size": 2,
+    "parameter_dtype": "bfloat16",
+    "reduction_dtype": "float32",
+    "global_batch_size": 4,
+    "local_batch_size": 1,
+    "gradient_accumulation": 2,
+    "sequence_length": 32,
+    "lr_schedule_total_updates": 16,
+    "validation_every_update": true,
+    "full_DCP_each_update": true,
+    "runs": {
+      "shared-uninterrupted": {
+        "status": "passed",
+        "final_completed_updates": 4,
+        "updates_executed_in_this_invocation": 4,
+        "training_cross_entropy": [
+          {
+            "step": 1,
+            "ce": 4.175992488861084
+          },
+          {
+            "step": 2,
+            "ce": 4.07595157623291
+          },
+          {
+            "step": 3,
+            "ce": 4.041825771331787
+          },
+          {
+            "step": 4,
+            "ce": 4.003733158111572
+          }
+        ],
+        "validation": [
+          {
+            "step": 1,
+            "cross_entropy_rounded": 4.0765
+          },
+          {
+            "step": 2,
+            "cross_entropy_rounded": 3.9997
+          },
+          {
+            "step": 3,
+            "cross_entropy_rounded": 3.928
+          },
+          {
+            "step": 4,
+            "cross_entropy_rounded": 3.8696
+          }
+        ],
+        "full_checkpoint_verified": true,
+        "activation_checkpoint": null,
+        "activation_checkpoint_kind": null,
+        "native_experts": true,
+        "flex_attention": true,
+        "gradient_accumulation": 2,
+        "global_progress": {
+          "completed_updates": 4,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 2048
+        },
+        "global_source_counts": {
+          "architecture": {
+            "blocks": 8,
+            "input_tokens": 256,
+            "label_tokens": 256,
+            "documents": 21
+          },
+          "training": {
+            "blocks": 8,
+            "input_tokens": 256,
+            "label_tokens": 256,
+            "documents": 24
+          }
+        },
+        "continuation_fingerprint": "4d58583636098a14a2dc4f47d44bcce63398775c0c114a8a815a9989e673940b"
+      },
+      "shared-stopped": {
+        "status": "passed",
+        "final_completed_updates": 2,
+        "updates_executed_in_this_invocation": 2,
+        "training_cross_entropy": [
+          {
+            "step": 1,
+            "ce": 4.175992488861084
+          },
+          {
+            "step": 2,
+            "ce": 4.07595157623291
+          }
+        ],
+        "validation": [
+          {
+            "step": 1,
+            "cross_entropy_rounded": 4.0765
+          },
+          {
+            "step": 2,
+            "cross_entropy_rounded": 3.9997
+          }
+        ],
+        "full_checkpoint_verified": true,
+        "activation_checkpoint": null,
+        "activation_checkpoint_kind": null,
+        "native_experts": true,
+        "flex_attention": true,
+        "gradient_accumulation": 2,
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 256,
+          "input_tokens": 256,
+          "label_tokens": 256,
+          "recursive_input_tokens": 1024
+        },
+        "global_source_counts": {
+          "architecture": {
+            "blocks": 4,
+            "input_tokens": 128,
+            "label_tokens": 128,
+            "documents": 11
+          },
+          "training": {
+            "blocks": 4,
+            "input_tokens": 128,
+            "label_tokens": 128,
+            "documents": 12
+          }
+        },
+        "continuation_fingerprint": "4d58583636098a14a2dc4f47d44bcce63398775c0c114a8a815a9989e673940b"
+      },
+      "shared-resumed": {
+        "status": "passed",
+        "final_completed_updates": 4,
+        "updates_executed_in_this_invocation": 2,
+        "training_cross_entropy": [
+          {
+            "step": 3,
+            "ce": 4.041825771331787
+          },
+          {
+            "step": 4,
+            "ce": 4.003733158111572
+          }
+        ],
+        "validation": [
+          {
+            "step": 3,
+            "cross_entropy_rounded": 3.928
+          },
+          {
+            "step": 4,
+            "cross_entropy_rounded": 3.8696
+          }
+        ],
+        "full_checkpoint_verified": true,
+        "activation_checkpoint": null,
+        "activation_checkpoint_kind": null,
+        "native_experts": true,
+        "flex_attention": true,
+        "gradient_accumulation": 2,
+        "global_progress": {
+          "completed_updates": 4,
+          "padded_positions": 512,
+          "input_tokens": 512,
+          "label_tokens": 512,
+          "recursive_input_tokens": 2048
+        },
+        "global_source_counts": {
+          "architecture": {
+            "blocks": 8,
+            "input_tokens": 256,
+            "label_tokens": 256,
+            "documents": 21
+          },
+          "training": {
+            "blocks": 8,
+            "input_tokens": 256,
+            "label_tokens": 256,
+            "documents": 24
+          }
+        },
+        "continuation_fingerprint": "4d58583636098a14a2dc4f47d44bcce63398775c0c114a8a815a9989e673940b"
+      },
+      "partial_attention": {
+        "status": "passed",
+        "final_completed_updates": 2,
+        "updates_executed_in_this_invocation": 2,
+        "training_cross_entropy": [
+          {
+            "step": 1,
+            "ce": 4.183007717132568
+          },
+          {
+            "step": 2,
+            "ce": 4.059712886810303
+          }
+        ],
+        "validation": [
+          {
+            "step": 1,
+            "cross_entropy_rounded": 4.1003
+          },
+          {
+            "step": 2,
+            "cross_entropy_rounded": 4.0195
+          }
+        ],
+        "full_checkpoint_verified": true,
+        "activation_checkpoint": {
+          "preserve_rng_state": true,
+          "determinism_check": "default",
+          "debug": false
+        },
+        "activation_checkpoint_kind": "FullAC",
+        "native_experts": true,
+        "flex_attention": true,
+        "gradient_accumulation": 2,
+        "global_progress": {
+          "completed_updates": 2,
+          "padded_positions": 256,
+          "input_tokens": 256,
+          "label_tokens": 256,
+          "recursive_input_tokens": 1024
+        },
+        "global_source_counts": {
+          "architecture": {
+            "blocks": 4,
+            "input_tokens": 128,
+            "label_tokens": 128,
+            "documents": 11
+          },
+          "training": {
+            "blocks": 4,
+            "input_tokens": 128,
+            "label_tokens": 128,
+            "documents": 12
+          }
+        },
+        "continuation_fingerprint": "67ee2c83a267ab3540bf6ef3c6033aa1d3a2363c7726479bab7f5833a7e240f9"
+      }
+    }
+  },
+  "resume_comparison": {
+    "status": "passed",
+    "expected_steps": 4,
+    "model_tensor_count": 27,
+    "model_elements": 230272,
+    "max_absolute_model_error": 0.0,
+    "worst_model_tensor": "core.embedding.weight",
+    "atol": 2e-05,
+    "rtol": 0.0002,
+    "exact_continuation_keys": [
+      "train_state.step",
+      "train_state.rank_0",
+      "dataloader.dp_rank_0",
+      "train_state.ntokens_seen",
+      "train_state.rank_1",
+      "dataloader.dp_rank_1",
+      "dataloader.world_size",
+      "lr_scheduler.last_epoch"
+    ],
+    "training_rank_count": 2,
+    "data_rank_count": 2,
+    "global_progress": {
+      "completed_updates": 4,
+      "padded_positions": 512,
+      "input_tokens": 512,
+      "label_tokens": 512,
+      "recursive_input_tokens": 2048
+    },
+    "global_source_counts": {
+      "architecture": {
+        "blocks": 8,
+        "input_tokens": 256,
+        "label_tokens": 256,
+        "documents": 21
+      },
+      "training": {
+        "blocks": 8,
+        "input_tokens": 256,
+        "label_tokens": 256,
+        "documents": 24
+      }
+    },
+    "per_rank_torch_cuda_python_numpy_rng_and_cursor_tree_exact": true,
+    "resumed_metrics_exactly_equal_to_uninterrupted_tail": true,
+    "full_state_checkpoint_and_optimizer_load_exercised": true,
+    "direct_optimizer_tensor_equality_claim": false
+  },
+  "limits": {
+    "queue_deadline_seconds": 600,
+    "container_TERM_seconds": 885,
+    "container_KILL_grace_seconds": 15,
+    "admission_gate_timeout_seconds": 120,
+    "partial_allocation_or_single_started_container_deadline_seconds": 30
+  },
+  "gpu_budget": {
+    "authorized_gpu_hours": 2.0,
+    "accounting": "Conservative: earliest native replica startTime through explicit resource-release receipt, rounded up to whole seconds, charged for both GPUs.",
+    "native_allocation_start_utc": "2026-10-21T10:08:53+00:00",
+    "resources_released_utc": "2026-10-21T10:11:35.997997+00:00",
+    "charged_seconds_for_each_gpu": 163,
+    "this_batch_gpu_hours": 0.09055555555555556,
+    "prior_gpu_hours": 0.4291666666666667,
+    "cumulative_gpu_hours": 0.5197222222222222,
+    "remaining_gpu_hours": 1.4802777777777778
+  },
+  "release": {
+    "both_native_replicas_terminal_succeeded": true,
+    "both_driver_exit_codes": [
+      0,
+      0
+    ],
+    "both_evidence_bundles_collected": true,
+    "native_replicas_absent_after_delete": true,
+    "native_job_absent_after_delete": true,
+    "native_podgroup_absent_after_delete": true,
+    "local_controller_terminal_exit_code": 0,
+    "local_controller_pid_absent": true,
+    "resources_released": true,
+    "checked_utc": "2026-10-21T10:11:35.997997+00:00"
+  },
+  "qualification_complete_for_this_cross_host_scope": true,
+  "limitations": "This verifies correctness on a tiny offline fixture. It does not establish a pretraining recipe, model quality, throughput, RDMA operation, or scaling efficiency."
+}

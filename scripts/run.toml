@@ -1,0 +1,7 @@
+experiment = "moeloop-lab"       # separate from all historical infra experiments
+require_tracking_uri = true      # explicit endpoint; no accidental per-checkout SQLite store
+env_lock = ["uv.lock"]           # hashed into cvsm.env_lock_sha; missing files listed in cvsm.env_lock_missing
+data_manifest = ""               # hashed into cvsm.data_manifest_sha; empty means none
+seed_key = "debug.seed"          # TorchTitan native seed option; smoke.py uses the same spelling
+gpus = []                        # GPU ids to lease from; empty disables leasing
+lock_dir = ""                    # GPU lock files go in <lock_dir>/<host>/; empty means the system temp dir

@@ -1,0 +1,2 @@
+{"query": "The man turned on the tap, therefore", "choices": ["the sink stayed dry.", "water ran into the sink."], "gold": 1}
+{"query": "The girl found a bug in her soup, therefore", "choices": ["she ate it all.", "she lost her appetite."], "gold": 1}

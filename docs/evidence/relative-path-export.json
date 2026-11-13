@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "source_commit": "a19c6fa611f564078a45533d8c92ce096b5564e1",
+  "scope": "Relative launch paths through actual native training and cross-directory HF export",
+  "hardware": {
+    "gpu": "NVIDIA H200",
+    "gpu_count": 1
+  },
+  "training": {
+    "updates": 2,
+    "native_experts": true,
+    "flex_attention": true,
+    "mixed_precision": "bfloat16",
+    "validation_per_update": true,
+    "durable_full_dcp": true,
+    "ga": 2,
+    "seq_len": 32
+  },
+  "input_paths": {
+    "manifest": "data/prepared/manifest.json",
+    "tokenizer": "data/prepared/tokenizer",
+    "dump_folder": "outputs/moeloop"
+  },
+  "verified": [
+    "Actual native trainer persisted absolute launch-relative manifest, tokenizer and run paths",
+    "Native full-state DCP receipt passes qualification verification",
+    "Export from a different working directory discovers tokenizer automatically",
+    "Explicit tokenizer export succeeds against the same training manifest",
+    "Automatic and explicit exports have identical model tensors and valid provenance hashes",
+    "Heldout and cached generation CLIs succeed offline"
+  ],
+  "heldout": {
+    "ce": 4.03254497051239,
+    "valid_tokens": 64,
+    "complete_split": false
+  },
+  "model_tensor_count": 27,
+  "boundaries": [
+    "Two-update offline engineering fixture; no training quality claim",
+    "Single-GPU regression complements prior multi-node qualification; does not replace it",
+    "Persistent development environment retained after execution"
+  ],
+  "verification_harness": {
+    "initial_driver_exit_code": 1,
+    "initial_postcheck_error": "KeyError: tokenizer; verification assertion used a nonexistent provenance field after all product commands succeeded",
+    "corrected_postcheck_exit_code": 0,
+    "correction": "Validate tokenizer_source_files against the prepared manifest; no product code or training/export rerun required",
+    "original_failure_retained": true
+  },
+  "process_results": {
+    "native_training": 0,
+    "full_dcp_receipt": 0,
+    "export_auto": 0,
+    "export_explicit": 0,
+    "heldout": 0,
+    "cached_generation": 0,
+    "corrected_postcheck": 0
+  }
+}
