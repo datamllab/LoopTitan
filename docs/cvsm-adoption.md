@@ -14,4 +14,4 @@ The project uses an MLflow HTTP service. Clients should set `MLFLOW_TRACKING_URI
 
 A later adaptation adds `require_tracking_uri=true` to `scripts/run.toml`, and run and results share the same check. The reference SQLite fallback of CVSM is kept only for configurations that do not enable this option. This keeps tests with an offline temporary database easy. The default experiment changed to `moeloop-lab`, and the seed option changed to the native `debug.seed`. The other upstream run/results record and spec parsing algorithms are kept.
 
-The import added `src/moeloop_lab/protocol.py`, a read-only doctor, a CPU smoke and the matching tests. For the interface and its limits, see the [experiment protocol](protocol.md) and the [training integration](torchtitan.md).
+This repository adds `src/moeloop_lab/protocol.py`, a read-only doctor, a CPU smoke and the matching tests. For the interface and its limits, see the [experiment protocol](protocol.md) and the [training integration](torchtitan.md).

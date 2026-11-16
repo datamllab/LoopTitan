@@ -44,7 +44,7 @@ The complete native configuration keeps values that change, such as the output d
 
 `native-config.json` keeps the same native configuration. `metrics.json` is a snapshot of finite numbers that rank 0 writes once. `log.txt` comes from the launcher. `derived.target_input_tokens` is the configured target. MLflow `FINISHED` means that the command exited with 0. The native step field is a state counter. None of the three proves the optimizer steps or tokens that were actually completed. Checkpoints, raw data and large logs go to explicit external storage. Do not write them into RUN_DIR, because RUN_DIR is uploaded as a whole. `uv.lock` freezes the control environment. It cannot replace a lock of the training environment. The observation of the run environment is also not a complete proof that the environment can be rebuilt.
 
-A manifest hash identifies the manifest itself. It does not mean that all data shards were verified again. The SHA of a model module does not automatically prove the identity of all dynamic plugins. The specific data and model entry points must accept these conditions, and the study must state them.
+A manifest hash identifies the manifest itself. It does not mean that all data shards were verified again. The SHA of a model module does not automatically prove the identity of all dynamic plugins. The specific data and model entry points must verify these conditions, and the study must state them.
 
 ## Limits of interruption and resume
 
