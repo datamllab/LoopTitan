@@ -56,6 +56,23 @@ def test_foil_flattens_only_core_and_preserves_attention_owners():
         recipes.foil_spec(core_layers=3)
 
 
+def test_constructor_keywords_never_repeat_a_shared_geometry_keyword():
+    import inspect
+
+    for name in dir(recipes):
+        parameters = inspect.signature(getattr(recipes, name)).parameters if name.endswith("_spec") else {}
+        if "geometry" in parameters:
+            assert not set(parameters) & recipes._GEOMETRY_KEYS, name
+    # Method parameters plus one shared geometry, as for every other constructor; num_experts is Foil's Base E.
+    geometry = dict(vocab_size=128, dim=32, hidden_dim=64, num_heads=4, num_kv_heads=2, num_experts=6, max_seq_len=64)
+    foil = recipes.foil_spec(core_layers=2, passes=2, **geometry)
+    base = recipes.foil_base_spec(core_layers=2, passes=2, **geometry)
+    assert [foil.model.region_config(r).num_experts for r in ("prefix", "core", "suffix")] == [6, 12, 6]
+    assert base.model.region_config("core").num_experts == 6 and foil.source["base_E_D_L"] == [6, 2, 2]
+    # Foil keeps its own default E = 4 when the geometry omits it.
+    assert recipes.foil_spec().model.num_experts == recipes.foil_base_spec().model.num_experts == 4
+
+
 def test_smelt_ten_physical_layers_keep_middle_half_and_existing_eight_layer_path():
     from moeloop.costs import estimate_cost
 
