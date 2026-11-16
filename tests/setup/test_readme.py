@@ -87,6 +87,6 @@ def test_bibtex_entry_equals_the_model_card_entry():
     assert len(entry) == 1
     assert entry == block.findall(card)
     cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
-    assert f"@software{{{cff['title'].lower()}," in entry[0] and f"title = {{{cff['title']}}}" in entry[0]
+    assert f"@software{{{cff['title'].lower()}," in entry[0] and f"title = {{{{{cff['title']}}}}}," in entry[0]  # double braces keep the capitals
     assert f"author = {{{{{cff['authors'][0]['name']}}}}}" in entry[0]
     assert f"version = {{{cff['version']}}}" in entry[0] and f"url = {{{cff['url']}}}" in entry[0]
