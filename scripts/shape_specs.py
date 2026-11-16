@@ -7,7 +7,8 @@ MoEs deeper and narrower than U. M0LR and M0I (AdamW only) split M0R's residual 
 it is the same training as LR x 0.5 (weight decay x 2) plus init x 0.5 on the middle layers'
 branch output projections, so each keeps M0R's 3/6/3 split and changes one of the two. Each arm is a Phase 1 spec (recipes/phase1/m0-*.json or
 m4-*.json) with the model fields below replaced; everything else, the optimizer, schedule and run
-settings included, is the source's, except that the arms in FULL_CELLS checkpoint activations.
+settings included, is the source's, except that the arms in FULL_CELLS checkpoint activations
+and ``source`` names the arm and its Phase 1 spec.
 The description is the spec's ``preserved`` sentence. A run sets its LR at launch
 (recipe_experiments.py run --lr).
 
@@ -73,8 +74,10 @@ OPTIMIZERS = {"m0lr": ("adamw",), "m0i": ("adamw",)}  # every other arm: AdamW a
 
 def spec_for(arm: str, optimizer: str) -> dict:
     source, changes, description = ARMS[arm]
-    spec = json.loads((ROOT / f"recipes/phase1/{source}-{optimizer}.json").read_text())
-    spec |= {"name": f"shape-{arm}-{optimizer}", "preserved": [description], "model": spec["model"] | changes}
+    base = f"recipes/phase1/{source}-{optimizer}.json"
+    spec = json.loads((ROOT / base).read_text())
+    spec |= {"name": f"shape-{arm}-{optimizer}", "preserved": [description], "model": spec["model"] | changes,
+             "source": {"kind": "shape_arm", "version": 1, "arm": arm, "base_recipe": base}}
     if arm in FULL_CELLS:
         spec["run"] |= {"activation_checkpointing": "full_cells"}
     return RecipeSpec.from_dict(spec).to_dict()  # from_dict validates the model and its depth

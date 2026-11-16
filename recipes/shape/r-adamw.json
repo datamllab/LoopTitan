@@ -64,10 +64,10 @@
     "entropy_coeff": 0.0
   },
   "source": {
-    "kind": "phase1_arm",
+    "kind": "shape_arm",
     "version": 1,
-    "arm": "m4",
-    "base_recipe": "recipes/p2_smelt.json"
+    "arm": "r",
+    "base_recipe": "recipes/phase1/m4-adamw.json"
   },
   "preserved": [
     "M4's expert layout (88 experts in each of the first 3 and last 3 layers, 44 in each of the middle 12) with the middle residual not scaled."

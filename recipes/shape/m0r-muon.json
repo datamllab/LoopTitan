@@ -64,10 +64,10 @@
     "entropy_coeff": 0.0
   },
   "source": {
-    "kind": "phase1_arm",
+    "kind": "shape_arm",
     "version": 1,
-    "arm": "m0",
-    "base_recipe": "recipes/p2_moe.json"
+    "arm": "m0r",
+    "base_recipe": "recipes/phase1/m0-muon.json"
   },
   "preserved": [
     "M0's shape with only the residual of the middle 6 layers scaled by 0.5."

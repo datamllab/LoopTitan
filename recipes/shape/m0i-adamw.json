@@ -65,10 +65,10 @@
     "entropy_coeff": 0.0
   },
   "source": {
-    "kind": "phase1_arm",
+    "kind": "shape_arm",
     "version": 1,
-    "arm": "m0",
-    "base_recipe": "recipes/p2_moe.json"
+    "arm": "m0i",
+    "base_recipe": "recipes/phase1/m0-adamw.json"
   },
   "preserved": [
     "M0's shape with only the init of the middle 6 layers' branch output projections (attention out_proj, expert down projections) scaled by 0.5. Under Adam, M0R's residual x 0.5 is this init change plus LR x 0.5 (weight decay x 2) on the same projections; this arm keeps only the init change, to test whether M0R's gain comes from the init."
