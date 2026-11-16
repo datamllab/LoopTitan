@@ -1,0 +1,133 @@
+---
+// The documentation landing page: the release line, a short orientation, the five main paths as stations on
+// one shaft, the four start commands, and every page by group. The homepage's vocabulary throughout.
+import { BASE, GROUPS, REPO_URL } from '../../nav.mjs';
+import { C, P, T, modelSvg } from '../lib/home.mjs';
+
+const m3 = C['phase1/m3'];
+const hero = modelSvg(m3, { slots: 14, pitch: 22, bw: 15, hU: 92, top: 42, bottom: 8, sw: 1.5, hk: 1.05, label: true });
+const runs = m3.pre + m3.core * m3.visits + m3.suf;
+const paths = [
+	{ href: `${BASE}docs/development/#development-environment-and-checks`, t: 'Start in five minutes', d: 'Install, print the configuration tree, run the tests.', f: 'docs/development.md' },
+	{ href: `${BASE}docs/extensions/#add-a-configuration`, t: 'Add a configuration', d: 'Change the fields of a frozen configuration and check it.', f: 'docs/extensions.md' },
+	{ href: `${BASE}docs/comparison/`, t: 'Match budgets', d: 'Parameters, FLOPs and KV cache of two configurations, on a CPU.', f: 'docs/comparison.md' },
+	{ href: `${BASE}docs/results/phase1/`, t: 'Reproduce Phase 1', d: 'Every configuration, protocol value and run of the first study.', f: 'docs/results/phase1.md' },
+	{ href: `${BASE}docs/contributing/`, t: 'Enter a result', d: 'Run a frozen track and open one pull request.', f: '.github/CONTRIBUTING.md' },
+];
+const blurb: Record<string, string> = {
+	development: 'Environment, checks, conformance tests.',
+	architecture: 'One model: stored cells, calls, owners.',
+	recipes: 'The published designs and their fields.',
+	extensions: 'A new state update, a new configuration.',
+	comparison: 'The three budgets and the Bench.',
+	baselines: 'Against the official Qwen3-MoE.',
+	training: 'Data, TorchTitan, resume, export.',
+	validation: 'What has run, and its scope.',
+	'results/phase1': 'Every Phase 1 row, both optimizers.',
+	protocol: 'Studies, runs and their records.',
+	contributing: 'One folder, one pull request.',
+	torchtitan: 'The optional run record.',
+	'method-map': 'What each design keeps and adapts.',
+	'cvsm-adoption': 'Where the protocol comes from.',
+};
+const commands = ['git clone https://github.com/datamllab/LoopTitan && cd LoopTitan', "uv pip install '.[data,hf]'", 'python scripts/lineage.py', 'python -m pytest -q'];
+void P;
+---
+
+<div class="not-content lt-home">
+	<section class="lt-home__hero">
+		<div class="lt-home__copy">
+			<a class="lt-release" href={`${BASE}docs/results/phase1/`}
+				><svg class="i" aria-hidden="true"><use href="#g-loop"></use></svg><span class="lt-release__k">Phase 1</span><span>The results of the first study</span><svg class="i lt-release__h" aria-hidden="true"><use href="#g-head"></use></svg></a
+			>
+			<h1 class="lt-home__h" id="_top">Documentation</h1>
+			<p class="lt-home__lead">One readable model for looped MoE research. Change a field, match the budgets, train, and keep the record.</p>
+			<div class="lt-home__cta">
+				<a class="lt-btn lt-btn--acc" href={`${BASE}docs/architecture/`}><span>Read the architecture</span></a>
+				<button type="button" class="lt-btn lt-btn--ghost" data-open-search><svg class="i" aria-hidden="true"><use href="#g-search"></use></svg><span>Search</span><kbd>/</kbd></button>
+			</div>
+		</div>
+		<figure class="lt-home__fig" aria-label={`${T.design['phase1/m3']}.`}>
+			<div class="lt-home__stage" set:html={hero} />
+			<figcaption class="lt-home__id">
+				<span class="lt-home__name">{T.design['phase1/m3']}</span>
+				<span class="lt-home__count"><span>{m3.pre + m3.core + m3.suf} stored</span><span class="is-loop">{runs} run</span></span>
+			</figcaption>
+		</figure>
+	</section>
+
+	<section class="lt-home__sec" aria-labelledby="paths-h">
+		<h2 class="lt-home__h2" id="paths-h">Main paths</h2>
+		<ol class="lt-rail">
+			{
+				paths.map((p) => (
+					<li>
+						<a class="lt-rail__a" href={p.href}>
+							<b>{p.t}</b>
+							<span>{p.d}</span>
+						</a>
+						<span class="lt-ev lt-rail__f">{p.f}</span>
+					</li>
+				))
+			}
+		</ol>
+	</section>
+
+	<section class="lt-home__sec lt-home__start" aria-labelledby="start-h">
+		<div class="lt-home__starttext">
+			<h2 class="lt-home__h2" id="start-h">Start in four commands</h2>
+			<p>Clone, install the CPU model with its data and Hugging Face extras, print the tree of frozen configurations, run the tests. No GPU is needed.</p>
+			<p class="lt-home__next">Then <a href={`${BASE}docs/architecture/`}>Architecture</a>, <a href={`${BASE}docs/recipes/`}>Recipes</a>, <a href={`${BASE}docs/comparison/`}>Cost and comparison</a>.</p>
+		</div>
+		<div class="lt-term">
+			<button type="button" class="lt-tbtn" data-copy={commands.join('\n')} aria-label="Copy the four commands"
+				><svg class="i lt-tbtn__a" aria-hidden="true"><use href="#g-twin"></use></svg><svg class="i lt-tbtn__b" aria-hidden="true"><use href="#g-in"></use></svg><span>copy</span></button
+			>
+			<pre class="lt-term__body" tabindex="0"><code>{commands.map((c, i) => <span class="lt-ln"><span class="lt-ln__n" aria-hidden="true">{i + 1}</span>{c}</span>)}</code></pre>
+		</div>
+	</section>
+
+	<section class="lt-home__sec" aria-labelledby="all-h">
+		<h2 class="lt-home__h2" id="all-h">All pages</h2>
+		<div class="lt-groups">
+			{
+				GROUPS.map((g, gi) => (
+					<div class="lt-group">
+						<p class="lt-group__h">
+							<span class="lt-group__n">{String(gi + 1).padStart(2, '0')}</span>
+							{g.label}
+						</p>
+						<ul>
+							{g.pages
+								.filter(([src]) => src)
+								.map(([, slug, label]) => (
+									<li>
+										<a href={`${BASE}docs/${slug}/`}>
+											<span class="lt-group__t">{label}</span>
+											<span class="lt-group__d">{blurb[slug]}</span>
+										</a>
+									</li>
+								))}
+						</ul>
+					</div>
+				))
+			}
+		</div>
+		<p class="lt-home__src">Every page is a document of the repository, synced from <a class="lt-ev" href={`${REPO_URL}/tree/main/docs`} rel="noopener">docs/</a> on the main branch.</p>
+	</section>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => {
+		b.addEventListener('click', async () => {
+			try {
+				await navigator.clipboard.writeText(b.dataset.copy || '');
+				b.classList.add('is-done');
+				setTimeout(() => b.classList.remove('is-done'), 1600);
+			} catch {}
+		});
+	});
+	document.querySelectorAll('[data-open-search]').forEach((b) =>
+		b.addEventListener('click', () => document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]')?.click())
+	);
+</script>

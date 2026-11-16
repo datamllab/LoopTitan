@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoopTitan · A common ground for looped MoE research</title>
+<meta name="description" content="LoopTitan: the design space of looped MoE in one model, compared on equal budgets, checked against independent code, with an open record.">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="brand/favicon.ico" sizes="32x32">
+<link rel="icon" type="image/svg+xml" href="brand/favicon.svg">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.replace('no-js', 'js'); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('is-opening');</script>
+<script src="data/configs.js"></script>
+<script src="data/checks.js"></script>
+<script src="data/compare.js"></script>
+<script src="data/data.js"></script>
+<script src="data/record.js"></script>
+<script src="data/refs.js"></script>
+<script src="content.js"></script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+	<!-- the page's own glyphs: each is a miniature of a drawing on this page. 16-unit grid, 1.5 stroke. -->
+	<symbol id="g-bar" viewBox="0 0 16 16"><path d="M1.5 8.5h13" stroke="currentColor" stroke-width="1" opacity=".45"/><rect x="6.5" y="3" width="3" height="11" rx="1" fill="currentColor"/></symbol>
+	<symbol id="g-loop" viewBox="0 0 16 16"><g fill="currentColor"><rect x="2.5" y="8" width="2.5" height="6.5" rx="1"/><rect x="6.75" y="8" width="2.5" height="6.5" rx="1"/><rect x="11" y="8" width="2.5" height="6.5" rx="1"/></g><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.25 6.25C12.25 1.75 3.75 1.75 3.75 6.25"/><path d="M1.9 4.6l1.85 1.9 1.85-1.9"/></g></symbol>
+	<symbol id="g-head" viewBox="0 0 16 16"><path d="M5 6.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+	<symbol id="g-out" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.25 13C3.25 7.5 6.5 3.75 12.25 3.75"/><path d="M9.75 1.5l2.5 2.25-2.5 2.25"/></g></symbol>
+	<symbol id="g-in" viewBox="0 0 16 16"><path d="M.5 8h15" stroke="currentColor" stroke-width="1" opacity=".45"/><path d="M3 4v8M13 4v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8.75" cy="8" r="2.25" fill="currentColor"/></symbol>
+	<symbol id="g-off" viewBox="0 0 16 16"><path d="M.5 8h15" stroke="currentColor" stroke-width="1" opacity=".45"/><path d="M1.75 4v8M8.75 4v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13.25" cy="8" r="2" fill="var(--paper, #fff)" stroke="currentColor" stroke-width="1.5"/></symbol>
+	<symbol id="g-twin" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.25" y="4.75" width="6.5" height="9.5" rx="1.5" opacity=".45"/><rect x="7.25" y="1.75" width="6.5" height="9.5" rx="1.5"/></g></symbol>
+	<symbol id="g-pause" viewBox="0 0 16 16"><g fill="currentColor"><rect x="4.5" y="3" width="2.5" height="10" rx="1"/><rect x="9" y="3" width="2.5" height="10" rx="1"/></g></symbol>
+	<symbol id="g-play" viewBox="0 0 16 16"><path d="M5.25 3.4v9.2a.6.6 0 0 0 .92.5l7.1-4.6a.6.6 0 0 0 0-1l-7.1-4.6a.6.6 0 0 0-.92.5z" fill="currentColor"/></symbol>
+</svg>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" data-nav>
+	<div class="nav__in">
+		<a class="lockup" href="#top" aria-label="LoopTitan, top of page">
+			<span class="lockup__mark" aria-hidden="true"><svg focusable="false" viewBox="0 0 106.22 100" data-mark="medium" data-grow="shell"><use href="brand/mark.svg#medium"/></svg></span>
+			<span class="lockup__name">LoopTitan</span>
+		</a>
+		<nav class="nav__links" aria-label="Sections" data-navlinks>
+			<span class="nav__pill" data-navpill aria-hidden="true"></span>
+			<a href="#designs">Designs</a>
+			<a href="#compare">Compare</a>
+			<a href="#check">Check</a>
+			<a href="#studies">Studies</a>
+			<a href="#record">Record</a>
+			<a href="#start">Start</a>
+		</nav>
+		<a class="qlink nav__docs" href="docs/">Docs</a>
+		<a class="btn btn--ghost btn--s" href="https://github.com/datamllab/LoopTitan" rel="noopener"><svg class="i" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 .2a8 8 0 0 0-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.4.7 0-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.7-3.6 3.9.3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 .2"/></svg><span>GitHub</span></a>
+	</div>
+</header>
+
+<main id="main">
+<!-- ============================================================ 0. FIRST SCREEN -->
+<section class="hero" id="top" aria-labelledby="hero-h">
+	<div class="hero__glow" aria-hidden="true"></div>
+	<div class="wrap hero__grid">
+		<div class="hero__copy">
+			<a class="release" href="#studies" data-in style="--d:0"><span class="release__m" data-release aria-hidden="true"></span><span class="release__k">Phase 1</span><span class="release__t">The first study, with its report</span><svg class="i release__h" aria-hidden="true"><use href="#g-head"/></svg></a>
+			<h1 class="hero__h" id="hero-h" data-in style="--d:1">A common ground for looped MoE research.</h1>
+			<p class="hero__sub" data-in style="--d:2">The design space of looped MoE in one model, compared on equal&nbsp;terms.</p>
+			<div class="hero__cta" data-in style="--d:3">
+				<a class="btn btn--acc" href="https://github.com/datamllab/LoopTitan" rel="noopener"><span>Open on GitHub</span><svg class="i" aria-hidden="true"><use href="#g-out"/></svg></a>
+				<a class="btn btn--ghost" href="#start"><span>Get started</span></a>
+				<span class="hero__quiet"><a class="qlink" href="#" aria-disabled="true">Paper</a><a class="qlink" href="#" aria-disabled="true">Models</a></span>
+			</div>
+			<ol class="pillars" data-in style="--d:4">
+				<li><a href="#designs"><span class="pillars__f" data-pf="model" aria-hidden="true"></span><span class="pillars__t"><b>One model, every design.</b><span><span class="pillars__n" data-pn="configs" data-v="configs"></span> configurations in one model</span></span></a></li>
+				<li><a href="#compare"><span class="pillars__f" data-pf="budget" aria-hidden="true"></span><span class="pillars__t"><b>Equal budgets before you train.</b><span><span class="pillars__n" data-pn="budgets" data-v="budgets"></span> budgets within ±5%</span></span></a></li>
+				<li><a href="#check"><span class="pillars__f" data-pf="check" aria-hidden="true"></span><span class="pillars__t"><b>Checked against independent code.</b><span><span class="pillars__n" data-pn="checks" data-v="checks"></span> values within tolerance</span></span></a></li>
+			</ol><script>fillV()</script>
+		</div>
+
+		<figure class="inst" data-hero aria-labelledby="inst-cap">
+			<div class="inst__bar">
+				<div class="seg seg--hero" role="radiogroup" aria-label="Designs" data-chips></div>
+				<button type="button" class="iconbtn" data-auto aria-label="Pause the tour" title="Pause the tour"><svg class="pause" aria-hidden="true"><use href="#g-pause"/></svg><svg class="play" aria-hidden="true"><use href="#g-play"/></svg></button>
+			</div>
+			<div class="inst__stage" data-stage>
+				<svg class="model" data-svg aria-hidden="true"></svg>
+				<div class="tip" data-tip aria-hidden="true"></div>
+			</div>
+			<div class="inst__id" aria-live="off">
+				<p class="inst__name" data-name></p>
+				<p class="inst__tags" data-tags></p>
+				<dl class="inst__count">
+					<div><dt>Layers stored</dt><dd data-stored>12</dd></div>
+					<div><dt>Layers run</dt><dd data-run>18</dd></div>
+				</dl>
+			</div>
+			<div class="inst__bud">
+				<p class="inst__bh"><span>Budget against the ordinary MoE</span><span class="okline" data-ok><span class="okline__b" data-ok-b aria-hidden="true"></span><span class="okline__t" data-ok-t>within ±5%</span></span></p>
+				<div class="gauges" data-gauges></div>
+			</div>
+			<figcaption class="inst__key" id="inst-cap"><span class="key__i"><span class="key key--ink"></span>one layer, area = its expert parameters</span><span class="key__i"><span class="key key--acc"></span>looped layers</span><span class="key__i"><span class="key key--arc">×2</span>visits per token</span></figcaption>
+		</figure>
+	</div>
+</section>
+
+<!-- ============================================================ 1. DESIGNS -->
+<section class="sec" id="designs" aria-labelledby="designs-h">
+	<div class="wrap">
+		<header class="sh" data-rv>
+			<p class="eyebrow"><span>01</span>Designs</p>
+			<h2 class="sh__h" id="designs-h">One model, every&nbsp;design.</h2>
+			<p class="sh__lead">Each design decision is a field of one readable model. Each configuration declares its parent and the fields it&nbsp;changes.</p>
+		</header>
+		<ol class="mechs" data-mechs></ol>
+
+		<div class="explorer" data-explorer data-rv>
+			<div class="explorer__side">
+				<div class="explorer__head">
+					<p class="explorer__t"><b data-n-configs data-v="configs"></b> frozen configurations</p><script>fillV()</script>
+					<label class="filter"><span class="filter__k" aria-hidden="true">filter</span><input type="search" aria-label="Filter configurations" data-filter spellcheck="false" autocomplete="off"><span class="filter__n" data-filter-n aria-live="polite"></span><span class="filter__key" aria-hidden="true">/</span></label>
+				</div>
+				<ul class="tree" role="listbox" aria-label="Configurations, by parent" data-tree></ul>
+			</div>
+			<div class="explorer__main">
+				<div class="insp__top">
+					<div>
+						<p class="insp__from" data-from></p>
+						<h3 class="insp__name" data-iname></h3>
+					</div>
+					<a class="filechip" data-ifile rel="noopener"><i>recipe</i><span></span></a>
+				</div>
+				<div class="insp__stage"><svg class="model" data-isvg aria-hidden="true"></svg></div>
+				<div class="insp__grid">
+					<div class="diffcard">
+						<p class="cardlabel" data-dlabel>Changed against its parent</p>
+						<div class="diff" data-diff></div>
+					</div>
+					<div class="insp__bud">
+						<p class="cardlabel">Budget against the ordinary MoE</p>
+						<div class="gauges gauges--stack" data-igauges></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<p class="note" data-rv>From <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/scripts/lineage.py" rel="noopener">scripts/lineage.py</a> and the frozen files in <code>recipes/</code>. One height scale for every drawing on this page. A superscript marks a published design that uses this mechanism and is implemented&nbsp;here.</p>
+	</div>
+</section>
+
+<!-- ============================================================ 2. COMPARE -->
+<section class="sec sec--alt" id="compare" aria-labelledby="compare-h">
+	<div class="wrap">
+		<header class="sh" data-rv>
+			<p class="eyebrow"><span>02</span>Compare</p>
+			<h2 class="sh__h" id="compare-h">Equal budgets before you&nbsp;train.</h2>
+			<p class="sh__lead">One command on a CPU: unique parameters, training FLOPs and KV cache of two configurations, against one&nbsp;tolerance.</p>
+		</header>
+		<div class="bento bento--cmp">
+			<figure class="card card--match" data-match data-rv aria-labelledby="match-h">
+				<h3 class="card__h" id="match-h">Match first, then compare.</h3>
+				<p class="card__t">The unrolled twin writes the loop out as distinct layers: same budgets, no revisit. A loop added without matching leaves the&nbsp;band.</p>
+				<div class="seg" role="radiogroup" aria-label="Configuration" data-mchips></div>
+				<div class="match__stage"><svg class="model" data-msvg aria-hidden="true"></svg></div>
+				<div class="match__run" data-mrun aria-hidden="true"><p class="match__runk">Training FLOPs per token, one cell per layer run</p></div>
+				<p class="match__cap" data-mcap aria-live="polite"></p>
+				<div class="match__bud">
+					<p class="inst__bh"><span>Budget against the ordinary MoE</span><span class="okline" data-mok><span class="okline__b" data-mok-b aria-hidden="true"></span><span class="okline__t" data-mok-t>within ±5%</span></span></p>
+					<div class="gauges" data-mgauges></div>
+				</div>
+			</figure>
+			<div class="term" data-term data-rv>
+				<span class="term__acts">
+					<button type="button" class="tbtn" data-replay aria-label="Run again" data-tip="Run again"><svg class="i" aria-hidden="true"><use href="#g-loop"/></svg><span>run again</span></button>
+					<button type="button" class="tbtn" data-copy="cmd-cmp" aria-label="Copy the command" data-tip="Copy"><svg class="i tbtn__a" aria-hidden="true"><use href="#g-twin"/></svg><svg class="i tbtn__b" aria-hidden="true"><use href="#g-in"/></svg><span>copy</span></button>
+				</span>
+				<pre class="term__body" id="cmd-cmp"><code class="term__cmd" data-cmd data-v="cmd"><span class="term__p" aria-hidden="true">$ </span></code><code class="term__out" data-out></code></pre><script>fillV()</script>
+			</div>
+			<div class="card card--ctl card--chain" data-rv>
+				<p class="cardlabel">Control that ships with it</p>
+				<h3 class="card__h">The one-change chain</h3>
+				<p class="card__t">From the ordinary MoE to the loop, one decision per step, each step matched on all three&nbsp;budgets.</p>
+				<ol class="chainrow" data-chainrow aria-hidden="true"></ol>
+				<span class="ev-row"><a class="ev" href="https://github.com/datamllab/LoopTitan/tree/main/recipes/shape" rel="noopener">recipes/shape/</a><a class="ev" href="https://github.com/datamllab/LoopTitan/tree/main/recipes/phase1" rel="noopener">recipes/phase1/</a></span>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- ============================================================ 3. CHECK -->
+<section class="sec" id="check" aria-labelledby="check-h">
+	<div class="wrap">
+		<header class="sh" data-rv>
+			<p class="eyebrow"><span>03</span>Check</p>
+			<h2 class="sh__h" id="check-h">Checked against independent&nbsp;code.</h2>
+			<p class="sh__lead">The model matches the official Transformers Qwen3-MoE in forward pass, gradients, optimizer steps and cache. A loop calls the official layers in the loop’s order, with the weights&nbsp;shared.</p>
+		</header>
+		<div class="bento bento--chk">
+			<figure class="card card--matrix" data-rv aria-labelledby="mx-cap">
+				<div class="card__headrow">
+					<p class="cardlabel"><span data-v="casesLabel"></span><code>Qwen3MoeForCausalLM</code></p>
+					<span class="tstrip"><span class="tstrip__c" data-mx-cells aria-hidden="true"></span><span class="tstrip__t" data-mx-ok data-v="checksWithin"></span></span>
+				</div>
+				<div class="calls" data-calls aria-hidden="true"></div>
+				<div class="tplot" data-tplot role="img" aria-label="Thirty measured differences, each against its tolerance; every one is below it."></div>
+				<div class="mxwrap" id="mx-values" hidden><div class="matrix" data-matrix></div></div>
+				<button type="button" class="disc__tog mx__tog" aria-expanded="false" aria-controls="mx-values" data-mx-tog><svg class="i" aria-hidden="true"><use href="#g-head"/></svg><span data-v="checksAll"></span></button>
+				<figcaption class="note" id="mx-cap">Largest absolute difference from the reference, <span data-v="updates"></span> <span data-v="optimizer"></span> updates each, <span data-v="dtype"></span> on <span data-v="device"></span>, Transformers <span data-v="transformers"></span>. Each dot is one difference against its own tolerance. Evidence: <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/baselines.md" rel="noopener">docs/baselines.md</a> <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/evidence/qwen3-cpu.json" rel="noopener">qwen3-cpu.json</a></figcaption>
+			</figure>
+			<div class="card card--stat" data-rv>
+				<p class="cardlabel">Official checkpoints convert</p>
+				<p class="stat"><span class="stat__n" data-v="stat"></span></p>
+				<p class="card__t">Largest logit difference at every depth after converting the official weights of two published looped models<sup class="ref-k" data-refs="2510.25741 2502.05171"></sup>. Same argmax&nbsp;token.</p>
+				<span class="ev-row" data-v="statPulls"></span>
+			</div>
+			<div class="card card--code" data-rv>
+				<p class="cardlabel">A conformance check for your configuration</p>
+				<pre class="code"><code><span class="tk-k">from</span> moeloop.testing <span class="tk-k">import</span> check_recipe
+report = <span class="tk-f">check_recipe</span>(spec)</code></pre>
+				<ul class="checks" data-checks></ul>
+				<p class="card__foot"><span class="stat__s" data-tests data-v="tests"></span> tests · <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/extensions.md" rel="noopener">docs/extensions.md</a></p>
+			</div>
+		</div>
+	</div>
+<script>fillV()</script>
+</section>
+
+<!-- ============================================================ 4. TRAIN AND EXPORT -->
+<section class="sec sec--tight" id="train" aria-labelledby="train-h">
+	<div class="wrap">
+		<header class="sh sh--row" data-rv>
+			<p class="eyebrow"><span>04</span>Train and export</p>
+		</header>
+		<ol class="rail" data-rv>
+			<li><b>TorchTitan</b><span>Native FSDP training.</span><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/torchtitan.md" rel="noopener">docs/torchtitan.md</a></li>
+			<li><b>AdamW or Muon</b><span>One setting in the recipe.</span><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/training.md" rel="noopener">docs/training.md</a></li>
+			<li><b>One data stream</b><span>The same tokens at any GPU count.</span><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/architecture.md" rel="noopener">docs/architecture.md</a></li>
+			<li><b>Exact resume</b><span>Every model and optimizer tensor equal.</span><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/validation.md" rel="noopener">docs/validation.md</a></li>
+			<li><b>Hugging Face export</b><span>Standalone, no training code.</span><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/training.md" rel="noopener">docs/training.md</a></li>
+		</ol>
+	</div>
+</section>
+
+<!-- ============================================================ 5. STUDIES -->
+<section class="sec sec--alt" id="studies" aria-labelledby="studies-h">
+	<div class="wrap">
+		<header class="sh" data-rv>
+			<p class="eyebrow"><span>05</span>Studies</p>
+			<h2 class="sh__h" id="studies-h">Studies run on LoopTitan.</h2>
+			<p class="sh__lead">Each study ships with its report, its configurations and its&nbsp;record.</p>
+		</header>
+		<article class="study" aria-labelledby="p1-h" data-rv>
+			<div class="study__head">
+				<div class="study__meta"><span class="mlabel">Phase 1</span><span class="study__scale" data-scale data-v="scale"></span></div><script>fillV()</script>
+				<h3 class="study__h" id="p1-h">What does parameter revisit buy a mixture&#8209;of&#8209;experts?</h3>
+				<ol class="finds">
+					<li><span class="finds__n">1</span><p>Parameter revisit itself contributes almost&nbsp;nothing.</p></li>
+					<li><span class="finds__n">2</span><p>More than half of the looped recipe’s gain disappears under&nbsp;Muon.</p></li>
+					<li><span class="finds__n">3</span><p>Beyond matched budgets, one more visit gains as much as doubling the experts under&nbsp;Muon.</p></li>
+				</ol>
+				<p class="study__links"><a class="btn btn--ghost btn--s" href="#" aria-disabled="true"><span>Read the report</span></a><span class="ev-row" data-v="studies"></span></p><script>fillV()</script>
+			</div>
+			<figure class="fall" aria-labelledby="fall-cap">
+				<div class="fall__head">
+					<p class="fall__t">The looped recipe, built one decision at a time</p>
+					<p class="legend"><span><span class="legend__k legend__k--a"></span>AdamW</span><span><span class="legend__k legend__k--m"></span>Muon</span></p>
+				</div>
+				<div class="fall__plot" data-fall></div>
+				<figcaption class="note" id="fall-cap" data-protocol></figcaption>
+			</figure>
+			<div class="disc" data-disc>
+				<p class="disc__t" data-pub-t data-v="pubTitle"></p><script>fillV()</script>
+				<div class="disc__body" id="pub-body">
+					<div class="tbl"><table class="rt" data-pub></table></div>
+					<div class="disc__notes" data-pub-notes></div>
+				</div>
+				<button type="button" class="disc__tog" aria-expanded="false" aria-controls="pub-body" data-disc-tog><svg class="i" aria-hidden="true"><use href="#g-head"/></svg><span data-disc-l></span></button>
+			</div>
+		</article>
+		<p class="later" data-rv><span class="later__s" aria-hidden="true"></span>Later phases join this list when they are&nbsp;released.</p>
+	</div>
+</section>
+
+<!-- ============================================================ 6. OPEN RECORD -->
+<section class="sec" id="record" aria-labelledby="record-h">
+	<div class="wrap">
+		<header class="sh" data-rv>
+			<p class="eyebrow"><span>06</span>An open record</p>
+			<h2 class="sh__h" id="record-h">Declared, checked, in the&nbsp;open.</h2>
+		</header>
+		<ol class="flow" data-rv>
+			<li><span class="flow__n">1</span><b>Declare</b><span>The study fixes its arms, its controlled fields and its adaptable fields.</span></li>
+			<li><span class="flow__n">2</span><b>Check</b><span>Every run is checked against the declaration.</span></li>
+			<li><span class="flow__n">3</span><b>Record</b><span>Runs, failures and refuted predictions stay in the public issues.</span></li>
+			<li class="flow__in"><span class="flow__n">4</span><b>Contribute</b><span>An outside result enters by pull request as one folder; the bench check validates it, and every complete record is merged.</span><span class="ev-row"><a class="ev ev--doc" href="https://github.com/datamllab/LoopTitan/blob/main/.github/CONTRIBUTING.md" rel="noopener">Contributing guide</a><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/.github/workflows/bench.yml" rel="noopener">bench.yml</a></span><span class="entry" data-entry aria-hidden="true"></span></li>
+		</ol>
+		<div class="bento bento--rec">
+			<div class="card card--case" data-rv aria-labelledby="case-h">
+				<div class="card__headrow"><p class="cardlabel" id="case-h">A real case · <a class="ev ev--doc" rel="noopener" data-v="caseIssue"></a></p></div>
+				<div class="ci">
+					<div class="ci__row ci__row--block">
+						<span class="ci__ic" aria-hidden="true"><svg class="i" aria-hidden="true"><use href="#g-off"/></svg></span>
+						<div><p class="ci__h">Blocked before launch</p><p class="ci__t">A short cool-down fork would record <code data-v="caseRecorded"></code>. Its study declared <code data-v="caseDeclared"></code> as&nbsp;controlled.</p></div>
+					</div>
+					<div class="ci__row ci__row--ok">
+						<span class="ci__ic" aria-hidden="true"><svg class="i" aria-hidden="true"><use href="#g-in"/></svg></span>
+						<div><p class="ci__h">Decision</p><p class="ci__t">The study moved <code data-v="caseField"></code> to its adaptable fields, derived from whole steps. The runs went ahead unchanged.</p></div>
+					</div>
+				</div>
+			</div>
+			<script>fillV()</script>
+			<figure class="card card--act" data-rv aria-labelledby="act-cap">
+				<div class="card__headrow"><p class="cardlabel" id="act-cap">Every study and every run is a public thread</p><a class="ev ev--doc" href="https://github.com/datamllab/LoopTitan/issues" rel="noopener">Issues</a></div>
+				<dl class="tally" data-tally></dl>
+				<div class="act" data-act></div>
+			</figure>
+		</div>
+	</div>
+</section>
+
+<!-- ============================================================ 7. START -->
+<section class="sec sec--alt" id="start" aria-labelledby="start-h">
+	<div class="wrap">
+		<header class="sh" data-rv>
+			<p class="eyebrow"><span>07</span>Start</p>
+			<h2 class="sh__h" id="start-h">Start in four&nbsp;commands.</h2>
+		</header>
+		<div class="bento bento--start">
+			<div class="term term--start" data-rv>
+				<span class="term__acts"><button type="button" class="tbtn" data-copy="cmd-start" data-text="git clone https://github.com/datamllab/LoopTitan && cd LoopTitan
+uv pip install &#39;.[data,hf]&#39;
+python scripts/lineage.py
+python -m pytest -q" aria-label="Copy the four commands" data-tip="Copy"><svg class="i tbtn__a" aria-hidden="true"><use href="#g-twin"/></svg><svg class="i tbtn__b" aria-hidden="true"><use href="#g-in"/></svg><span>copy</span></button></span>
+<pre class="term__body term__body--n" id="cmd-start"><code><span class="ln"><span class="term__p" aria-hidden="true">1</span>git clone https://github.com/datamllab/LoopTitan &amp;&amp; cd LoopTitan</span><span class="ln"><span class="term__p" aria-hidden="true">2</span>uv pip install '.[data,hf]'</span><span class="ln"><span class="term__p" aria-hidden="true">3</span>python scripts/lineage.py</span><span class="ln"><span class="term__p" aria-hidden="true">4</span>python -m pytest -q</span></code></pre>
+			</div>
+			<div class="card card--add" data-rv>
+				<p class="cardlabel">Add a configuration</p>
+				<div class="addfig" data-addfig aria-hidden="true"></div>
+				<ol class="steps">
+					<li><span class="steps__n">1</span><p>Copy a frozen configuration from <code>recipes/</code> and change its fields.</p></li>
+					<li><span class="steps__n">2</span><p>Declare its parent in <code>scripts/lineage.py</code>.</p></li>
+					<li><span class="steps__n">3</span><p>Compare its budgets and run <code>check_recipe</code>.</p></li>
+				</ol>
+				<span class="ev-row"><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/recipes.md" rel="noopener">docs/recipes.md</a><a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/development.md" rel="noopener">docs/development.md</a></span>
+			</div>
+			<div class="card card--cite" data-rv>
+				<div class="authors" aria-label="Authors">
+					<p class="authors__n">The LoopTitan authors</p>
+					<ul class="authors__i"><li data-institution>Institution</li><li data-institution>Institution</li></ul>
+				</div>
+				<p class="cardlabel">Cite and licence</p>
+				<p class="card__t">Cite LoopTitan with the repository’s <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/CITATION.cff" rel="noopener">CITATION.cff</a>. Code under the <a class="ev ev--doc" href="https://github.com/datamllab/LoopTitan/blob/main/LICENSE" rel="noopener">MIT licence</a>. Python package <code>moeloop</code>.</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- ============================================================ ACKNOWLEDGEMENTS, REFERENCES -->
+<section class="sec sec--back" id="thanks" aria-labelledby="thanks-h">
+	<div class="wrap back">
+		<div class="thanks" data-rv>
+			<h2 class="back__h" id="thanks-h">Acknowledgements</h2>
+			<p>LoopTitan stands on the work of others, and we thank&nbsp;them.</p>
+			<p><a href="https://github.com/pytorch/torchtitan" rel="noopener">TorchTitan</a> is the training system we build on. <a href="https://github.com/doem97/cvsm" rel="noopener">CVSM</a>, a protocol for research run through issues, shaped how our record is kept. <a href="https://github.com/huggingface/transformers" rel="noopener">Hugging Face Transformers</a> and its Qwen3-MoE implementation are our independent&nbsp;reference.</p>
+			<p>The authors of these public looped-model codebases shared the code whose designs we implement here, and we learned from&nbsp;it:</p>
+			<ul class="thanks__list">
+				<li><a href="https://github.com/seal-rg/recurrent-pretraining" rel="noopener">seal-rg/recurrent-pretraining</a></li>
+				<li><a href="https://github.com/SR-A-W/how-to-loop-moe" rel="noopener">SR-A-W/how-to-loop-moe</a></li>
+				<li><a href="https://github.com/epfml/looped-moe" rel="noopener">epfml/looped-moe</a></li>
+				<li><a href="https://github.com/hed-ucas/LOOM" rel="noopener">hed-ucas/LOOM</a></li>
+				<li><a href="https://github.com/ifm-ai/xllm-loop" rel="noopener">ifm-ai/xllm-loop</a></li>
+				<li><a href="https://github.com/lcqysl/LatentLoop" rel="noopener">lcqysl/LatentLoop</a></li>
+				<li><a href="https://huggingface.co/ByteDance/Ouro-1.4B" rel="noopener">ByteDance/Ouro-1.4B</a> <span class="mid">(model code)</span></li>
+			</ul>
+			<p>Thank you to every author whose design is a configuration on this&nbsp;page.</p>
+		</div>
+		<div class="refs" data-rv>
+			<h2 class="back__h" id="refs-h">References</h2>
+			<ol class="refs__list" data-refs-list></ol>
+		</div>
+	</div>
+</section>
+</main>
+
+<footer class="foot">
+	<div class="wrap foot__in">
+		<div class="foot__meta">
+			<nav class="foot__nav" aria-label="Project, footer">
+				<a href="https://github.com/datamllab/LoopTitan" rel="noopener">GitHub</a>
+				<a class="qlink" href="#" aria-disabled="true">Paper</a>
+				<a class="qlink" href="#" aria-disabled="true">Models</a>
+				<a href="https://github.com/datamllab/LoopTitan/blob/main/CITATION.cff" rel="noopener">Cite</a>
+			</nav>
+			<p>The LoopTitan authors · <a href="https://github.com/datamllab/LoopTitan/blob/main/LICENSE" rel="noopener">MIT licence</a></p>
+			<p class="foot__src" data-src></p>
+		</div>
+		<span class="foot__shaft" aria-hidden="true"></span>
+		<div class="foot__lock">
+			<span class="foot__mark" aria-hidden="true"><svg focusable="false" viewBox="0 0 106.22 100" data-mark="medium"><use href="brand/mark.svg#medium"/></svg></span>
+			<p class="foot__name">LoopTitan</p>
+		</div>
+	</div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
