@@ -1,0 +1,99 @@
+/* LoopTitan design tokens: shared by the homepage and the docs. Type, weight, spacing, radii, control heights,
+   border, shadows, colours and motion. Load before the page's own stylesheet. */
+@font-face { font-family: 'Inter'; src: url(fonts/inter.woff2) format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url(fonts/geist-mono.woff2) format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+
+:root {
+	/* colour: ink and greys; indigo only for the loop and the primary action */
+	--ink: #16181d;
+	--ink-2: #2b2f38;
+	--mid: #5b616e;
+	--soft-t: #737985;   /* the lightest grey for text (4.4 : 1) */
+	--soft: #9aa0ab;     /* marks and strokes only, never text */
+	--hair: #d5d8de;     /* drawing strokes */
+	--line: #e3e5e9;     /* the one border */
+	--faint: #eceef1;
+	--surface-3: #eef0f3;
+	--surface: #f5f6f8;
+	--surface-2: #fafbfc;
+	--paper: #ffffff;
+	--acc: #3346d3;      /* the loop, the primary action, focus */
+	--acc-d: #2738b8;
+	--acc-2: #7c89e4;    /* the loop, light: the token's light and its trail */
+	--acc-3: #aab3f0;    /* the loop on dark ground; focus on dark ground */
+	--tint: #f2f4fd;     /* the loop, as a ground: loop chips, the loop row */
+	--tint-2: #e6e9fb;
+	--code: #111317;
+	--code-line: #262a32;
+	--c-fg: #e6e8ee;
+	--c-fg-2: #b8bdc8;
+	--c-mute: #8d93a0;
+	--c-punc: #5f6573;
+
+	/* type: eight sizes, three weights */
+	--fs-1: 0.75rem;                        /* 12  micro, mono data */
+	--fs-2: 0.8125rem;                      /* 13  caption, controls, code */
+	--fs-3: 0.9375rem;                      /* 15  body */
+	--fs-4: 1.0625rem;                      /* 17  title */
+	--fs-5: 1.1875rem;                      /* 19  lead */
+	--fs-6: 1.5rem;                         /* 24  h3, numerals */
+	--fs-7: clamp(2rem, 3.4vw, 3rem);       /* 32–48  h2 */
+	--fs-8: clamp(2.5rem, 4vw, 3.875rem);   /* 40–62  display, the stat */
+	--w-r: 400;
+	--w-m: 500;
+	--w-s: 600;
+
+	/* space: one 4 px scale */
+	--s-1: 0.125rem;  /* 2 */
+	--s-2: 0.25rem;   /* 4 */
+	--s-3: 0.5rem;    /* 8 */
+	--s-4: 0.75rem;   /* 12 */
+	--s-5: 1rem;      /* 16 */
+	--s-6: 1.25rem;   /* 20 */
+	--s-7: 1.5rem;    /* 24 */
+	--s-8: 2rem;      /* 32 */
+	--s-9: 2.5rem;    /* 40 */
+	--s-10: 3rem;     /* 48 */
+	--s-11: 4rem;     /* 64 */
+	--s-12: 6rem;     /* 96 */
+	--sec-y: clamp(4rem, 7.5vw, 6rem);
+
+	/* radii: four */
+	--r-1: 0.375rem;  /* 6   chips, small squares, tooltips */
+	--r-2: 0.75rem;   /* 12  inset panels, wells, code blocks */
+	--r-3: 1.25rem;   /* 20  cards and panels */
+	--r-p: 62.5rem;   /* pill: buttons and switches */
+
+	/* controls: one ladder; horizontal padding follows the height */
+	--h-1: 1.25rem;   /* 20  evidence chips, keys */
+	--h-2: 1.5rem;    /* 24  status, tags, number squares */
+	--h-3: 1.75rem;   /* 28  rows, file chips, small buttons on code */
+	--h-4: 2rem;      /* 32  switches, nav, small buttons, icon buttons */
+	--h-5: 2.75rem;   /* 44  buttons */
+
+	/* one border, two shadows */
+	--bd: 0 0 0 1px var(--line);
+	--bd-in: inset 0 0 0 1px var(--line);
+	--sh-1: 0 1px 2px rgba(22, 24, 29, .05);
+	--sh-2: 0 1px 2px rgba(22, 24, 29, .04), 0 1rem 2rem -1rem rgba(22, 24, 29, .18);
+
+	/* motion: six durations, three easings and linear, one spring (in app.js) */
+	--t-press: 80ms;
+	--t-1: 140ms;
+	--t-2: 220ms;
+	--t-3: 320ms;
+	--t-4: 480ms;
+	--t-5: 760ms;
+	--stagger: 40ms;
+	--e-out: cubic-bezier(.16, 1, .3, 1);
+	--e-move: cubic-bezier(.65, 0, .35, 1);
+	--e-exit: cubic-bezier(.7, 0, .84, 0);
+
+	--sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+	--wrap: 77.5rem;
+	--gut: 2rem;
+	--nav-h: 4rem;
+	color-scheme: light;
+	interpolate-size: allow-keywords;
+}

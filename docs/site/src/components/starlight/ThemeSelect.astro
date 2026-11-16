@@ -1,0 +1,32 @@
+---
+// One round icon button that switches light and dark (the homepage's .iconbtn, its own glyphs). It writes
+// Starlight's own preference key, so Starlight's inline theme script applies the choice before the first paint.
+---
+
+<lt-theme class="lt-theme">
+	<button type="button" class="lt-iconbtn" aria-label="Switch to dark theme" data-tip="Theme">
+		<svg class="i lt-theme__l" aria-hidden="true"><use href="#g-light"></use></svg>
+		<svg class="i lt-theme__d" aria-hidden="true"><use href="#g-dark"></use></svg>
+	</button>
+</lt-theme>
+
+<script>
+	class LtTheme extends HTMLElement {
+		sync?: () => void;
+		connectedCallback() {
+			const b = this.querySelector('button')!;
+			const sync = () => b.setAttribute('aria-label', document.documentElement.dataset.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+			this.sync = sync;
+			sync();
+			b.addEventListener('click', () => {
+				const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+				document.documentElement.dataset.theme = next;
+				try {
+					localStorage.setItem('starlight-theme', next);
+				} catch {}
+				document.querySelectorAll('lt-theme').forEach((t) => (t as LtTheme).sync?.());
+			});
+		}
+	}
+	customElements.define('lt-theme', LtTheme);
+</script>

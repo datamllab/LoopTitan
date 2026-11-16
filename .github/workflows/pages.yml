@@ -1,0 +1,78 @@
+name: pages
+
+# Builds the site (docs/site/build.sh) with the base /LoopTitan/: as a check on pull requests that touch the site or
+# the documents, and on every push to main. A push to main is published to GitHub Pages only while the repository is
+# public, so nothing is published while it is private.
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "README.md"
+      - ".github/CONTRIBUTING.md"
+      - ".github/workflows/pages.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      PUBLISH: ${{ github.event_name == 'push' && github.event.repository.private == false }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: docs/site/.nvmrc
+          cache: npm
+          cache-dependency-path: docs/site/package-lock.json
+      # The homepage's data is generated from this checkout in the model environment, as in test.yml's model job.
+      - run: pip install uv==0.13.1
+      - run: uv sync --frozen
+      - run: uv pip install 'torch==2.14.0' --index-url https://download.pytorch.org/whl/cpu
+      - run: uv pip install -e '.[data,hf,train,report]' 'triton==3.8.0'
+      # Before publishing, refresh the record snapshot from the issue record with this workflow's read token.
+      - if: env.PUBLISH == 'true'
+        run: .venv/bin/python docs/site/scripts/gen_data.py --refresh-record
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      - run: ./docs/site/build.sh
+        env:
+          SITE_BASE: /LoopTitan/
+          PYTHON: ${{ github.workspace }}/.venv/bin/python
+      - if: env.PUBLISH == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site/dist
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

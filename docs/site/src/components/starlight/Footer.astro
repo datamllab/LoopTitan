@@ -1,0 +1,56 @@
+---
+// The page's source in the repository, previous and next on a shaft, and the homepage's footer.
+import { BASE, PAGES, REPO_URL } from '../../../nav.mjs';
+import { markSvg } from '../../lib/mark.mjs';
+
+const { pagination, entry } = Astro.locals.starlightRoute;
+const { prev, next } = pagination;
+const slug = entry.id.replace(/^docs\/?/, '');
+const page = PAGES.find((p) => p.slug === slug);
+const groupOf = (href: string) => PAGES.find((p) => href.endsWith(`/docs/${p.slug}/`))?.group ?? 'Start';
+---
+
+<footer class="lt-foot">
+	{
+		page && (
+			<p class="lt-foot__src">
+				<span>Source</span>
+				<a class="lt-ev" href={`${REPO_URL}/blob/main/${page.source}`} rel="noopener">{page.source}</a>
+				<span class="lt-foot__sep" aria-hidden="true" />
+				<a class="lt-ev lt-ev--doc" href={`${REPO_URL}/edit/main/${page.source}`} rel="noopener">Suggest a change</a>
+			</p>
+		)
+	}
+	{(prev || next) && <nav class="lt-pager" aria-label="Previous and next page">
+		{
+			prev ? (
+				<a class="lt-pager__a" href={prev.href} rel="prev">
+					<span class="lt-pager__k"><svg class="i lt-pager__h lt-pager__h--l" aria-hidden="true"><use href="#g-head" /></svg>{groupOf(prev.href)}</span>
+					<span class="lt-pager__t">{prev.label}</span>
+				</a>
+			) : (
+				<span />
+			)
+		}
+		{
+			next && (
+				<a class="lt-pager__a lt-pager__a--next" href={next.href} rel="next">
+					<span class="lt-pager__k">{groupOf(next.href)}<svg class="i lt-pager__h" aria-hidden="true"><use href="#g-head" /></svg></span>
+					<span class="lt-pager__t">{next.label}</span>
+				</a>
+			)
+		}
+	</nav>}
+	<div class="lt-sitefoot">
+		<div class="lt-sitefoot__meta">
+			<nav class="lt-sitefoot__nav" aria-label="Project">
+				<a href={REPO_URL} rel="noopener">GitHub</a>
+				<a href={`${BASE}`}>Home</a>
+				<a href={`${REPO_URL}/blob/main/CITATION.cff`} rel="noopener">Cite</a>
+			</nav>
+			<p>The LoopTitan authors · <a href={`${REPO_URL}/blob/main/LICENSE`} rel="noopener">MIT licence</a></p>
+		</div>
+		<span class="lt-sitefoot__shaft" aria-hidden="true"></span>
+		<a class="lt-sitefoot__lock" href={BASE} aria-label="LoopTitan, home"><span>LoopTitan</span><span class="lt-sitefoot__mark" set:html={markSvg} /></a>
+	</div>
+</footer>

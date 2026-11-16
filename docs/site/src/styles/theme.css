@@ -1,0 +1,102 @@
+/* The documentation's theme on the shared tokens (tokens.css, the homepage's own file, linked first):
+   the dark values of the same names, and Starlight's variables mapped onto the tokens.
+   Unlayered on purpose: it sits above Starlight's cascade layers. */
+
+:root {
+	/* tokens the documentation adds; derived from the shared ones */
+	--text: var(--ink-2);
+	--code-edge: #000;
+	--nav-bg: rgba(255, 255, 255, .92);
+	--fig-glow: var(--acc);
+
+	--sl-font: var(--sans);
+	--sl-font-mono: var(--mono);
+	--sl-color-white: var(--ink);
+	--sl-color-gray-1: var(--ink-2);
+	--sl-color-gray-2: var(--ink-2);
+	--sl-color-gray-3: var(--mid);
+	--sl-color-gray-4: var(--soft-t);
+	--sl-color-gray-5: var(--line);
+	--sl-color-gray-6: var(--surface);
+	--sl-color-gray-7: var(--surface-2);
+	--sl-color-black: var(--paper);
+	--sl-color-accent-low: var(--surface-3);
+	--sl-color-accent: var(--ink);
+	--sl-color-accent-high: var(--ink);
+	--sl-color-text: var(--ink-2);
+	--sl-color-text-accent: var(--ink);
+	--sl-color-text-invert: var(--paper);
+	--sl-color-bg: var(--paper);
+	--sl-color-bg-nav: var(--nav-bg);
+	--sl-color-bg-sidebar: var(--paper);
+	--sl-color-bg-inline-code: var(--surface);
+	--sl-color-bg-accent: var(--ink);
+	--sl-color-hairline-light: var(--faint);
+	--sl-color-hairline: var(--line);
+	--sl-color-hairline-shade: var(--line);
+	--sl-color-backdrop-overlay: rgba(22, 24, 29, .28);
+	/* asides and badges: greys; indigo only for the loop and the primary action */
+	--sl-color-blue-low: var(--surface-2);
+	--sl-color-blue: var(--ink);
+	--sl-color-blue-high: var(--ink);
+	--sl-color-purple-low: var(--surface-2);
+	--sl-color-purple: var(--ink);
+	--sl-color-purple-high: var(--ink);
+	--sl-color-green-low: var(--surface-2);
+	--sl-color-green: var(--ink);
+	--sl-color-green-high: var(--ink);
+	--sl-color-orange-low: var(--surface-2);
+	--sl-color-orange: var(--ink);
+	--sl-color-orange-high: var(--ink);
+	--sl-color-red-low: var(--surface-2);
+	--sl-color-red: var(--ink);
+	--sl-color-red-high: var(--ink);
+	--sl-shadow-sm: var(--sh-1);
+	--sl-shadow-md: var(--sh-2);
+	--sl-shadow-lg: var(--sh-2);
+
+	--sl-text-body: var(--fs-3);
+	--sl-text-h1: clamp(2rem, 1.6rem + 1.3vw, 2.625rem);
+	--sl-text-h2: var(--fs-6);
+	--sl-text-h3: var(--fs-4);
+	--sl-text-h4: var(--fs-3);
+	--sl-line-height: 1.7;
+	--sl-line-height-headings: 1.2;
+	--sl-content-width: 46rem;
+	--sl-sidebar-width: 17rem;
+	--sl-nav-height: var(--nav-h);
+	--sl-nav-pad-x: var(--s-7);
+	--sl-content-pad-x: var(--s-9);
+	--sl-menu-button-size: var(--h-4);
+	--sl-mobile-toc-height: 2.75rem;
+}
+
+/* dark: the same family on the #111317 ground */
+:root[data-theme='dark'] {
+	--ink: #e7ebf1;
+	--ink-2: #c3c9d4;
+	--mid: #949baa;
+	--soft-t: #7f8696;
+	--soft: #5c6372;
+	--hair: #363b46;
+	--line: #262a32;
+	--faint: #1d2027;
+	--surface-3: #20242c;
+	--surface: #191c22;
+	--surface-2: #15171c;
+	--paper: #111317;
+	--acc: #7486f2;
+	--acc-d: #8e9cf5;
+	--acc-2: #5a68c9;
+	--acc-3: #3d4790;
+	--tint: #171b2e;
+	--tint-2: #212845;
+	--code: #0b0c0f;
+	--code-line: #22252c;
+	--code-edge: #262a32;
+	--nav-bg: rgba(17, 19, 23, .92);
+	--sh-1: 0 1px 2px rgba(0, 0, 0, .3);
+	--sh-2: 0 1px 2px rgba(0, 0, 0, .3), 0 1rem 2rem -1rem rgba(0, 0, 0, .7);
+	--sl-color-backdrop-overlay: rgba(5, 6, 8, .62);
+	color-scheme: dark;
+}

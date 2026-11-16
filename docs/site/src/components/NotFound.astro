@@ -1,0 +1,25 @@
+---
+// The 404 page: the ordinary MoE drawn with one layer missing, and the ways back.
+import { C, modelSvg } from '../lib/home.mjs';
+import { BASE } from '../../nav.mjs';
+
+const svg = modelSvg(C['phase1/m0'], { slots: 14, pitch: 22, bw: 15, hU: 80, top: 16, bottom: 6, gap: 6 });
+---
+
+<div class="not-content lt-404">
+	<div class="lt-404__fig" set:html={svg} />
+	<p class="lt-eyebrow"><span>404</span>Not found</p>
+	<h1 class="lt-404__h" id="_top">No page has this address.</h1>
+	<p class="lt-404__t">It may have moved when the documents were synced from the repository. Search the documentation, or start from one of these.</p>
+	<p class="lt-404__a">
+		<a class="lt-btn lt-btn--acc" href={`${BASE}docs/`}><span>Documentation</span></a>
+		<a class="lt-btn lt-btn--ghost" href={BASE}><span>Home</span></a>
+		<button type="button" class="lt-btn lt-btn--ghost" data-open-search><svg class="i" aria-hidden="true"><use href="#g-search"></use></svg><span>Search</span></button>
+	</p>
+</div>
+
+<script>
+	document.querySelectorAll('[data-open-search]').forEach((b) =>
+		b.addEventListener('click', () => document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]')?.click())
+	);
+</script>

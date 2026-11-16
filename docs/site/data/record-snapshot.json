@@ -1,0 +1,1968 @@
+{
+ "as_of": "2026-11-16",
+ "repo": "https://github.com/datamllab/LoopTitan",
+ "threads": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "opened": "2026-10-20",
+   "closed": "2026-10-21",
+   "comments": 3,
+   "parent": null,
+   "title": "建立基于 CVSM 的 MoE-Loop 实验起点"
+  },
+  {
+   "n": 2,
+   "kind": "code",
+   "opened": "2026-10-20",
+   "closed": "2026-10-20",
+   "comments": 4,
+   "parent": 1,
+   "title": null
+  },
+  {
+   "n": 3,
+   "kind": "pr",
+   "opened": "2026-10-20",
+   "closed": "2026-10-20",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 4,
+   "kind": "code",
+   "opened": "2026-10-20",
+   "closed": "2026-10-21",
+   "comments": 12,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 5,
+   "kind": "pr",
+   "opened": "2026-10-20",
+   "closed": "2026-10-21",
+   "comments": 5,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 6,
+   "kind": "code",
+   "opened": "2026-10-21",
+   "closed": "2026-10-23",
+   "comments": 27,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 7,
+   "kind": "code",
+   "opened": "2026-10-21",
+   "closed": "2026-10-24",
+   "comments": 12,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 8,
+   "kind": "code",
+   "opened": "2026-10-21",
+   "closed": "2026-10-24",
+   "comments": 10,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 9,
+   "kind": "pr",
+   "opened": "2026-10-21",
+   "closed": "2026-10-23",
+   "comments": 9,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 11,
+   "kind": "pr",
+   "opened": "2026-10-23",
+   "closed": "2026-10-24",
+   "comments": 9,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 12,
+   "kind": "pr",
+   "opened": "2026-10-24",
+   "closed": "2026-10-26",
+   "comments": 4,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 19,
+   "kind": "plan",
+   "opened": "2026-10-29",
+   "closed": "2026-11-03",
+   "comments": 3,
+   "parent": null,
+   "title": "评测标准：字节精确的 BPB 与 CORE"
+  },
+  {
+   "n": 20,
+   "kind": "plan",
+   "opened": "2026-10-29",
+   "closed": null,
+   "comments": 4,
+   "parent": null,
+   "title": "训练方法与前沿实践对齐：Muon、与卡数无关的数据流、WSD 降温分支、EMA"
+  },
+  {
+   "n": 21,
+   "kind": "plan",
+   "opened": "2026-10-29",
+   "closed": null,
+   "comments": 6,
+   "parent": null,
+   "title": "Looped MoE Bench：协议、核对器、排行榜与首轮参考矩阵"
+  },
+  {
+   "n": 22,
+   "kind": "plan",
+   "opened": "2026-10-29",
+   "closed": "2026-11-03",
+   "comments": 6,
+   "parent": null,
+   "title": "方法覆盖、互操作与第三方接入"
+  },
+  {
+   "n": 24,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 0,
+   "parent": 19,
+   "title": null
+  },
+  {
+   "n": 25,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 0,
+   "parent": 19,
+   "title": null
+  },
+  {
+   "n": 26,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 2,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 27,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 7,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 28,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 29,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 3,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 30,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 0,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 31,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 32,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 0,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 33,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 0,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 34,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 36,
+   "kind": "run",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 14,
+   "parent": 19,
+   "title": null
+  },
+  {
+   "n": 37,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 38,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 39,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 41,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": 19,
+   "title": null
+  },
+  {
+   "n": 43,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 4,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 44,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 45,
+   "kind": "run",
+   "opened": "2026-10-29",
+   "closed": null,
+   "comments": 4,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 46,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 4,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 47,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 5,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 48,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 4,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 49,
+   "kind": "run",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 17,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 50,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-03",
+   "comments": 3,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 83,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 84,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 85,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 5,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 86,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 1,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 87,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-11-02",
+   "comments": 5,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 88,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 90,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 91,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 92,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 93,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 94,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 95,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 6,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 96,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 97,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 98,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 99,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 100,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 101,
+   "kind": "code",
+   "opened": "2026-10-29",
+   "closed": "2026-10-29",
+   "comments": 0,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 102,
+   "kind": "pr",
+   "opened": "2026-10-29",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 103,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 0,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 104,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 105,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 106,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 107,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": 19,
+   "title": null
+  },
+  {
+   "n": 111,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 5,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 113,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 114,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 115,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 116,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 118,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 119,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 0,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 120,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-11-02",
+   "comments": 5,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 121,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 122,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 125,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 126,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 0,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 127,
+   "kind": "code",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 0,
+   "parent": 19,
+   "title": null
+  },
+  {
+   "n": 129,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 130,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 131,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 132,
+   "kind": "pr",
+   "opened": "2026-10-30",
+   "closed": "2026-10-30",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 135,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 136,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 22,
+   "title": null
+  },
+  {
+   "n": 137,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 138,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 143,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 144,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 4,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 146,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 147,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 4,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 148,
+   "kind": "plan",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": null,
+   "title": "核心代码清晰化：每个事实一处定义，前向即递推"
+  },
+  {
+   "n": 149,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 0,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 150,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 151,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 152,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 153,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 154,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 155,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 6,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 156,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 157,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 4,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 158,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 160,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": 148,
+   "title": null
+  },
+  {
+   "n": 163,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 164,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 167,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 168,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 169,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 170,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 171,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 174,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 175,
+   "kind": "run",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 6,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 176,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 177,
+   "kind": "study",
+   "opened": "2026-11-02",
+   "closed": "2026-11-05",
+   "comments": 21,
+   "parent": null,
+   "title": "Phase 1：200M/5B 下 looped MoE 收益的来源（分解链与参照轨，AdamW 与 Muon）"
+  },
+  {
+   "n": 178,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 179,
+   "kind": "code",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 1,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 180,
+   "kind": "run",
+   "opened": "2026-11-02",
+   "closed": "2026-11-03",
+   "comments": 17,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 182,
+   "kind": "study",
+   "opened": "2026-11-02",
+   "closed": "2026-11-03",
+   "comments": 4,
+   "parent": null,
+   "title": "Phase 1 时长：主线各臂在 0.625、1.25、2.5B 退火终点上的差距"
+  },
+  {
+   "n": 184,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 4,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 185,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 186,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 189,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 191,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 192,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 193,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 194,
+   "kind": "run",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 3,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 195,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 196,
+   "kind": "run",
+   "opened": "2026-11-02",
+   "closed": "2026-11-03",
+   "comments": 19,
+   "parent": 182,
+   "title": null
+  },
+  {
+   "n": 197,
+   "kind": "run",
+   "opened": "2026-11-02",
+   "closed": "2026-11-03",
+   "comments": 5,
+   "parent": 20,
+   "title": null
+  },
+  {
+   "n": 198,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-02",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 199,
+   "kind": "pr",
+   "opened": "2026-11-02",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 200,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 24,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 201,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 3,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 202,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 3,
+   "parent": null,
+   "title": "探索：共享权重帮的是优化还是表达力？（解绑续训）"
+  },
+  {
+   "n": 203,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-05",
+   "comments": 7,
+   "parent": null,
+   "title": "探索：循环 MoE 两遍的梯度与 loss 曲率（只读诊断）"
+  },
+  {
+   "n": 204,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 3,
+   "parent": null,
+   "title": "探索：循环 MoE 该读哪一遍的结果（只读）"
+  },
+  {
+   "n": 205,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 1,
+   "parent": 202,
+   "title": null
+  },
+  {
+   "n": 206,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 0,
+   "parent": 203,
+   "title": null
+  },
+  {
+   "n": 208,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 209,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 210,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": 202,
+   "title": null
+  },
+  {
+   "n": 211,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 22,
+   "parent": 203,
+   "title": null
+  },
+  {
+   "n": 212,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 7,
+   "parent": 204,
+   "title": null
+  },
+  {
+   "n": 214,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-05",
+   "comments": 7,
+   "parent": null,
+   "title": "Phase 1 长程：循环的优势在更长训练中怎样变化？（M0、M3 × AdamW、Muon，延长到 10B、20B）"
+  },
+  {
+   "n": 215,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 20,
+   "parent": 214,
+   "title": null
+  },
+  {
+   "n": 216,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 11,
+   "parent": null,
+   "title": "Phase 1 形状：循环 MoE 的优势来自哪种形状改动？（形状拆解，含只缩放残差的对照）"
+  },
+  {
+   "n": 217,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 0,
+   "parent": 216,
+   "title": null
+  },
+  {
+   "n": 218,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 7,
+   "parent": 216,
+   "title": null
+  },
+  {
+   "n": 219,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 220,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 3,
+   "parent": 203,
+   "title": null
+  },
+  {
+   "n": 221,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 223,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-07",
+   "comments": 14,
+   "parent": null,
+   "title": "Phase 1 尺寸：0.1B 与 0.5B 激活上的 D/N 曲线（M0、M3 × AdamW、Muon）"
+  },
+  {
+   "n": 224,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 0,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 225,
+   "kind": "study",
+   "opened": "2026-11-03",
+   "closed": "2026-11-05",
+   "comments": 17,
+   "parent": null,
+   "title": "Phase 1 方法：已发表循环方法在 0.2B/5B 预算对齐下的比较（含 SMELT 3、4 遍，AdamW 与 Muon）"
+  },
+  {
+   "n": 226,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 0,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 227,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 0,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 228,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 229,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": null,
+   "comments": 0,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 230,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 8,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 231,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 232,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 8,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 233,
+   "kind": "code",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": 21,
+   "title": null
+  },
+  {
+   "n": 234,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 235,
+   "kind": "run",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 12,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 236,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-03",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 237,
+   "kind": "pr",
+   "opened": "2026-11-03",
+   "closed": "2026-11-04",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 238,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 11,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 239,
+   "kind": "code",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 0,
+   "parent": 216,
+   "title": null
+  },
+  {
+   "n": 240,
+   "kind": "pr",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 242,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 16,
+   "parent": 216,
+   "title": null
+  },
+  {
+   "n": 243,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-05",
+   "comments": 24,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 244,
+   "kind": "code",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 0,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 245,
+   "kind": "pr",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 246,
+   "kind": "code",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 0,
+   "parent": 216,
+   "title": null
+  },
+  {
+   "n": 247,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 7,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 248,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-05",
+   "comments": 11,
+   "parent": 214,
+   "title": null
+  },
+  {
+   "n": 249,
+   "kind": "code",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 1,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 250,
+   "kind": "pr",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 251,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-07",
+   "comments": 24,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 252,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 6,
+   "parent": 216,
+   "title": null
+  },
+  {
+   "n": 253,
+   "kind": "pr",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 254,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 6,
+   "parent": 225,
+   "title": null
+  },
+  {
+   "n": 255,
+   "kind": "code",
+   "opened": "2026-11-04",
+   "closed": "2026-11-05",
+   "comments": 3,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 256,
+   "kind": "study",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 2,
+   "parent": null,
+   "title": "探索：循环 MoE 的推理深度能否改变（已训练模型 × 1–8 遍评测，只评测）"
+  },
+  {
+   "n": 257,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 8,
+   "parent": 256,
+   "title": null
+  },
+  {
+   "n": 262,
+   "kind": "study",
+   "opened": "2026-11-04",
+   "closed": "2026-11-05",
+   "comments": 3,
+   "parent": null,
+   "title": "Phase 1 下游：12 个主要模型的 CORE 评测（5B、20B，AdamW 与 Muon）"
+  },
+  {
+   "n": 263,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-05",
+   "comments": 10,
+   "parent": 262,
+   "title": null
+  },
+  {
+   "n": 264,
+   "kind": "code",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 0,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 265,
+   "kind": "pr",
+   "opened": "2026-11-04",
+   "closed": "2026-11-04",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 266,
+   "kind": "run",
+   "opened": "2026-11-04",
+   "closed": "2026-11-05",
+   "comments": 7,
+   "parent": 177,
+   "title": null
+  },
+  {
+   "n": 269,
+   "kind": "pr",
+   "opened": "2026-11-05",
+   "closed": "2026-11-05",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 271,
+   "kind": "run",
+   "opened": "2026-11-05",
+   "closed": "2026-11-07",
+   "comments": 10,
+   "parent": 223,
+   "title": null
+  },
+  {
+   "n": 272,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 273,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 274,
+   "kind": "plan",
+   "opened": "2026-11-16",
+   "closed": null,
+   "comments": 0,
+   "parent": null,
+   "title": "Release readiness: English repository, results as data, benchmark record, README and homepage"
+  },
+  {
+   "n": 275,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 3,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 276,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 5,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 277,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 278,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 6,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 279,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 6,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 280,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 4,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 281,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 9,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 282,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 9,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 283,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 6,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 284,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 8,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 285,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 5,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 286,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": null,
+   "comments": 0,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 287,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 288,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 289,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 4,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 290,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 1,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 291,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 4,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 292,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 293,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 294,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 295,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 296,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 297,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 298,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 8,
+   "parent": 274,
+   "title": null
+  },
+  {
+   "n": 299,
+   "kind": "pr",
+   "opened": "2026-11-16",
+   "closed": "2026-11-16",
+   "comments": 2,
+   "parent": null,
+   "title": null
+  },
+  {
+   "n": 300,
+   "kind": "code",
+   "opened": "2026-11-16",
+   "closed": null,
+   "comments": 7,
+   "parent": 274,
+   "title": null
+  }
+ ]
+}

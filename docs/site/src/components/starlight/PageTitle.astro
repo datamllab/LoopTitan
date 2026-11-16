@@ -1,0 +1,27 @@
+---
+// The page title with the homepage's eyebrow above it: a shaft with one tick per group, the page's group
+// raised, then the group's number and name. The documentation landing page draws its own title.
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+import { GROUPS } from '../../../nav.mjs';
+import { eyebrowSvg } from '../../lib/vocab.mjs';
+
+const id = Astro.locals.starlightRoute.entry.id;
+const slug = id.replace(/^docs\/?/, '');
+const gi = GROUPS.findIndex((g) => g.pages.some(([, s]) => s === slug));
+const isHome = id === 'docs' || id === '404';
+---
+
+{
+	!isHome && (
+		<>
+			{gi >= 0 && (
+				<p class="lt-eyebrow">
+					<Fragment set:html={eyebrowSvg(gi, GROUPS.length)} />
+					<span>{String(gi + 1).padStart(2, '0')}</span>
+					{GROUPS[gi].label}
+				</p>
+			)}
+			<Default><slot /></Default>
+		</>
+	)
+}

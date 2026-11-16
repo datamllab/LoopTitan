@@ -18,3 +18,9 @@ checkpoints/
 *.pt
 *.pth
 *.safetensors
+# docs/site: dependencies, build output and files the build writes (docs/site/README.md)
+docs/site/node_modules/
+docs/site/.astro/
+docs/site/public/
+docs/site/home/data/
+docs/site/src/content/docs/docs/**/*.md

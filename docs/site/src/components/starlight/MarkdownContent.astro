@@ -1,0 +1,16 @@
+---
+// The rendered document, with the page's figure first (if it has one) and the small HTML refinements of
+// lib/postprocess.mjs (tables in scroll containers, numeric cells, result bars). The text is never changed.
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+import { figureFor } from '../../lib/figures.mjs';
+import { postprocess } from '../../lib/postprocess.mjs';
+
+const id = Astro.locals.starlightRoute.entry.id;
+const figure = figureFor(id);
+const html = postprocess(await Astro.slots.render('default'), id);
+---
+
+<Default>
+	{figure && <Fragment set:html={figure} />}
+	<Fragment set:html={html} />
+</Default>
