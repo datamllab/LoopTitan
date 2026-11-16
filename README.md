@@ -62,4 +62,4 @@ uv run --frozen python -m pytest -q
 
 ## License
 
-[Apache-2.0](LICENSE). Built on [CVSM](https://github.com/doem97/cvsm). Cite the repository and the exact source commit ([CITATION.cff](CITATION.cff)); cite the method papers separately, see the [method map](docs/method-map.md).
+[MIT](LICENSE). Built on [CVSM](https://github.com/doem97/cvsm). Cite the repository and the exact source commit ([CITATION.cff](CITATION.cff)); cite the method papers separately, see the [method map](docs/method-map.md).

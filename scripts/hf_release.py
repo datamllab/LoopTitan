@@ -183,7 +183,7 @@ def render_card(role, model, repos, facts, source, base):
     kind = "Looped (weight-shared depth) MoE" if role == "looped" else "Ordinary MoE control"
     tags = ["moeloop", "mixture-of-experts", "looped-moe" if role == "looped" else "moe-control",
             "custom_code", facts["anchor"].lower()]
-    lines = ["---", "license: apache-2.0", "library_name: transformers", "pipeline_tag: text-generation",
+    lines = ["---", "license: mit", "library_name: transformers", "pipeline_tag: text-generation",
              "tags:", *[f"- {json.dumps(tag)}" for tag in tags], "datasets:", f"- {json.dumps(source['id'])}", "---", "",
              f"# {model['repo']}", "",
              f"{kind}, trained from scratch for the {facts['anchor']} paired comparison of "
