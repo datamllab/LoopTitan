@@ -1,10 +1,10 @@
-# 训练、数据与模型交付
+# Training, data and model delivery
 
-研究者只需读取普通 Python recipe、JSON 和明确的 model/objective。TorchTitan 提供外层训练生命周期，公共代码无需 GitHub、MLflow 或内部部署服务。已有 prepared 数据时，可直接从[JSON 运行与恢复](#从-json-运行与恢复)，再[导出、评测和生成](#导出评测和生成)。
+A researcher reads only plain Python recipes, JSON files and an explicit model and objective. TorchTitan supplies the outer training lifecycle. The public code does not need GitHub, MLflow or an internal deployment service. If you already have prepared data, go directly to [Run and resume from JSON](#run-and-resume-from-json), then to [Export, evaluate and generate](#export-evaluate-and-generate).
 
-## 安装环境
+## Set up the environment
 
-已核对 Python 3.12、Torch 2.14.0、TorchTitan `086bf6c166ec85c1298eb5596fa9bf95f6a2d840`；`train` extra 从 PyPI 安装 `torchtitan==0.3.0`，即该 commit 的 tag v0.3.0。CUDA 环境先按硬件安装 Torch 2.14.0，再安装项目：
+The verified versions are Python 3.12, Torch 2.14.0 and TorchTitan `086bf6c166ec85c1298eb5596fa9bf95f6a2d840`. The `train` extra installs `torchtitan==0.3.0` from PyPI. This is the tag v0.3.0 of that commit. In a CUDA environment, first install Torch 2.14.0 for your hardware. Then install the project:
 
 ```sh
 uv venv --python 3.12
@@ -14,32 +14,32 @@ uv pip install -e '.[data,hf,train]'
 python -m moeloop.train --config tiny --help
 ```
 
-CPU 参考模型/HF 使用官方 CPU index 和 `.[data,hf]` 即可。训练与控制环境分开；`uv run --frozen` 面向不含 Torch 的实验控制环境，已安装额外训练依赖后直接使用该环境的 `python`。
+For the CPU reference model and HF, the official CPU index and `.[data,hf]` are sufficient. Keep the training environment separate from the control environment. `uv run --frozen` is for the experiment control environment, which does not contain Torch. After you install the extra training dependencies, use the `python` of that environment directly.
 
-训练入口检查实际 import 的上游源文件，而非仅检查发行版名称。离线集群可将相同上游源码放在 `PYTHONPATH`，无需修改共享 Python 环境。不同上游版本需要单独审阅 adapter；不会静默降级到另一个模型。
+The training entry point checks the upstream source files that it actually imports, not only the distribution name. On an offline cluster, you can put the same upstream source on `PYTHONPATH`. You then do not need to change a shared Python environment. A different upstream version needs a separate review of the adapter. The entry point does not silently fall back to a different model.
 
-## 数据准备和 mixture
+## Data preparation and mixtures
 
-WikiText2 安装/工程示例，不作为方法有效性或最终筛选数据：
+WikiText2 is an installation and engineering example. Do not use it to show that a method is valid, or as data for a final screen:
 
 ```sh
 python -m moeloop.prepare --recipe wikitext2_gpt2 --output /data/demo
 ```
 
-固定 WikiText-2 raw 与 GPT-2 tokenizer revision，只处理原始非空行。每行是一个文档；明确添加 BOS/EOS，文档内做 next-token shift。它是流程示例，不等于外部 WikiText PPL 榜单的上下文协议。
+The recipe pins WikiText-2 raw and the GPT-2 tokenizer revision. It processes only the original non-empty lines. Each line is one document. The recipe adds BOS and EOS explicitly and does the next-token shift inside each document. This is an example of the workflow. It is not the context protocol of external WikiText PPL leaderboards.
 
-P1 已完成公开原始 DCLM 的数据准备。重放时直接使用已发布的[原始1024份有序 catalog](evidence/p1-dclm-source.json)，不要重新冻结另一份清单：
+P1 completed the data preparation from public raw DCLM. To replay it, use the published [ordered catalog of the 1024 raw files](evidence/p1-dclm-source.json) directly. Do not freeze a different list:
 
-| 身份 | P1 实际值 |
+| Identity | P1 value |
 |---|---|
-| 原始数据 | `mlfoundations/dclm-baseline-1.0-parquet@817d6752765f6a41261085171dd546b104f60626` |
-| tokenizer | `Qwen/Qwen3-30B-A3B@ae659febe817e4b3ebd7355f47792725801204c9`，vocab151669 |
-| 有效 labels | train 24,000,067,249；validation 10,001,497；test 10,009,889 |
-| prepared manifest fingerprint | `e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152` |
+| Raw data | `mlfoundations/dclm-baseline-1.0-parquet@817d6752765f6a41261085171dd546b104f60626` |
+| tokenizer | `Qwen/Qwen3-30B-A3B@ae659febe817e4b3ebd7355f47792725801204c9`, vocab 151669 |
+| Valid labels | train 24,000,067,249; validation 10,001,497; test 10,009,889 |
+| Prepared manifest fingerprint | `e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152` |
 
-准备到第198份 Parquet 时达到各 split 预算，扫描19,624,997篇原始文档、去除10,762篇重复文档，无空文档。原始 document ID 与精确 UTF-8 内容 SHA 全局去重；按内容 hash 前8 bytes 的 big-endian 整数 mod100 分割，0=test、1=validation、其余=train，各 split 在完整文档边界达到预算。**保留完整1024份 catalog**：只需下载实际读取的前缀，将 catalog 截成198份会改变 provenance 和 manifest 身份。
+Preparation reached the budget of every split at Parquet file 198. It scanned 19,624,997 raw documents and removed 10,762 duplicate documents. There were no empty documents. Deduplication is global, by raw document ID and by the SHA of the exact UTF-8 content. The split uses the first 8 bytes of the content hash as a big-endian integer mod 100: 0 = test, 1 = validation, all other values = train. Each split reaches its budget at a complete document boundary. **Keep the complete catalog of 1024 files.** You need to download only the prefix that preparation actually reads. If you cut the catalog to 198 files, the provenance and the manifest identity change.
 
-先将固定 tokenizer 下载到一个新的目录，**仅取以下四个源文件**；`config.json` 等额外源文件也会进入身份记录，不能混入：
+First, download the pinned tokenizer to a new directory. **Get only the four source files below.** Additional source files, such as `config.json`, also go into the identity record, so do not mix them in:
 
 ```sh
 export QWEN3_TOKENIZER_FOUR_FILES=/assets/qwen3-p1-tokenizer
@@ -54,7 +54,7 @@ snapshot_download(
 PY
 ```
 
-`DCLM_PARQUET` 指向含 catalog 相对路径的本地 Parquet 根目录，`P1_DATA` 为新的 prepared 目录。按本次实际预算和 shard 大小准备：
+`DCLM_PARQUET` points to the local Parquet root directory that contains the relative paths of the catalog. `P1_DATA` is a new prepared directory. Prepare with the budget and shard size of this run:
 
 ```sh
 export P1_DATA=/data/dclm-p1
@@ -65,11 +65,11 @@ python scripts/recipe_data.py --dclm-source docs/evidence/p1-dclm-source.json \
 cmp "$P1_DATA/manifest.json" docs/evidence/p1-data-manifest.json
 ```
 
-该命令不下载模型权重。省略 `--source-directory` 会按冻结 catalog 使用 Hugging Face cache/下载；其他数据使用者可用 `--freeze-dclm-source` 建立自己的清单，但不再是这次 P1 的原始身份。原始 tokenizer.json SHA 为 `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4`；准备时显式规范化 BOS=EOS=PAD151645，输出 tokenizer.json SHA 为 `a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794`，完整源/输出资产 hash 见 [manifest](evidence/p1-data-manifest.json)。
+This command does not download model weights. If you omit `--source-directory`, the command uses the Hugging Face cache, or downloads, as the frozen catalog specifies. Other data users can make their own list with `--freeze-dclm-source`. That list is then not the raw identity of this P1. The SHA of the original tokenizer.json is `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4`. Preparation explicitly normalizes BOS = EOS = PAD = 151645. The SHA of the output tokenizer.json is `a63080b4b30dc861fe1b0e420c53a241304dc81aff3d9bb315e6e33e2a1ab794`. For the full hashes of the source and output assets, see the [manifest](evidence/p1-data-manifest.json).
 
-中断后在相同源清单、tokenizer、预算和输出目录的原命令上追加 `--resume`，从最后提交的输入 shard 继续。完成后的 token/index shards 与 manifest 保持 immutable；不足时不能循环小集冒充 fresh labels。公开仓库包含元数据和各 payload 的 hash，不包含约96GB的 prepared tokens。
+After an interruption, add `--resume` to the original command, with the same source list, tokenizer, budget and output directory. Preparation then continues from the last committed input shard. After completion, the token and index shards and the manifest stay immutable. If the data is not sufficient, do not loop a small set to imitate fresh labels. The public repository contains the metadata and the hash of each payload. It does not contain the prepared tokens, which are about 96GB.
 
-早期工程资格还使用已有 DCLM 预分词文档的 legacy importer。其默认300M/1M/1M fixture 继续用于 smoke，不满足 P1 的完整数据供给；`DCLM_PREPARED` 指向该旧格式的源 manifest 与 payload：
+Early engineering qualification also used a legacy importer for existing pre-tokenized DCLM documents. Its default fixture of 300M/1M/1M is still used for smoke tests. It does not supply the complete data for P1. `DCLM_PREPARED` points to the source manifest and payload in that old format:
 
 ```sh
 export MOELOOP_DATA=/data/dclm-qwen3-v1
@@ -77,25 +77,25 @@ python scripts/recipe_data.py --packed-source "$DCLM_PREPARED/manifest.json" \
   --tokenizer "$TOKENIZER_DIR" --output "$MOELOOP_DATA"
 ```
 
-源格式为已有按文档保存的 little-endian uint32 tokens、累计文档末尾 offsets、原文 blake2b64 sidecar。导入固定前两个 train chunks，不静默追加第三块；校验原文件 size/SHA、offsets、token range 和逐文档末尾 EOS。默认至少 train 300M、validation 1M、test 1M 有效 shifted labels，完整文档边界略超，为后续 268M-position horizon 预留同一内容身份。
+The source format is existing per-document little-endian uint32 tokens, cumulative document-end offsets and a blake2b64 sidecar of the original text. The import pins the first two train chunks. It does not silently append a third chunk. It checks the size and SHA of the original files, the offsets, the token range and the EOS at the end of each document. The default is at least 300M train, 1M validation and 1M test valid shifted labels. Complete document boundaries make the counts slightly larger. This keeps the same content identity available for a later horizon of 268M positions.
 
-tokenizer 固定为 `Qwen/Qwen3-30B-A3B@ae659febe817e4b3ebd7355f47792725801204c9`，实际 vocab_size=151669。源序列为 EOS-only（151645），导入不解码、不重新分词、不追加第二个 EOS，只前加一个显式 BOS=151645；PAD 也设为151645。原 token body/EOS 保持不变，这不是原 Qwen 已配置 BOS。源 tokenizer 资产 SHA 与输出规范化 role/config 的 SHA 分开记录，词表 ID 映射不变。
+The tokenizer is pinned to `Qwen/Qwen3-30B-A3B@ae659febe817e4b3ebd7355f47792725801204c9`, with an actual vocab_size=151669. The source sequences are EOS-only (151645). The import does not decode, does not re-tokenize and does not append a second EOS. It only prepends one explicit BOS=151645. PAD is also set to 151645. The original token body and EOS do not change. This BOS is not a BOS that the original Qwen configuration sets. The SHA of the source tokenizer assets and the SHA of the normalized output role/config are recorded separately. The vocabulary ID mapping does not change.
 
-按原 token 文档的 uint32 little-endian 字节（含原 EOS）计算 SHA256、全局去重，以 hash 前8 bytes 的 big-endian 整数 mod100 分配：0=test、1=validation、2..99=train。各 split 在整篇边界达到预算后停止接收。sidecar 用 parent chunk 身份/文档 ordinal 定位，保留 token SHA 和原文 blake2b64；它们不是完整原始 HF/WARC document ID。
+The SHA256 is calculated on the uint32 little-endian bytes of each original token document (including the original EOS). Deduplication is global. The first 8 bytes of the hash, as a big-endian integer mod 100, assign the split: 0 = test, 1 = validation, 2..99 = train. Each split stops taking documents when it reaches its budget at a whole-document boundary. The sidecar locates each document by the parent chunk identity and the document ordinal. It keeps the token SHA and the blake2b64 of the original text. These are not complete original HF/WARC document IDs.
 
-来源是公开 [DCLM baseline 家族](https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0)，其公开卡记录为 CC-BY-4.0。上述 legacy 副本的上游下载 commit 未知，不能拿另一次观测的公开 HEAD 冒充；其内容 revision 由 parent manifest 与 tokens/docs/dochash SHA 标识。新的原始 Parquet 路径使用 `--freeze-dclm-source` 记录的公开 revision 和逐文件身份。完整清单、许可、选择规则、实际 labels、tokenizer 和 packing 进入各自 manifest；新数据不能静默继承旧 fixture 的身份。
+The source is the public [DCLM baseline family](https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0). Its public card records the license as CC-BY-4.0. The upstream download commit of the legacy copy above is unknown. Do not use the public HEAD of a different observation in its place. The parent manifest and the tokens/docs/dochash SHA identify its content revision. The new raw Parquet path uses the public revision and the per-file identity that `--freeze-dclm-source` records. The complete list, license, selection rules, actual labels, tokenizer and packing go into the manifest of each dataset. New data cannot silently inherit the identity of the old fixture.
 
-历史300M工程 fixture 的[公共证据摘要](evidence/dclm-v1.json)保留 manifest fingerprint、两个 parent chunks 的 SHA、tokenizer 源/规范化资产 hash、实际 split 计数及 token SHA 隔离检查。实际有效 labels 为 train 300,002,777、validation 1,000,401、test 1,000,504；235,913篇选中文档的全局 token SHA 重复/跨 split 重复计数为0。精确预分词二进制 chunks 尚未公开发布，上游下载 commit 仍未知；该摘要标识实际内容身份，训练/恢复/HF 资格另见[验证记录](validation.md)。
+The [public evidence summary](evidence/dclm-v1.json) of the historical 300M engineering fixture keeps the manifest fingerprint, the SHA of the two parent chunks, the hashes of the source and normalized tokenizer assets, the actual split counts and the token SHA isolation check. The actual valid labels are train 300,002,777, validation 1,000,401 and test 1,000,504. Among the 235,913 selected documents, the count of global token SHA duplicates and of cross-split duplicates is 0. The exact pre-tokenized binary chunks are not published yet, and the upstream download commit is still unknown. The summary identifies the actual content. For the training, resume and HF qualification, see the [validation record](validation.md).
 
-FineWeb-Edu/GPT2 是独立的可选示例，不是 DCLM 的前置条件或更优数据声明：
+FineWeb-Edu/GPT2 is a separate optional example. It is not a prerequisite for DCLM, and it is not a claim of better data:
 
 ```sh
 python scripts/recipe_data.py --fineweb-edu --output "$FINEWEB_OUTPUT"
 ```
 
-该显式 fallback 固定 FineWeb-Edu revision `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9` 的 `sample/10BT/000_00000.parquet`，下载/缓存并校验 size/SHA；复用本地文件时用 `--source-file "$FINEWEB_SHARD"` 替代 `--fineweb-edu`。不指定任何 source 选项会报错，不再隐式下载 FineWeb。它使用 GPT2 revision `607a30d783dfa663caf39e06633721c8d4cfcd7e`，许可为 [ODC-By v1.0](https://opendatacommons.org/licenses/by/1-0/) 加 [CommonCrawl terms](https://commoncrawl.org/terms-of-use)，tokenizer 为 MIT。修改源/tokenizer/分割/预算须创建新 fixture；test 独立保留，不用于调参。
+This explicit fallback pins `sample/10BT/000_00000.parquet` of FineWeb-Edu revision `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9`. It downloads or caches the file and checks its size and SHA. To reuse a local file, replace `--fineweb-edu` with `--source-file "$FINEWEB_SHARD"`. If you give no source option, the command stops with an error. It no longer downloads FineWeb implicitly. It uses GPT2 revision `607a30d783dfa663caf39e06633721c8d4cfcd7e`. The license is [ODC-By v1.0](https://opendatacommons.org/licenses/by/1-0/) plus the [CommonCrawl terms](https://commoncrawl.org/terms-of-use). The tokenizer is MIT. A change of source, tokenizer, split or budget needs a new fixture. The test split stays separate and is not used for tuning.
 
-本地 JSONL/text 使用同一 writer：
+Local JSONL or text uses the same writer:
 
 ```sh
 python -m moeloop.prepare --input /data/train.jsonl --validation /data/valid.jsonl \
@@ -104,11 +104,11 @@ python -m moeloop.prepare --input /data/train.jsonl --validation /data/valid.jso
   --output /data/prepared
 ```
 
-准备阶段输出 immutable token/index shards、tokenizer 与 manifest。显式 special ID 会规范化复制后的 tokenizer 角色，原始 assets 不变；训练、导出和生成保持同一 BOS/EOS/PAD。输出目录必须是新目录。
+The preparation stage writes immutable token and index shards, the tokenizer and the manifest. Explicit special IDs normalize the roles in the copied tokenizer. The original assets do not change. Training, export and generation keep the same BOS/EOS/PAD. The output directory must be a new directory.
 
-数据按文档内预测 pair 拼 fixed-length block，位置在每个 block 的文档 segment 内从零开始，跨文档不可 attention。长文档跨 block 不保留前一 block 的 KV，也不重新添加 BOS。尾部 padding 使用独立 input mask，labels=-100；PAD 可以与 EOS 同 ID。
+The data packs the prediction pairs of each document into fixed-length blocks. Positions start from zero in each document segment of a block. Attention does not cross documents. When a long document continues across blocks, the next block does not keep the KV of the previous block and does not add BOS again. Tail padding uses a separate input mask, with labels=-100. PAD can have the same ID as EOS.
 
-多个 source 先各自形成等长 block，再按权重选择。因此权重描述 input-token mixture，而不是文档数量比例。用普通 Python 数据配置定义 source、split 和权重：
+Each source first forms blocks of equal length. Then the loader selects blocks by weight. Thus the weights describe the input-token mixture, not the ratio of document counts. Define sources, splits and weights in a plain Python data configuration:
 
 ```python
 from moeloop.data import PackedDataset
@@ -116,19 +116,19 @@ data = PackedDataset('/data/prepared/manifest.json', seq_len=1024,
                      source_weights={'web': 0.7, 'code': 0.3}, seed=42)
 ```
 
-writer 的 `prepare_dataset` 接受 `{source: {split: texts}}` 迭代器；不会把整个语料的 token 装进 Python list。运行时 mmap 有界缓存。训练启动由 rank 0 校验全量 hash，其他 rank 核对同一 manifest 和文件尺寸；之后复用验证结果。所有 rank 必须看到相同 immutable 数据命名空间，运行中不修改 shards。
+The writer function `prepare_dataset` accepts `{source: {split: texts}}` iterators. It does not load the tokens of the whole corpus into a Python list. At run time, mmap uses a bounded cache. At training start, rank 0 checks all hashes. The other ranks check the same manifest and the file sizes. After that, the result of the check is reused. All ranks must see the same immutable data namespace. Do not change the shards during a run.
 
-## 修改研究机制
+## Change the research mechanisms
 
-`moeloop.recipes` 的九条 `*_spec()` 返回可在CPU上查看和修改的 `RecipeSpec`，包括 `huginn_spec()`、`loom_spec()`、`ouro_spec()`、`sandwich_spec()`、`relaxed_spec()`；其JSON、区域覆盖和方法适配见[配方](recipes.md)。用户的模型配置保持显式；DCLM的实际词表不同于内置小例默认值，普通factory应主动读取manifest并传给spec。
+In `moeloop.recipes`, the nine selected paths each have a `*_spec()` function. It returns a `RecipeSpec` that you can inspect and change on a CPU. The functions include `huginn_spec()`, `loom_spec()`, `ouro_spec()`, `sandwich_spec()` and `relaxed_spec()`. For their JSON, region overrides and method adaptations, see [Recipes](recipes.md). Keep the model configuration of the user explicit. The actual vocabulary of DCLM is different from the default of the built-in small examples. A plain factory must read the manifest and pass the vocabulary to the spec.
 
-`trainer_config(spec)` 直接消费 `run.activation_checkpointing`：`none` 关闭 AC，`full_cells` 使用原生 Full AC；其他策略明确拒绝。`optimizer.zero_weight_decay_roles` 使用 `norm/embedding/lm_head/router` 的声明子集，空列表表示所有参数采用给定 weight decay。共同 adapter 当前支持 AdamW 与 Muon（`optimizer.name`）、FP32 master/reduce、core 专家 LR 作用域且无 weight-decay 补偿；其他显式设置会报错，不保留与执行不符的 metadata。
+`trainer_config(spec)` uses `run.activation_checkpointing` directly: `none` turns AC off, and `full_cells` uses the native Full AC. It rejects all other policies explicitly. `optimizer.zero_weight_decay_roles` uses a declared subset of `norm/embedding/lm_head/router`. An empty list means that all parameters use the given weight decay. The common adapter currently supports AdamW and Muon (`optimizer.name`), FP32 master/reduce, a core expert LR scope and no weight-decay compensation. Any other explicit setting causes an error. The adapter keeps no metadata that does not agree with the execution.
 
-选 Muon 时，`optimizer.name` 写 `"Muon"`，并在 `optimizer.muon` 中给出且只给出 `optim.MUON_FIELDS` 列出的字段，多一个或少一个都会报错；最短写法见 `tests/training/test_muon.py` 的 `muon_spec`，Bench 固定的取值见 [`eval/bench/tracks.json`](../eval/bench/tracks.json) 的 `optimizers.fixed.Muon`。隐藏矩阵（见 `MUON_PATTERN`）由 DistMuon 更新，其余参数仍按 `optimizer` 里的 AdamW 设置更新。哪些参数是隐藏矩阵，只在 [`optim.py`](../src/moeloop/optim.py) 的 `MUON_PATTERN` 一处，理由与限制见[架构](architecture.md#5-训练动态必须看得见)：Muon 只走 GPU 上的原生 FSDP，GPU 验证见 #49。
+To select Muon, set `optimizer.name` to `"Muon"`. In `optimizer.muon`, give exactly the fields that `optim.MUON_FIELDS` lists. One field more or one field less causes an error. For the shortest form, see `muon_spec` in `tests/training/test_muon.py`. For the values that the Bench fixes, see `tracks.<track>.optimizers.fixed.Muon` in [`eval/bench/tracks.json`](../eval/bench/tracks.json). DistMuon updates the hidden matrices (see `MUON_PATTERN`). It updates all other parameters with the AdamW settings in `optimizer`. Only one place defines which parameters are hidden matrices: `MUON_PATTERN` in [`optim.py`](../src/moeloop/optim.py). For the reasons and limits, see [Architecture](architecture.md#5-training-dynamics-must-be-visible). Muon runs only on native FSDP on GPU. For the GPU validation, see #49.
 
-通用方法模板默认 context 2048、global batch 32768 packed positions、512 successful updates、每64 updates 固定 validation，BF16 native experts。它们与下文的实际 P1 JSON 是不同规模的配方；`tiny` 保持四步安装 demo。实际运行资格另见验证页。
+The general method template defaults to context 2048, a global batch of 32768 packed positions, 512 successful updates, a fixed validation every 64 updates, and BF16 native experts. These recipes have a different scale from the actual P1 JSON below. `tiny` is a short installation demo of 100 successful updates. For the qualification of actual runs, see the validation page.
 
-例如保存为 `my_recipes.py`，通过公开的短 adapter `trainer_config(spec)` 返回 native Trainer config：
+For example, save the code below as `my_recipes.py`. The public short adapter `trainer_config(spec)` returns a native Trainer config:
 
 ```python
 # my_recipes.py
@@ -148,28 +148,34 @@ torchrun --standalone --nproc-per-node=4 -m moeloop.train \
   --module my_recipes --config experiment --dump-folder /runs/experiment
 ```
 
-CLI使用原生Python ConfigManager。模型config决定参数形状与固定推理默认值，training recipe决定训练深度、梯度与目标。上例可将 `smelt_spec` 换成任一新增spec，仍通过同一个 `trainer_config(spec)` 接入；内置同名factory是模板，真实数据必须显式匹配词表。
+The CLI uses the native Python ConfigManager. The model config sets the parameter shapes and the fixed inference defaults. The training recipe sets the training depth, the gradients and the objective. In the example, you can replace `smelt_spec` with any new spec. It still connects through the same `trainer_config(spec)`. The built-in factories of the same names are templates. With real data, you must match the vocabulary explicitly.
 
-| 训练规则 | 实际行为 |
+| Training rule | Actual behavior |
 |---|---|
-| 固定/有限集合深度 | 固定深度或每update一次选择，同update各rank/microbatch相同 |
-| Huginn-inspired采样 | 每microbatch按Poisson-lognormal采样r，跨rank同步；只对最后 `min(k,r)` 次stack visit反传，anchor保持live |
-| LOOM full-BPTT | 固定H>2，global memory每forward清零、local每轮清零；无段间detach/optimizer step |
-| Ouro Stage I | 全轮执行，逐token expected CE−entropy；唯一head与gate都训练，标准validation另用terminal CE |
+| Fixed or finite-set depth | Fixed depth, or one choice per update. The choice is the same on all ranks and microbatches of one update. |
+| Huginn-inspired sampling | Samples r per microbatch from a Poisson-lognormal distribution and synchronizes it across ranks. Backpropagates only through the last `min(k,r)` stack visits. The anchor stays live. |
+| LOOM full-BPTT | Fixed H>2. Global memory is reset to zero at each forward. Local memory is reset to zero at each visit. No detach and no optimizer step between segments. |
+| Ouro Stage I | Runs all visits. Per-token expected CE−entropy. Trains the single head and the gate. Standard validation uses terminal CE separately. |
 
-随机初态在递归与AC之前只生成一次；深度以成功update/microbatch坐标定位，validation隔离RNG。`uniform_update_v1` 的深度序列与卡数无关；`poisson_lognormal_micro_v1` 按 microbatch 抽样，训练器取 rank 0 的 microbatch 序号，所以序列取决于累积步数 global batch ÷ (local batch × 卡数)。部分共享、layer loop、EMA和expected CE采用固定深度/full BPTT；缺少明确梯度定义的组合直接报错。
+The random initial state is generated only once, before the recursion and before AC. The depth is located by the coordinates of the successful update and the microbatch. Validation uses an isolated RNG. The depth sequence of `uniform_update_v1` does not depend on the GPU count. `poisson_lognormal_micro_v1` samples per microbatch. The trainer uses the microbatch index of rank 0, so the sequence depends on the number of accumulation steps: global batch ÷ (local batch × GPU count). Partial sharing, layer loop, EMA and expected CE use fixed depth and full BPTT. A combination without an explicit gradient definition causes an error.
 
-主 CE 使用全局整个 update 的有效 label 分母。aux 是 `local_micro_call_mean`：先按单个 microbatch 的可微 router calls 平均，再对整个 update 的逻辑 microbatch（global batch ÷ local batch）平均。改变 microbatch geometry 可能改变非加性的 aux，即使全局 batch 不变；global batch 与单卡 batch 都固定、且深度规则也与卡数无关（固定深度或 `uniform_update_v1`，不含 `poisson_lognormal_micro_v1`）、初始状态也不按 rank 抽取（随机 latent 初态用各 rank 自己的 RNG，目前只有 `huginn_spec` 如此，它已被其深度规则排除）时，aux 与卡数无关，GPU 验证见 #49。数据流与卡数无关是其前提之一：所有 rank 打包同一条逻辑 block 流，一次 update 的 block 按 rank 连续切片（rank r 取该 update 的第 `[r·K, (r+1)·K)` 个，K 为每 rank 的 block 数），所以不同卡数的运行每次 update 读到相同的 block、相同的顺序，每个逻辑 microbatch 的 block 也由数据流固定（规则名 `logical_blocks_v1`，见 [`data.py`](../src/moeloop/data.py) 的 `PackedDataset`）。forward 不更新持久 router 计数；AC 重算不会重复提交统计。
+The main CE uses the valid labels of the whole update across all ranks as the denominator. aux is `local_micro_call_mean`: it is first averaged over the differentiable router calls of one microbatch, then over the logical microbatches of the whole update (global batch ÷ local batch). A change of microbatch geometry can change the non-additive aux, even if the global batch stays the same. aux does not depend on the GPU count when all of these conditions are true:
 
-原生 grouped experts 执行 BF16；FP32 reference 的算术容差与 native GPU 资格分别记录。训练 head/CE 分块，避免强制创建完整 `[B,S,V]` logits。默认关闭 CUDA graphs/model compile，采用 `partial_dtensor` DP/FSDP。每轮独立 attention 可用 Full AC；Selective AC 与该 nested FSDP 组合会明确拒绝。
+- The global batch and the per-GPU batch are both fixed.
+- The depth rule does not depend on the GPU count (fixed depth or `uniform_update_v1`, not `poisson_lognormal_micro_v1`).
+- The initial state is not drawn per rank. (A random latent initial state uses the RNG of each rank. Currently only `huginn_spec` does this, and its depth rule already excludes it.)
 
-Ouro的概率/entropy使用稳定精度，忽略label同时排除CE与entropy；expected CE按整个update的全局有效labels归约，aux另行归约。训练可保留每轮hidden，但通过非重入checkpoint分块重算head/CE，避免保存每轮完整词表中间量。这项head重算即使Cell AC关闭也有计算成本；`fixed_expected_matrix_v1`单列它。Huginn随机深度与尾段梯度的训练FLOPs是声明深度分布下的期望（`sampled_depth_matrix_v1`），p50/p95深度的单次成本在 `flops.training_depth`；默认深度的nominal分解只是一次固定前向，二者都不是实测成本。
+For the GPU validation, see #49. One of the preconditions is a data stream that does not depend on the GPU count. All ranks pack the same logical stream of blocks. The blocks of one update go to the ranks in contiguous slices: rank r takes blocks `[r·K, (r+1)·K)` of that update, where K is the number of blocks per rank. Thus runs with different GPU counts read the same blocks in the same order at each update. The data stream also fixes the blocks of each logical microbatch (rule name `logical_blocks_v1`; see `PackedDataset` in [`data.py`](../src/moeloop/data.py)). The forward pass does not update persistent router counts. AC recomputation does not commit the statistics twice.
 
-并行修改代码/recipe 时各用自己的 worktree，每个实验使用独立输出根及自己冻结的 recipe/source 身份。数据 manifest 与 immutable shards 可只读复用；不同 worktree 不共写 checkpoint、metrics 或 attempts。
+Native grouped experts run in BF16. The arithmetic tolerance of the FP32 reference and the native GPU qualification are recorded separately. The training head and CE run in chunks. This avoids a forced full `[B,S,V]` logits tensor. CUDA graphs and model compile are off by default. DP/FSDP uses `partial_dtensor`. Attention that is independent per visit can use Full AC. The combination of Selective AC with this nested FSDP is rejected explicitly.
 
-## 从 JSON 运行与恢复
+Ouro calculates probabilities and entropy with stable precision. An ignored label is excluded from both CE and entropy. Expected CE is reduced over the global valid labels of the whole update. aux is reduced separately. Training can keep the hidden state of each visit. It recomputes the head and CE in chunks through a non-reentrant checkpoint. This avoids storing the full-vocabulary intermediates of each visit. This head recomputation has a compute cost even when Cell AC is off. `fixed_expected_matrix_v1` shows it as a separate item. For Huginn random depth with tail gradients, the training FLOPs are an expectation over the declared depth distribution (`sampled_depth_matrix_v1`). The cost of one pass at the p50/p95 depths is in `flops.training_depth`. The nominal breakdown at the default depth is only one fixed forward. Neither of them is a measured cost.
 
-`scripts/recipe_experiments.py` 读取普通 `RecipeSpec` JSON 和 prepared manifest，在已分配 GPU 上调用同一个原生 Trainer。下面使用上文的 DCLM/Qwen3 数据，用 C 的一份 JSON 演示8步再接续至16步；它保留完整2048步 schedule，不代表正式 C 面板验收。其他 recipe 应显式匹配 manifest 词表与 batch/拓扑。
+When you change code or recipes in parallel, use a separate worktree for each change. Each experiment uses its own output root and its own frozen recipe/source identity. Data manifests and immutable shards can be reused read-only. Different worktrees do not write to the same checkpoints, metrics or attempts.
+
+## Run and resume from JSON
+
+`scripts/recipe_experiments.py` reads a plain `RecipeSpec` JSON and a prepared manifest. It calls the same native Trainer on GPUs that are already allocated. The example below uses the DCLM/Qwen3 data above. It uses one JSON of C to run 8 steps and then continue to 16 steps. It keeps the full schedule of 2048 steps. It is not the formal acceptance of the C panel. Other recipes must match the vocabulary and the batch/topology of the manifest explicitly.
 
 ```sh
 export SPEC="$PWD/recipes/c_a0_r0.json"
@@ -181,17 +187,17 @@ python scripts/recipe_experiments.py run --spec "$SPEC" \
   --resume "$RUN/checkpoint/step-8"
 ```
 
-`--gpus` 是所有节点的总 rank 数。单节点默认使用 `--standalone`；多节点在每个节点运行同一命令，并设置 `NNODES`、`NPROC_PER_NODE`、`NODE_RANK`、`MASTER_ADDR`、`MASTER_PORT`。同一实验各节点共享同一个输出目录和相同输入身份；并发实验分别选输出根与 rendezvous，不互相复用端口。launcher 不申请 GPU。
+`--gpus` is the total number of ranks on all nodes. On one node, the default is `--standalone`. For multiple nodes, run the same command on each node and set `NNODES`, `NPROC_PER_NODE`, `NODE_RANK`, `MASTER_ADDR` and `MASTER_PORT`. All nodes of one experiment share the same output directory and the same input identity. Concurrent experiments each use their own output root and rendezvous, and do not share ports. The launcher does not request GPUs.
 
-首次运行保存 `spec.json`、`request.json` 和实际执行的 `source/` 快照，随后追加进程事实、`metrics.jsonl`、`outcome.json` 与 full DCP。已有更新必须显式传 `--resume`；runner 在启动前将完整 checkpoint 保留到 `protected/step-N`，避免 rolling keep2 清理恢复起点。保持原源码、recipe、runtime、数据路径与拓扑；`--stop` 是绝对成功更新坐标，不重置 optimizer 或 schedule。修改代码或实验控制后使用新的输出目录和 lineage。
+The first run saves `spec.json`, `request.json` and a `source/` snapshot of the code that it runs. It then appends the process facts, `metrics.jsonl`, `outcome.json` and the full DCP. If updates already exist, you must pass `--resume` explicitly. Before the launch, the runner keeps the complete checkpoint in `protected/step-N`. This prevents the rolling keep 2 cleanup from deleting the resume point. Keep the original source code, recipe, runtime, data paths and topology. `--stop` is an absolute coordinate in successful updates. It does not reset the optimizer or the schedule. After a change of code or of experiment controls, use a new output directory and a new lineage.
 
-安装后的公共 factory 是 `moeloop.experiment:experiment`，通过 `torchrun ... -m moeloop.train --module moeloop.experiment --config experiment` 使用。以 `MOELOOP_EXPERIMENT_SPEC`、`MOELOOP_EXPERIMENT_MANIFEST`、`MOELOOP_EXPERIMENT_OUTPUT` 指定普通文件路径，按需设置 `MOELOOP_EXPERIMENT_STOP` 与 `MOELOOP_EXPERIMENT_RESUME`。runner 的 `--installed` 选择已安装包而非源码快照；source97 的完整 wheel 用户旅程已通过 V3 实际验收，精确来源和收据见[验证记录](validation.md)。
+After installation, the public factory is `moeloop.experiment:experiment`. Use it through `torchrun ... -m moeloop.train --module moeloop.experiment --config experiment`. Give plain file paths in `MOELOOP_EXPERIMENT_SPEC`, `MOELOOP_EXPERIMENT_MANIFEST` and `MOELOOP_EXPERIMENT_OUTPUT`. Set `MOELOOP_EXPERIMENT_STOP` and `MOELOOP_EXPERIMENT_RESUME` when you need them. The runner option `--installed` selects the installed package instead of the source snapshot. The complete wheel user journey of source97 passed the V3 acceptance in an actual run. For the exact source and the receipts, see the [validation record](validation.md).
 
-可选 CVSM/MLflow 只记录已有命令与有限产物，见[实验协议](protocol.md)；它们不是准备数据、训练、恢复或 HF 消费的依赖。
+Optional CVSM/MLflow only records existing commands and a limited set of artifacts; see [Experiment protocol](protocol.md). Data preparation, training, resume and HF use do not depend on them.
 
-## 新增方法的阶段资格
+## Stage qualification of new methods
 
-完整v2阶段资格已通过，见[实际证据](evidence/recipes-v2.json)。可在 GPU 上重放四条新增路径（Huginn、LOOM、Ouro及LOOM×attention）和attention×router四格；该阶段入口继承#6完整证据，不重复原预训练：
+The complete v2 stage qualification passed; see the [actual evidence](evidence/recipes-v2.json). You can replay on GPU the four new paths (Huginn, LOOM, Ouro and LOOM×attention) and the attention×router four-arm grid. This stage entry point inherits the complete evidence of #6. It does not repeat the original pretraining:
 
 ```sh
 python scripts/recipe_qualification.py --stage v2 \
@@ -201,27 +207,27 @@ python scripts/recipe_qualification.py --stage v2 \
 python scripts/check_release.py --stage v2 --evidence "$MOELOOP_EVIDENCE"
 ```
 
-`V1_EVIDENCE`指接受过验收的完整持久产物目录，`V1_SOURCE`指其原冻结P1源码身份JSON；公开`docs/evidence/p1.json`只是投影，不能代替原始bundle。默认每新增方法512步、2048ctx、global16序列，是工程资格；四格的短更新不是效果排行榜。新增方法的实际恢复、HF范围与最终状态由验证记录列出。
+`V1_EVIDENCE` is the accepted directory of complete durable artifacts. `V1_SOURCE` is the JSON of its original frozen P1 source identity. The public `docs/evidence/p1.json` is only a projection. It cannot replace the original bundle. The default is 512 steps per new method, 2048ctx and a global batch of 16 sequences. This is an engineering qualification. The short updates of the four-arm grid are not a quality ranking. For the actual resume, the HF scope and the final status of the new methods, see the validation record.
 
-## P1 实际配方与双机训练
+## P1 recipes and two-node training
 
-本次实际配方为 [`recipes/p1_moe.json`](../recipes/p1_moe.json) 和 [`recipes/p1_smelt.json`](../recipes/p1_smelt.json)。直接加载这些 JSON；`p1_smelt_spec()` 给出实际训练的 F440 臂（实测 pairs 口径，与 P2 相同），不带参数的 `recipe_anchor.py` 仍生成 dense-S² 的 F424 模板，不能替代实际 F440。两臂已经完成19,537次更新，各 **20,486,029,312 有效 labels**，无 padding、无重复 epoch、唯一训练 seed42。模型几何见[配方](recipes.md#p1-普通-moe--smelt)，实际曲线、完整终点评估和 GPUHr 见 [P1 证据](evidence/p1.json)。
+The recipes of this run are [`recipes/p1_moe.json`](../recipes/p1_moe.json) and [`recipes/p1_smelt.json`](../recipes/p1_smelt.json). Load these JSON files directly. `p1_smelt_spec()` gives the F440 arm that was actually trained (measured-pairs convention, the same as P2). `recipe_anchor.py` without arguments still generates the dense-S² F424 template. It cannot replace the actual F440. Both arms completed 19,537 updates, each with **20,486,029,312 valid labels**: no padding, no repeated epoch and only one training seed, 42. For the model geometry, see [Recipes](recipes.md#p1-ordinary-moe--smelt). For the actual curves, the complete endpoint evaluation and the GPU-hours, see the [P1 evidence](evidence/p1.json).
 
-训练来源固定为 `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`，TorchTitan 为上述固定 commit；实际环境 Python3.12.15、Torch2.14.0+cu130、CUDA13.0，HF 消费使用 Transformers5.19.0。后续公开工件与预算 CLI 的接线不改变模型数学，也不代表发布 HEAD 被重新训练。
+The training source is pinned to `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`. TorchTitan is the pinned commit above. The actual environment is Python3.12.15, Torch2.14.0+cu130 and CUDA13.0. HF use ran on Transformers5.19.0. Later wiring of public artifacts and of the budget CLI does not change the model mathematics. It also does not mean that the release HEAD was trained again.
 
-| 共同运行控制 | 本次实际值 |
+| Common run control | Value in this run |
 |---|---|
-| 硬件 / mesh | 两节点、每节点8×H200；DP replicate2 × shard8（HSDP） |
-| batch / context | local16、GA1、global256条序列、4096ctx；1,048,576 positions/update |
-| 优化 | AdamW，peak LR3e-4，betas(.9,.95)、eps1e-8、WD.1、clip1 |
-| 训练算术 | BF16 compute、FP32 masters/reduce、native grouped experts、FlexAttention、head chunks8 |
-| 目标 | full BPTT、terminal CE，balance coeff.01，aux=`local_micro_call_mean` |
-| WSD | warmup20更新；stable end10000；cosine decay9537更新至峰值LR的.1；完整 horizon19537 |
-| 其他 | finite epoch0、shuffle、num_workers0；无 AC/compile/CUDA graphs；TP/EP/CP/PP=1 |
+| Hardware / mesh | Two nodes, 8×H200 per node; DP replicate2 × shard8 (HSDP) |
+| Batch / context | local16, GA1, global256 sequences, 4096ctx; 1,048,576 positions/update |
+| Optimization | AdamW, peak LR3e-4, betas(.9,.95), eps1e-8, WD.1, clip1 |
+| Training arithmetic | BF16 compute, FP32 masters/reduce, native grouped experts, FlexAttention, head chunks8 |
+| Objective | full BPTT, terminal CE, balance coeff.01, aux=`local_micro_call_mean` |
+| WSD | warmup20 updates; stable end10000; cosine decay over 9537 updates to .1 of the peak LR; full horizon19537 |
+| Other | finite epoch0, shuffle, num_workers0; no AC/compile/CUDA graphs; TP/EP/CP/PP=1 |
 
-norm、embedding、lm_head、router 的 WD 为0；两臂 expert LR 均不另缩放。1e-4 是未使用的稳定性 fallback，不是一条额外实验。local batch/GA 同样属于比较控制，因为 aux 对 microbatch 几何并非线性。
+The WD of norm, embedding, lm_head and router is 0. Neither arm scales the expert LR. 1e-4 is an unused stability fallback. It is not an additional experiment. The local batch and GA are also comparison controls, because aux is not linear in the microbatch geometry.
 
-所有 rank 需能读同一份 prepared 数据与运行目录。两台已分配节点分别在 checkout 根执行以下命令，只将 `NODE_RANK` 设为0或1；`MASTER_ADDR`、`MASTER_PORT` 使用自己的 rendezvous 地址。另一臂将 `P1_SPEC` 改为 `recipes/p1_smelt.json`，使用独立的 `P1_RUN`。首次完整训练前执行 `unset MOELOOP_ANCHOR_STOP MOELOOP_ANCHOR_RESUME`；短训和接续时按下文设置它们，torchrun 命令不变。
+All ranks must be able to read the same prepared data and run directory. On each of the two allocated nodes, run the command below from the checkout root. Set only `NODE_RANK` to 0 or 1. Use your own rendezvous address for `MASTER_ADDR` and `MASTER_PORT`. For the other arm, change `P1_SPEC` to `recipes/p1_smelt.json` and use a separate `P1_RUN`. Before the first complete training, run `unset MOELOOP_ANCHOR_STOP MOELOOP_ANCHOR_RESUME`. For short runs and continuations, set them as described below. The torchrun command does not change.
 
 ```sh
 export P1_SPEC=recipes/p1_moe.json
@@ -238,15 +244,15 @@ torchrun --nnodes=2 --nproc-per-node=8 --node-rank "$NODE_RANK" \
   --parallelism.data-parallel-shard-degree 8 --comm.init-timeout-seconds 1800
 ```
 
-先做短程验证时，在启动前设 `MOELOOP_ANCHOR_STOP=8`；它只设置本次绝对停止坐标，保留 JSON 内的完整19537 WSD。完成后按下节保护 full DCP，再移除 stop 或改为较大的诊断坐标接续，两臂保留相同控制，不追加 seeds。每477更新执行一次固定 validation/checkpoint；原生约1M-label validation 实际每点为1,048,576 labels，停点会增加终点评价，均与完整10M终点评测分开记录。
+For a short check first, set `MOELOOP_ANCHOR_STOP=8` before the launch. It sets only the absolute stop coordinate of this launch. The full WSD of 19537 in the JSON stays. After the short run completes, protect the full DCP as the next section describes. Then remove the stop, or change it to a larger diagnostic coordinate, and continue. Keep the same controls on both arms. Do not add seeds. A fixed validation and a checkpoint run every 477 updates. The native validation of about 1M labels actually uses 1,048,576 labels per point. A stop point adds an endpoint evaluation. All of these are recorded separately from the complete 10M endpoint evaluation.
 
-仅探索新形状时可以使用 `recipe_anchor.py --attention-pairs-per-sequence 4180216.9229844734 --output /runs/new-pair`，它不启动训练，也不自动生成本次冻结的 source/runtime/data 身份。该 pairs 数来自完整20.486B训练 prefix 的实际文档 packing；预算定义与复算命令见[成本与比较](comparison.md#p1-与文档内-attention-预算)。
+To explore a new shape only, you can use `recipe_anchor.py --attention-pairs-per-sequence 4180216.9229844734 --output /runs/new-pair`. It does not start training. It also does not generate the frozen source/runtime/data identity of this run automatically. The pair count comes from the actual document packing of the complete 20.486B training prefix. For the budget definition and the command that recalculates it, see [Costs and comparison](comparison.md#p1-and-the-within-document-attention-budget).
 
-## 继续训练与结果事实
+## Continue training and recorded results
 
-native checkpoint 目录为 `checkpoint/step-N`，最终保存完整训练状态。直接使用 `moeloop.train` 时，相同输出目录再次启动会加载 latest checkpoint；也可显式设置 `--checkpoint.initial-load-path /runs/original/checkpoint/step-N`。上文 runner 始终要求显式 `--resume`。保持模型、source code、数据/tokenizer、world size、workers、optimizer/loss/AC 与 schedule horizon 不变；目标 stop step 可以延长。
+The native checkpoint directory is `checkpoint/step-N`. The final save holds the full training state. When you use `moeloop.train` directly, a new launch with the same output directory loads the latest checkpoint. You can also set `--checkpoint.initial-load-path /runs/original/checkpoint/step-N` explicitly. The runner above always requires an explicit `--resume`. Keep the model, source code, data/tokenizer, world size, workers, optimizer/loss/AC and schedule horizon unchanged. You can extend the target stop step.
 
-P1 入口保留最近两个 rolling checkpoints。要将早期 checkpoint 作为可审阅的恢复起点，**先在所有训练进程退出后完整复制到 rolling 目录之外**，再启动下一段；例如在共享存储上执行一次：
+The P1 entry point keeps the two most recent rolling checkpoints. To use an early checkpoint as a resume point that others can review, **first let all training processes exit. Then copy the complete checkpoint to a location outside the rolling directory.** Then start the next segment. For example, run this once on shared storage:
 
 ```sh
 mkdir -p "$P1_RUN/continuation"
@@ -256,21 +262,21 @@ export MOELOOP_ANCHOR_RESUME="$P1_RUN/continuation/step-8"
 unset MOELOOP_ANCHOR_STOP
 ```
 
-在两节点使用同一个保护路径并重跑上面的 torchrun 命令，接续时保留 `MOELOOP_ANCHOR_RESUME`。完整 DCP 包括 metadata 及所有 rank shards；只拷贝模型或某个 rank 不是 full-state 恢复。公开重放生成自己的 process/路径 lineage，原运行的 source、恢复证明和结果身份保留在证据中。
+On both nodes, use the same protected path and run the torchrun command above again. Keep `MOELOOP_ANCHOR_RESUME` set for the continuation. A full DCP includes the metadata and the shards of all ranks. A copy of only the model, or of only one rank, is not a full-state resume. A public replay generates its own process and path lineage. The evidence keeps the source, the resume proof and the result identity of the original run.
 
-首版严格继续要求 `num_workers=0` 和相同拓扑：逻辑数据流本身与卡数无关，但保存的数据状态记录 rank、world size 和每 rank block 数，换卡数会被拒绝。保存每 rank RNG、数据游标/部分 buffer、source/mixture 状态、已完成 updates 和实际 tokens。DataLoader 的独立 generator、validation RNG 隔离保证继续过程不额外消耗训练随机序列。换数据阶段、换拓扑或仅模型 warm start 应作为新 lineage 明确执行；不使用 `strict=False` 隐藏不一致。
+Strict continuation in the first version requires `num_workers=0` and the same topology. The logical data stream itself does not depend on the GPU count. But the saved data state records the rank, the world size and the number of blocks per rank, so a change of GPU count is rejected. The checkpoint saves the RNG of each rank, the data cursor and partial buffer, the source/mixture state, the completed updates and the actual tokens. A separate generator for the DataLoader and an isolated validation RNG make sure that continuation does not use extra values of the training random sequence. A change of data stage, a change of topology or a model-only warm start must be done explicitly, as a new lineage. Do not use `strict=False` to hide a mismatch.
 
-CE、aux、进度和路由计数按每次成功update记录；随机深度另记每microbatch的实际r/梯度轮数，expected CE另记训练expected CE、entropy与exit分布。每次训练 validation 向输出目录的 `validation.jsonl` 追加一条记录，除 CE 外带 `label_bytes`、`ce_sum_text`、`bpb`、`byte_table_sha256` 和 `bpb_unavailable`，口径与 `moeloop.evaluate` 相同（见下文“导出、评测和生成”）。分子分母都按 rank 求和，所以 BPB 不依赖卡数。BPB 同时以 `validation_metrics/bpb` 记入原生指标，与 TorchTitan 自带的 `validation_metrics/loss` 同组，JSONL 里的字段名仍是 `bpb`；没有字节表时这四个字节字段为 None，`bpb_unavailable` 写明原因，也不记该指标。实现见 [`titan.py`](../src/moeloop/titan.py) 的 `LoopValidator.validate`。
+CE, aux, progress and routing counts are recorded at each successful update. Random depth also records the actual r and the number of gradient visits for each microbatch. Expected CE also records the training expected CE, the entropy and the exit distribution. Each training validation appends one record to `validation.jsonl` in the output directory. In addition to CE, the record has `label_bytes`, `ce_sum_text`, `bpb`, `byte_table_sha256` and `bpb_unavailable`. These fields use the same definition as `moeloop.evaluate` (see "Export, evaluate and generate" below). The numerator and the denominator are both summed over the ranks, so BPB does not depend on the GPU count. BPB is also logged as the native metric `validation_metrics/bpb`, in the same group as the TorchTitan metric `validation_metrics/loss`. In the JSONL, the field name is still `bpb`. Without a byte table, these four byte fields are None, `bpb_unavailable` gives the reason, and the metric is not logged. The implementation is `LoopValidator.validate` in [`titan.py`](../src/moeloop/titan.py).
 
-梯度范数、原生吞吐和显存峰值只在TorchTitan实际日志采样步出现；`metrics.log_freq > 1`时，其余行省略未观测字段。P1使用`log_freq=1`。
+Gradient norm, native throughput and peak memory appear only at the steps where TorchTitan actually samples its log. When `metrics.log_freq > 1`, the other rows omit the fields that were not observed. P1 used `log_freq=1`.
 
-输出目录包含 model/resolved config、continuation identity、metrics.jsonl、outcome.json 和每次 attempt 的小型事实。successful updates 与原生提前自增的 step 分开；input tokens、有效监督 labels、padding positions 和递归工作量分别计数。数据耗尽或 checkpoint 未落盘不会标为完成。
+The output directory contains the model/resolved config, the continuation identity, metrics.jsonl, outcome.json and small facts for each attempt. Successful updates are counted separately from the native step, which increments early. Input tokens, valid supervised labels, padding positions and recursive work are each counted separately. Data exhaustion, or a checkpoint that was not written to disk, is not marked as complete.
 
-相对 manifest、tokenizer 和输出路径按训练启动目录解释，训练入口在元数据中保存绝对路径；manifest 也可输入包含 `manifest.json` 的目录。之后可以从其他工作目录导出。自动发现和身份校验仍需要原 prepared 数据与 tokenizer 文件可访问。
+Relative manifest, tokenizer and output paths are resolved against the directory where training starts. The training entry point saves absolute paths in the metadata. The manifest input can also be a directory that contains `manifest.json`. You can then export from a different working directory. Automatic discovery and identity checks still need access to the original prepared data and tokenizer files.
 
-## 导出、评测和生成
+## Export, evaluate and generate
 
-以下接续上面的8→16步示例；其他运行替换为实际持久保存的 step 和对应 context。导出目录和评测结果文件均使用新路径。
+The commands below continue the 8→16-step example above. For other runs, use the step that was actually saved durably, and the matching context. Use new paths for the export directory and for the evaluation result files.
 
 ```sh
 python -m moeloop.export --checkpoint "$RUN/checkpoint/step-16" \
@@ -282,23 +288,23 @@ python -m moeloop.generate --model "$RUN/hf-step16" --device cuda \
   --prompt 'The model' --max-new-tokens 32
 ```
 
-export 仅读取 DCP 的模型张量，不分配 optimizer；在 meta 上构造 owner 后严格载入。保存物理参数一次，附带 config、tokenizer、generation config、相对导入源码、LICENSE 与 hash/provenance。导出目录必须新建。模型配置和 tokenizer 可从训练元数据发现，也可显式指定；错误 tokenizer 会被拒绝。
+Export reads only the model tensors of the DCP. It does not allocate an optimizer. It builds the owner on the meta device and then loads strictly. It saves the physical parameters once, together with the config, the tokenizer, the generation config, the relatively imported source code, LICENSE and the hash/provenance. The export directory must be new. The model configuration and the tokenizer can be discovered from the training metadata, or you can give them explicitly. A wrong tokenizer is rejected.
 
-单一 source 的 heldout 可追加 `--document-loss-output /results/documents.json`，在同一次评测保存按 split 文档序号对齐的 CE sum/count，并合并跨 block 的同一文档。输出包含数据/上下文/读出身份与完整性标志；聚合结果记录其路径和 SHA。
+For held-out data from a single source, you can add `--document-loss-output /results/documents.json`. The same evaluation then saves the CE sum/count of each document, aligned by the document index in the split. It merges the parts of one document across blocks. The output contains the data, context and readout identities and the completeness flags. The aggregate result records the path and SHA of this file.
 
-结果同时给出 CE 和字节精确的 BPB，`bpb = ce_sum_text / (ln 2 · label_bytes)`。字节表来自 manifest 的 tokenizer 资产（[`tokens.py`](../src/moeloop/tokens.py)）；字节数为 0 的 label（EOS、PAD 和所有特殊/新增 token）同时不进 `ce_sum_text` 和 `label_bytes`，与 nanochat 的 `evaluate_bpb` 一致，把 EOS 的 CE 留在分子里会得到更大的数。`byte_table_sha256` 标识字节表。manifest 没有 tokenizer 资产或 tokenizer 不是 byte-level BPE 时，字节字段为 None，原因写在 `bpb_unavailable`；有 NFC 规范化的 tokenizer（如 Qwen3）按规范化后的文本计字节。精确定义见 `evaluate_heldout` 的 docstring。
+The result gives both CE and byte-exact BPB: `bpb = ce_sum_text / (ln 2 · label_bytes)`. The byte table comes from the tokenizer assets of the manifest ([`tokens.py`](../src/moeloop/tokens.py)). Labels with 0 bytes (EOS, PAD and all special or added tokens) go into neither `ce_sum_text` nor `label_bytes`. This agrees with `evaluate_bpb` of nanochat. If the CE of EOS stays in the numerator, the result is larger. `byte_table_sha256` identifies the byte table. If the manifest has no tokenizer assets, or the tokenizer is not a byte-level BPE, the byte fields are None, and `bpb_unavailable` gives the reason. For a tokenizer with NFC normalization (such as Qwen3), bytes are counted on the normalized text. For the exact definition, see the docstring of `evaluate_heldout`.
 
-CORE（DCLM v2 口径）对导出的 HF 目录运行。评测包由使用者手动下载并核对哈希，评测器不下载：
+CORE (the DCLM v2 definition) runs on an exported HF directory. The user downloads the evaluation bundle manually and checks its hashes. The evaluator does not download it:
 
 ```sh
-python -m moeloop.core --bundle-info   # 官方 URL、哈希与下载步骤
+python -m moeloop.core --bundle-info   # official URL, hashes and download steps
 python -m moeloop.core --model "$RUN/hf-step16" --bundle eval_bundle \
   --device cuda --output "$RUN/core-step16.json"
 ```
 
-结果的 `core` 是 22 个任务 centered accuracy 的均值，只有跑满全部任务且不设 `--max-per-task` 时才有值，否则为 None；`core_v1` 用旧版 random baseline，用于对照 nanochat 与 2025 年 9 月前的 DCLM 数字。提示词、打分规则和已知限制见 [`core.py`](../src/moeloop/core.py) 的 docstring。
+`core` in the result is the mean centered accuracy over 22 tasks. It has a value only when all tasks run and `--max-per-task` is not set. Otherwise it is None. `core_v1` uses the old random baseline. Use it to compare with nanochat and with DCLM numbers from before September 2025. For the prompts, the scoring rules and the known limits, see the docstring of [`core.py`](../src/moeloop/core.py).
 
-逐轮诊断对同一个导出目录和 prepared split 运行，输出每轮的 logit lens、残差更新、路由负载熵与 visit 间重叠，以及截断到 1..K 轮的损失：
+Per-visit diagnostics run on the same export directory and prepared split. For each visit, they output the logit lens, the residual update, the routing load entropy and the overlap between visits. They also output the loss truncated to 1..K visits:
 
 ```sh
 python -m moeloop.diagnostics --model "$RUN/hf-step16" \
@@ -306,9 +312,9 @@ python -m moeloop.diagnostics --model "$RUN/hf-step16" \
   --output "$RUN/diagnostics-step16.json" --plot "$RUN/diagnostics-step16.svg"
 ```
 
-`--plot` 需要 `report` extra（matplotlib）。visit 从 0 计；logit lens 与残差需要整轮状态，即 `order="stack"` 或 core 只有一个 Cell，否则这两项跳过并写明原因。BPB 的口径同 `evaluate`。各量的定义见 [`diagnostics.py`](../src/moeloop/diagnostics.py) 的 docstring。
+`--plot` needs the `report` extra (matplotlib). Visits count from 0. The logit lens and the residuals need the state of a whole visit, that is, `order="stack"` or a core with only one Cell. Otherwise these two items are skipped, and the output gives the reason. BPB uses the same definition as `evaluate`. For the definition of each quantity, see the docstring of [`diagnostics.py`](../src/moeloop/diagnostics.py).
 
-P1 每臂分别导出真正的 `step-19537`，用 FP32 HF 模型完整评价 validation/test，不传 `--max-batches`：
+For P1, export the true `step-19537` of each arm. Evaluate the complete validation/test with the FP32 HF model. Do not pass `--max-batches`:
 
 ```sh
 python -m moeloop.export --checkpoint "$P1_RUN/checkpoint/step-19537" \
@@ -322,15 +328,15 @@ for split in validation test; do
 done
 ```
 
-P1 证据里的终点是 CE，当时的评测还没有 BPB 与 CORE；P1/P2 test 的 BPB 与 CORE 补测见[证据](evidence/p1p2-test-bpb-core.json)。上面的命令不变；输出含 BPB 的条件是 manifest 带 tokenizer 文件，否则 `bpb_unavailable` 写明原因。完整 validation/test 实际各10,001,497 /10,009,889 labels；两臂文档顺序及各文档 label counts 必须相同。配对文档差便于理解 heldout 差异，不估计训练 seed 方差。原生BF16固定验证曲线与该完整FP32终点评估分别报告。
+The endpoint in the P1 evidence is CE. The evaluation at that time had no BPB and no CORE. For the later BPB and CORE measurements on the P1/P2 test split, see the [evidence](evidence/p1p2-test-bpb-core.json). The command above does not change. The output contains BPB when the manifest includes the tokenizer files. Otherwise `bpb_unavailable` gives the reason. The complete validation/test actually has 10,001,497 /10,009,889 labels. The document order and the label count of each document must be the same for both arms. Paired per-document differences help to understand held-out differences. They do not estimate the variance across training seeds. The native BF16 fixed validation curve and this complete FP32 endpoint evaluation are reported separately.
 
-HF Cache 类型停在 wrapper；core 的 KV 按逻辑 occurrence 独立，即使参数共享。一个 cache session 固定深度，不能中途新增缺少历史 KV 的 visit。公开模型 eval full-prefix 可正常求梯度，自动 cache 只在无梯度推理中启用。
+The HF Cache type stops at the wrapper. The KV of the core is independent for each logical occurrence, even when parameters are shared. One cache session has a fixed depth. It cannot add, in the middle of the session, a visit that has no history KV. The public model can compute gradients normally in full-prefix eval. The automatic cache is on only for inference without gradients.
 
-Huginn-inspired与LOOM首条路径使用固定深度、`use_cache=False`，每次forward重建初态/memory；Huginn评测采用确定性零latent，属于声明的eval adaptation。Ouro训练过的gate随模型导出，HF生成仍使用terminal logits；HF的`labels`按标准next-token shift计算terminal CE，不计算Stage I expected CE或entropy。新增路径的独立消费者资格仍以验证记录为准。
+The first paths of Huginn-inspired and LOOM use fixed depth and `use_cache=False`. Each forward rebuilds the initial state/memory. Huginn evaluation uses a deterministic zero latent. This is a declared eval adaptation. The trained Ouro gate is exported with the model. HF generation still uses terminal logits. HF `labels` computes terminal CE with the standard next-token shift. It does not compute the Stage I expected CE or entropy. For the qualification of independent consumers of the new paths, the validation record is authoritative.
 
-HF消费端支持标准`model.resize_token_embeddings(len(tokenizer), mean_resizing=False)`；可传`pad_to_multiple_of`。实际词表大小同时更新HF、core与保存配置，原embedding/head行保持，新增行按`init_std`初始化，两个参数owner继续独立。随后将模型和tokenizer一起保存即可离线重载。更换tokenizer后的原生预训练应重建prepared manifest并建立新运行身份。
+The HF consumer supports the standard `model.resize_token_embeddings(len(tokenizer), mean_resizing=False)`. You can pass `pad_to_multiple_of`. The actual vocabulary size updates the HF config, the core config and the saved config together. The original embedding/head rows stay. New rows are initialized with `init_std`. The two parameter owners stay independent. Then save the model and the tokenizer together, and you can reload them offline. For native pretraining with a different tokenizer, rebuild the prepared manifest and make a new run identity.
 
-下游评测复用现有 lm-evaluation-harness：
+Downstream evaluation reuses the existing lm-evaluation-harness:
 
 ```sh
 uv pip install -e '.[eval]'
@@ -339,4 +345,4 @@ python -m lm_eval --model hf \
   --tasks arc_easy --num_fewshot 0 --device cuda --batch_size 1
 ```
 
-真实结果应固定任务版本、完整评测范围和 checkpoint 身份。`--limit 2` 只适合工程连通性检查。heldout CE 使用本项目文档/packing 协议，不能直接拿来对比另一套 tokenizer/context 处理的 PPL；BPB 按字节归一，去掉了 tokenizer 切分的差异，但 context、packing 与 mask 仍是本协议。
+Real results must pin the task version, the complete evaluation scope and the checkpoint identity. `--limit 2` is only for an engineering connectivity check. Held-out CE uses the document/packing protocol of this project. Do not compare it directly with PPL from a different tokenizer/context processing. BPB normalizes by bytes, which removes the difference in tokenizer segmentation. But the context, packing and mask are still those of this protocol.
