@@ -187,9 +187,9 @@ The study walks one change at a time from an ordinary MoE to a looped MoE, at eq
 
 Test bits per byte (BPB) after 5.0B tokens of DCLM (4,769 updates of 1,048,576 tokens, seed 42); lower is better. Δ is the difference to step 0 with the same optimizer, in mBPB; a negative Δ is a gain. Parameters, training FLOPs and KV cache of every step are within 5% of step 0. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3); the loop of step 5 selects the same value under the same grid; every other configuration inherits it.
 
-1. **At equal budgets, the loop step adds little.** The loop is level with its untied twin (step 5 against step 4).
-2. **Shape gives most of the gain.** Steps 1–2 gain 6.9 mBPB under AdamW and 4.2 under Muon. The residual scale gains 3.0 under AdamW and nothing under Muon.
-3. **Beyond equal budgets, one more visit gains at least as much as twice the experts.** Running the ordinary MoE's middle layers twice (31% more training FLOPs, no new weights) gains 14.8 mBPB under AdamW and 12.2 under Muon; doubling its experts gains 14.3 and 9.9 ([outside matched budgets](docs/results/phase1.md#outside-matched-budgets)).
+1. **The loop itself adds almost nothing.** At equal budgets the loop is level with its untied twin (step 5 against step 4); most of the gain comes from shape.
+2. **More than half of the gain disappears under Muon.** The whole chain gains 9.0 mBPB under AdamW and 3.7 under Muon.
+3. **Beyond equal budgets, one more visit gains as much as twice the experts under Muon.** The visit costs 31% more training FLOPs and no new weights ([outside matched budgets](docs/results/phase1.md#outside-matched-budgets)).
 
 Every configuration, the controls and both optimizers: [Phase 1 results](docs/results/phase1.md) ([data](docs/results/phase1.json)). The record of the study: [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216), [#225](https://github.com/datamllab/LoopTitan/issues/225).
 
