@@ -2,7 +2,7 @@
 
 本文保留初次协议导入的来源记录。当前公共模型与原生训练实现见[训练与数据](training.md)，实际验证状态见[验证记录](validation.md)。
 
-复制自 [doem97/cvsm](https://github.com/doem97/cvsm/tree/b9cb290051f481b24c1abee332218efecfaaa02e)，完整 commit `b9cb290051f481b24c1abee332218efecfaaa02e`。保留根目录 Apache-2.0 [LICENSE](../LICENSE)；改动文件由 adoption commit 及后续 Git diff 标识。
+复制自 [doem97/cvsm](https://github.com/doem97/cvsm/tree/b9cb290051f481b24c1abee332218efecfaaa02e)，完整 commit `b9cb290051f481b24c1abee332218efecfaaa02e`。CVSM 与本仓库出自同一作者，导入部分随本仓库按根目录 MIT [LICENSE](../LICENSE) 发布；改动文件由 adoption commit 及后续 Git diff 标识。
 
 本仓库复制 `AGENTS.md`、四个 `.agents/skills/`、Claude/Codex 入口、GitHub 表单/guard/merge/CI、`scripts/` 和 `tests/`。没有复制 CVSM 的宣传网站或 Pages workflow。
 
