@@ -354,7 +354,7 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"- Configuration: [`{model['config']}`]({repo}/blob/main/{model['config']})",
               f"- Documentation: [docs]({repo}/tree/main/docs)", f"- Results: [results page]({repo}/blob/main/{page})",
               f"- Run record: [#{run['issue']}]({repo}/issues/{run['issue']})", "",
-              "## Citation", "", "```bibtex", f"@software{{{cff['title'].lower()},", f"  title = {{{cff['title']}}},",
+              "## Citation", "", "```bibtex", f"@software{{{cff['title'].lower()},", f"  title = {{{{{cff['title']}}}}},",
               f"  author = {{{authors}}},", f"  version = {{{cff['version']}}},", f"  url = {{{repo}}}", "}", "```", "",
               "## Licence", "", f"[{cff['license']}]({repo}/blob/main/LICENSE).", ""]
     return "\n".join(lines)

@@ -319,7 +319,7 @@ Cite the repository and the exact source commit: [CITATION.cff](CITATION.cff). C
 
 ```bibtex
 @software{looptitan,
-  title = {LoopTitan},
+  title = {{LoopTitan}},
   author = {{The LoopTitan authors}},
   version = {1.0.0rc1},
   url = {https://github.com/datamllab/LoopTitan}
