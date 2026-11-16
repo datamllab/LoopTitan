@@ -41,8 +41,8 @@ def test_cpu_fixture_through_real_mlflow_and_unmodified_spec_checker(tmp_path):
         assert config["derived"]["global_batch_size"] == 8
         assert json.loads(repo.artifact(run, "native-config.json").read_text()) == config["native"]
     results = repo.results("--spec", "-", issue=9, input=SPEC)
-    assert "4 个 run，2 组" in results
-    assert "规格核对：\n- 没有偏差" in results
+    assert "4 runs in 2 groups" in results
+    assert "Spec check:\n- No deviations" in results
 
     # A deviation is a new recorded attempt, never an edit to historical runs.
     result = repo.run(issue=9, cmd=[sys.executable, str(ROOT / "scripts" / "smoke.py"),
@@ -51,8 +51,8 @@ def test_cpu_fixture_through_real_mlflow_and_unmodified_spec_checker(tmp_path):
     result = repo.run(issue=9, cmd=[sys.executable, "-c", "raise SystemExit(7)"])
     assert result.returncode == 7
     results = repo.results("--spec", "-", issue=9, input=SPEC)
-    assert "6 个 run" in results
-    assert "`native.debug.seed in 1,2` 不成立" in results
+    assert "6 runs" in results
+    assert "`native.debug.seed in 1,2` does not hold" in results
     assert len([r for r in repo.runs() if r.info.status == "FAILED"]) == 1
 
 

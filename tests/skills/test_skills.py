@@ -172,5 +172,5 @@ def test_review_worktree_at_head_sha():
 def test_run_keeps_spec_duties():
     text = " ".join(skill_text("run").split())  # phrases may wrap
     assert "check that each Runs line runs exactly one arm" in text  # coverage before launch
-    assert "Stop every running run that `规格核对` lists" in text  # stop on a violation
-    assert "每项 Adaptable 改动" in text  # Adaptable changes stated in the results comment
+    assert "Stop every running run that `Spec check` lists" in text  # stop on a violation
+    assert "each Adaptable change" in text  # Adaptable changes stated in the results comment
