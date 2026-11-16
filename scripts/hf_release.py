@@ -60,6 +60,10 @@ ROOT = Path(__file__).resolve().parents[1]
 ROLES = {"looped": "candidate", "control": "reference"}
 SPLITS = ("validation", "test")
 NAMESPACE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+GENERATED = ("README.md", "banner.svg", "budgets.svg")  # written by this script for a single model
+# The learning rate was tuned on the ordinary MoE (REFERENCE) and the same grid run on this loop; the track's
+# lr_selection (eval/bench/tracks.json) names both models only in prose (M0 and M3), so the path is named here.
+SAME_GRID = "recipes/phase1/m3-{}.json"
 
 
 # --- evidence readers: one normalized view over the P1 and P2 publications ---------------
@@ -166,6 +170,7 @@ def single_releases(plan, base, namespace):
         row, optimizer, run = runs[model["config"]]
         files = None
         if model["export_dir"]:
+            require(not set(GENERATED) & set(model["files"]), f"{model['repo']}: {', '.join(GENERATED)} are generated")
             files = checked_files(model, base, None)
             for split in SPLITS:
                 name, expected = model["evaluation"][split], run[f"{split}_bpb"]
@@ -333,6 +338,8 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"tokens in sequences of {train['seq_len']:,}, {train['schedule']['name'].replace('_', '-')} schedule, "
               f"seed {train['seed']}. {name} at learning rate {lr(recipe['optimizer']['base_lr'])}, " +
               ("tuned on this model, once per optimizer" if model["config"] == reference["config"] else
+               "the value tuned once per optimizer on the ordinary MoE; the same grid on this model selects the same value"
+               if model["config"] == SAME_GRID.format(optimizer) else
                "inherited from the ordinary MoE, where it was tuned once per optimizer") +
               f" ([#{reference['issue']}]({repo}/issues/{reference['issue']})). The full protocol: "
               f"[results page]({repo}/blob/main/{page}).", "",

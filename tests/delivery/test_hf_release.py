@@ -404,7 +404,8 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
     assert ("5.0B tokens of [mlfoundations/dclm-baseline-1.0-parquet](https://huggingface.co/datasets/mlfoundations/"
             "dclm-baseline-1.0-parquet) at revision `817d6752765f6a41261085171dd546b104f60626` (CC-BY-4.0): 4,769 updates "
             "of 1,048,576 tokens in sequences of 4,096, warmup-stable-decay schedule, seed 42. Muon at learning rate "
-            "1.7e-3, inherited from the ordinary MoE, where it was tuned once per optimizer") in card
+            "1.7e-3, the value tuned once per optimizer on the ordinary MoE; the same grid on this model selects the "
+            "same value ([#180](https://github.com/datamllab/LoopTitan/issues/180)).") in card
     assert RESULTS["protocol"] not in card and "every row" not in card and card.lower().count("chain-end") == 1
     assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card and "trust_remote_code=True" in card
     for link in ("https://github.com/datamllab/LoopTitan/blob/main/recipes/phase1/m3-muon.json",
@@ -424,9 +425,29 @@ def test_unmatched_row_says_so():
     assert "# Ordinary MoE with twice the experts, outside matched budgets\n\nAdamW · LoopTitan Phase 1" in card
     assert ("Outside matched budgets: more than 5% from the ordinary MoE (AdamW) in unique non-embedding "
             "parameters (+96.7%).") in card and '- "moe"' in card and "![12 layers](banner.svg)" in card
-    reference = [model for model in json.loads(EXAMPLE.read_text())["models"] if model["repo"] == "looptitan-p1-moe12-muon"]
-    card = hf_release.single_releases({**plan, "models": reference}, EXAMPLE.parent, NAMESPACE)[0]["card"]
-    assert "Muon at learning rate 1.7e-3, tuned on this model, once per optimizer" in card
+
+
+@pytest.mark.parametrize("repo, sentence", [
+    ("looptitan-p1-moe12-muon", "Muon at learning rate 1.7e-3, tuned on this model, once per optimizer ([#180]"),
+    ("looptitan-p1-loop6x2-adamw", "AdamW at learning rate 1.2e-3, the value tuned once per optimizer on the ordinary MoE; "
+                                   "the same grid on this model selects the same value ([#180]"),
+    ("looptitan-p1-twin-muon", "Muon at learning rate 1.7e-3, inherited from the ordinary MoE, where it was tuned once "
+                               "per optimizer ([#180]"),
+    ("looptitan-p1-moe12-2e-adamw", "AdamW at learning rate 1.2e-3, inherited from the ordinary MoE")])
+def test_learning_rate_sentence_states_where_the_value_was_tuned(repo, sentence):
+    plan = json.loads(EXAMPLE.read_text())
+    plan["models"] = [model for model in plan["models"] if model["repo"] == repo]
+    card = hf_release.single_releases(plan, EXAMPLE.parent, NAMESPACE)[0]["card"]
+    assert sentence in card and card.count("learning rate") == 1
+
+
+@pytest.mark.parametrize("name", ["README.md", "banner.svg", "budgets.svg"])
+def test_single_plan_refuses_a_file_with_a_generated_name(single_plan, name):
+    document = json.loads(single_plan.read_text())
+    document["models"][0]["files"][name] = "0" * 64
+    single_plan.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="README.md, banner.svg, budgets.svg are generated"):
+        hf_release.load_plan(single_plan, NAMESPACE)
 
 
 def test_budgets_figure_uses_the_readme_band_and_marks_values_outside_it():
