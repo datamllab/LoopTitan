@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
-"""Plan, render and (only on request) upload paired Hugging Face releases; never train.
+"""Plan, render and (only on request) upload Hugging Face releases of single models or pairs; never train.
 
 Example: python scripts/hf_release.py plan.json --namespace my-org            # dry-run
          HF_TOKEN=... python scripts/hf_release.py plan.json --namespace my-org --upload
 
-A release plan lists pairs. Each pair names one evidence file (anchor P1: docs/evidence/p1.json,
+A plan of single models (docs/release/phase1-models.example.json) names a results file
+(docs/results/phase1.json), the dataset's source receipt, a collection (title, description) and a
+list of `models`. Each model gives its repo name, the `config` path that binds it to one run of the
+results file, its local `export_dir`, the exact `files` to upload with their SHA-256, and its
+`evaluation`: the names, among those files, of the `python -m moeloop.evaluate` outputs for the
+validation and test splits. Their `bpb` must equal the run's validation_bpb and test_bpb to 6
+decimals, or the whole run is refused. The card and a banner (banner.svg, drawn from the
+configuration) are generated; every number on them comes from the results file and the
+configuration, and the reference of the BPB difference is the ordinary MoE under the same optimizer.
+A model whose `export_dir` is still empty is rendered in the dry-run and refused by `--upload`.
+With `--upload`, after the repos exist, one collection in the namespace lists them in plan order.
+
+A pair plan lists pairs. Each pair names one evidence file (anchor P1: docs/evidence/p1.json,
 anchor P2: docs/evidence/recipes-v3.json), a DCLM source receipt, and two models: `looped`
 (the evidence `candidate` arm) and its matched ordinary-MoE `control` (the `reference` arm).
 Every model gives its repo name, display recipe, local export directory, recipe file, checkpoint
@@ -27,14 +39,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import re
 import sys
 
-from check_release import require
-from recipe_delivery import read_json, sha256
+import yaml
 
+from check_release import require
+from moeloop.bench import load_tracks
+from recipe_delivery import read_json, sha256
+from results_table import METRICS, OPTIMIZERS, REFERENCE, lr, signed
+
+ROOT = Path(__file__).resolve().parents[1]
 ROLES = {"looped": "candidate", "control": "reference"}
 SPLITS = ("validation", "test")
 NAMESPACE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -110,6 +128,8 @@ def load_plan(path, namespace):
     require(NAMESPACE.fullmatch(namespace), f"invalid namespace {namespace!r}")
     path = Path(path).resolve()
     base, plan = path.parent, read_json(path)
+    if "models" in plan:
+        return single_releases(plan, base, namespace)
     require(plan.get("pairs"), "plan has no pairs")
     releases = []
     for pair in plan["pairs"]:
@@ -124,7 +144,38 @@ def load_plan(path, namespace):
             require(sha256(recipe) == facts["recipes"][ROLES[name]], f"{model['repo']}: recipe file differs from the evidence")
             files = checked_files(model, base, facts["arms"][ROLES[name]].get("export_provenance_sha256"))
             card = render_card(name, model, repos, facts, source, base)
-            releases.append({"pair": pair["name"], "role": name, "repo_id": repos[name], "card": card, "files": files})
+            releases.append({"pair": pair["name"], "role": name, "label": f"{pair['name']}, {name}",
+                             "repo_id": repos[name], "card": card, "assets": {}, "files": files})
+    return releases
+
+
+def single_releases(plan, base, namespace):
+    """One release per model of the plan, in plan order, bound to its run of the results file."""
+    results = read_json(base / plan["results"])
+    page = (base / plan["results"]).resolve().relative_to(ROOT).with_suffix(".md").as_posix()
+    runs = {run["config"]: (group, row, optimizer, run) for group in results["groups"] for row in group["rows"]
+            for optimizer, run in row["runs"].items()}
+    dataset, cff = read_json(base / plan["dataset"]), yaml.safe_load((ROOT / "CITATION.cff").read_text())
+    releases = []
+    for model in plan["models"]:
+        require(model["config"] in runs, f"{model['repo']}: {model['config']} is not a run of {plan['results']}")
+        group, row, optimizer, run = runs[model["config"]]
+        files = None
+        if model["export_dir"]:
+            files = checked_files(model, base, None)
+            for split in SPLITS:
+                name, expected = model["evaluation"][split], run[f"{split}_bpb"]
+                require(name in model["files"], f"{model['repo']}: evaluation file {name!r} is not listed in files")
+                bpb = read_json(base / model["export_dir"] / name)["bpb"]
+                require(f"{bpb:.6f}" == f"{expected:.6f}", f"{model['repo']}: {split} BPB {bpb:.6f} of {name} "
+                        f"differs from {expected:.6f} in {plan['results']}")
+        reference = REFERENCE.format(optimizer)
+        config = read_json(ROOT / model["config"])["model"]
+        card = model_card(f"{namespace}/{model['repo']}", model["config"], group, row, optimizer, run,
+                          runs[reference][3], results["protocol"], page, dataset, cff, config)
+        releases.append({"repo_id": f"{namespace}/{model['repo']}", "label": model["config"], "card": card,
+                         "assets": {"banner.svg": banner(config, read_json(ROOT / reference)["model"]).encode()},
+                         "files": files})
     return releases
 
 
@@ -239,21 +290,127 @@ def render_card(role, model, repos, facts, source, base):
     return "\n".join(lines)
 
 
+BUDGET_NAMES = {"unique_non_embedding_parameters": "Unique non-embedding parameters",
+                "training_flops_per_token": "Training FLOPs per token", "logical_kv_bytes": "KV cache"}
+
+
+def model_card(repo_id, config_path, group, row, optimizer, run, reference, protocol, page, dataset, cff, config):
+    """Markdown card of one model: every number comes from its row of the results file or its configuration."""
+    repo, name, looped = cff["repository-code"], OPTIMIZERS[optimizer], config["num_visits"] > 1
+    short = repo_id.split("/")[1]
+    tolerance = load_tracks()["P2"].budget["tolerance"]
+    authors = " and ".join("{" + a["name"] + "}" if "name" in a else f"{a['family-names']}, {a['given-names']}"
+                           for a in cff["authors"])
+    tags = ["looptitan", "mixture-of-experts", "looped-moe" if looped else "moe", "custom_code", optimizer]
+    lines = ["---", f"license: {cff['license'].lower()}", "library_name: transformers", "pipeline_tag: text-generation",
+             "tags:", *[f"- {json.dumps(tag)}" for tag in tags], "datasets:", f"- {json.dumps(dataset['id'])}",
+             "model-index:", f"- name: {json.dumps(short)}", "  results:",
+             "  - task:", "      type: text-generation", "    dataset:", f"      name: {json.dumps(dataset['id'])}",
+             f"      type: {json.dumps(dataset['id'])}", "    metrics:"]
+    for split in ("test", "validation"):
+        lines += [f"    - name: {split.capitalize()} BPB", "      type: bpb", f"      value: {run[f'{split}_bpb']:.6f}"]
+    lines += ["---", "", f"![{banner_text(config)}](banner.svg)", "", f"# {short}", "",
+              f"{row['design'][0].upper()}{row['design'][1:]}.", "",
+              f"Trained from scratch with {name} at learning rate {lr(run['lr'])} in Phase 1 of "
+              f"[{cff['title']}]({repo}). A base language model, not instruction tuned.", "",
+              "## Results", "", f"| Test BPB | Validation BPB | Δ test vs ordinary MoE ({name}) |", "|---:|---:|---:|",
+              f"| {run['test_bpb']:.6f} | {run['validation_bpb']:.6f} | "
+              f"{signed(1000 * (run['test_bpb'] - reference['test_bpb']), 2)} mBPB |", "",
+              "Bits per byte on the complete held-out test and validation splits after the last update. "
+              f"The ordinary MoE is [`{reference['config']}`]({repo}/blob/main/{reference['config']}); "
+              "1 mBPB is 0.001 BPB.", "", "## Budgets", "",
+              f"Matched: all three within {tolerance:.0%} of the ordinary MoE ({name})." if group["matched"] else
+              f"Not matched: at least one differs from the ordinary MoE ({name}) by more than {tolerance:.0%}.", "",
+              "| " + " | ".join(BUDGET_NAMES[key] for key in METRICS) + " |", "|---:|---:|---:|",
+              "| " + " | ".join(f"{signed(100 * run['budgets'][key], 1)}%" for key in METRICS) + " |", "",
+              "## Training", "", protocol, "",
+              f"Data: [{dataset['id']}](https://huggingface.co/datasets/{dataset['id']}) at revision "
+              f"`{dataset['revision']}` ({dataset['license']['id']}). All rows, variants and notes: "
+              f"[Phase 1 results]({repo}/blob/main/{page}).", "",
+              "## Use", "", "```python", "import torch", "from transformers import AutoModelForCausalLM, AutoTokenizer", "",
+              f"repo = {json.dumps(repo_id)}", "tokenizer = AutoTokenizer.from_pretrained(repo)",
+              "model = AutoModelForCausalLM.from_pretrained(repo, trust_remote_code=True).eval()",
+              "ids = torch.tensor([[tokenizer.bos_token_id] + tokenizer.encode(\"The model\", add_special_tokens=False)])",
+              "out = model.generate(ids, attention_mask=torch.ones_like(ids), max_new_tokens=32, do_sample=False)",
+              "print(tokenizer.decode(out[0], skip_special_tokens=True))", "```", "",
+              "The model runs Python code from this repository: read it first, or pin `revision=`.", "",
+              "## Links", "", f"- Code: [{cff['title']}]({repo})",
+              f"- Configuration: [`{config_path}`]({repo}/blob/main/{config_path})",
+              f"- Documentation: [docs]({repo}/tree/main/docs)", f"- Results: [Phase 1 results]({repo}/blob/main/{page})",
+              f"- Run record: [#{run['issue']}]({repo}/issues/{run['issue']})", "",
+              "## Citation", "", "```bibtex", f"@software{{{cff['title'].lower()},", f"  title = {{{cff['title']}}},",
+              f"  author = {{{authors}}},", f"  version = {{{cff['version']}}},", f"  url = {{{repo}}}", "}", "```", "",
+              "## Licence", "", f"[{cff['license']}]({repo}/blob/main/LICENSE).", ""]
+    return "\n".join(lines)
+
+
+def layer_params(config, region):
+    part = config.get(region) or {}
+    return 3 * (part.get("num_experts") or config["num_experts"]) * (part.get("hidden_dim") or config["hidden_dim"]) * config["dim"]
+
+
+def banner_text(config):
+    stored = config["prefix_cells"] + config["num_cells"] + config["suffix_cells"]
+    run = stored + (config["num_visits"] - 1) * config["num_cells"]
+    return f"{stored} layers stored, {run} run" if run > stored else f"{stored} layers"
+
+
+def banner(config, reference):
+    """The model as bars on a shaft, in the light colours of the README figures: one bar per stored layer,
+    its area the layer's expert parameters relative to a layer of the ordinary MoE (`reference`); the
+    looped layers in indigo under an arc with the visit count."""
+    unit = layer_params(reference, None)
+    regions = ["prefix"] * config["prefix_cells"] + ["core"] * config["num_cells"] + ["suffix"] * config["suffix_cells"]
+    sizes = [(region, 30 * math.sqrt(layer_params(config, region) / unit), 96 * math.sqrt(layer_params(config, region) / unit))
+             for region in regions]
+    looped, w, h, cy, gap = config["num_visits"] > 1, 880, 280, 160, 12
+    x = (w - sum(bw for _, bw, _ in sizes) - gap * (len(sizes) - 1)) / 2
+    out = [f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="20" style="fill:#FAFBFC;stroke:#E3E5E9"/>',
+           f'<path d="M48 {cy}H{w - 48}M{w - 55} {cy - 6}L{w - 48} {cy}L{w - 55} {cy + 6}" '
+           'style="fill:none;stroke:#D5D8DE;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/>']
+    core = []
+    for region, bw, bh in sizes:
+        fill = "#3346D3" if looped and region == "core" else "#16181D"
+        out.append(f'<rect x="{x:.1f}" y="{cy - bh / 2:.1f}" width="{bw:.1f}" height="{bh:.1f}" rx="6" style="fill:{fill}"/>')
+        if looped and region == "core":
+            core.append((x + bw / 2, cy - bh / 2))
+        x += bw + gap
+    if core:
+        (x2, top), x1, c = core[0], core[-1][0], 64
+        top -= 8
+        out.append(f'<path d="M{x1:.1f} {top:.1f}C{x1:.1f} {top - c:.1f} {x2:.1f} {top - c:.1f} {x2:.1f} {top:.1f}'
+                   f'M{x2 - 6:.1f} {top - 8:.1f}L{x2:.1f} {top:.1f}L{x2 + 6:.1f} {top - 8:.1f}" '
+                   'style="fill:none;stroke:#3346D3;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/>')
+        out.append(f'<text x="{(x1 + x2) / 2:.1f}" y="{top - .75 * c - 12:.1f}" text-anchor="middle" '
+                   f'style="font-size:26px;font-weight:650;fill:#3346D3">×{config["num_visits"]}</text>')
+    out.append(f'<text x="{w / 2}" y="{h - 22}" text-anchor="middle" style="font-size:14px;fill:#5B616E">'
+               f'{banner_text(config)}</text>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img">\n'
+            f'<title>{banner_text(config)}</title>\n<style>text{{font-family:-apple-system, BlinkMacSystemFont, '
+            f"'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif}}</style>\n" + "\n".join(out) + "\n</svg>\n")
+
+
 # --- dry-run and upload -------------------------------------------------------------------
 
-def dry_run_report(releases):
+def dry_run_report(releases, collection=None):
     lines = []
     for release in releases:
-        lines += [f"== {release['repo_id']} ({release['pair']}, {release['role']})", "files to upload:"]
+        lines += [f"== {release['repo_id']} ({release['label']})", "files to upload:"]
+        if release["files"] is None:
+            lines.append("  not filled in: export_dir, files and evaluation")
         lines += [f"  {row['sha256']}  {row['size']:>14,}  {row['name']}" + ("" if row["ok"] else
-                  f"  MISMATCH (plan {row['expected']})") for row in release["files"]]
+                  f"  MISMATCH (plan {row['expected']})") for row in release["files"] or []]
+        lines += [f"  generated {name} ({len(data):,} bytes)" for name, data in release["assets"].items()]
         lines += ["  generated README.md follows", "--- README.md ---", release["card"], "--- end ---", ""]
+    if collection:
+        lines += [f"== collection {collection['namespace']}: {collection['title']}", f"  {collection['description']}",
+                  *[f"  {i}. {release['repo_id']}" for i, release in enumerate(releases, 1)], ""]
     return "\n".join(lines)
 
 
 def mismatches(releases):
     """Re-hash every listed file; names of those that differ from the plan."""
-    return [f"{release['repo_id']}/{row['name']}" for release in releases for row in release["files"]
+    return [f"{release['repo_id']}/{row['name']}" for release in releases for row in release["files"] or []
             if sha256(row["path"]) != row["expected"]]
 
 
@@ -262,9 +419,12 @@ def hf_client(token):
     return HfApi(token=token), CommitOperationAdd
 
 
-def upload(releases, token, *, public=False):
-    """Upload exactly the listed files and each card; nothing is sent if any hash differs."""
+def upload(releases, token, *, public=False, collection=None):
+    """Upload exactly the listed files, each card and its assets, then the collection; nothing is sent
+    if an export is not filled in or any hash differs."""
     require(token, "upload needs HF_TOKEN in the environment")
+    empty = [release["repo_id"] for release in releases if release["files"] is None]
+    require(not empty, "refusing upload, export not filled in: " + ", ".join(empty))
     bad = mismatches(releases)
     require(not bad, "refusing upload, hash differs from plan: " + ", ".join(bad))
     api, add = hf_client(token)
@@ -272,8 +432,18 @@ def upload(releases, token, *, public=False):
         repo_id = release["repo_id"]
         api.create_repo(repo_id=repo_id, repo_type="model", private=not public, exist_ok=True)
         operations = [add(path_in_repo="README.md", path_or_fileobj=release["card"].encode())]
+        operations += [add(path_in_repo=name, path_or_fileobj=data) for name, data in release["assets"].items()]
         operations += [add(path_in_repo=row["name"], path_or_fileobj=str(row["path"])) for row in release["files"]]
-        api.create_commit(repo_id=repo_id, repo_type="model", operations=operations, commit_message="Add paired release files")
+        api.create_commit(repo_id=repo_id, repo_type="model", operations=operations,
+                          commit_message="Add paired release files" if "pair" in release else "Add release files")
+    if collection:
+        made = api.create_collection(title=collection["title"], namespace=collection["namespace"],
+                                     description=collection["description"], private=not public, exists_ok=True)
+        for release in releases:
+            made = api.add_collection_item(made.slug, item_id=release["repo_id"], item_type="model", exists_ok=True)
+        items = {item.item_id: item.item_object_id for item in made.items}
+        for position, release in enumerate(releases):  # an existing collection may hold another order
+            api.update_collection_item(made.slug, items[release["repo_id"]], position=position)
 
 
 def main(argv=None):
@@ -289,12 +459,14 @@ def main(argv=None):
     try:
         require(token or not args.upload, "--upload needs HF_TOKEN in the environment")
         releases = load_plan(args.plan, args.namespace)
+        collection = read_json(args.plan).get("collection")
+        collection = collection and {**collection, "namespace": args.namespace}
         if args.upload:
-            upload(releases, token, public=args.public)
+            upload(releases, token, public=args.public, collection=collection)
             print(f"uploaded {len(releases)} repos: " + ", ".join(release["repo_id"] for release in releases))
             return 0
-        print(dry_run_report(releases))
-        return 0 if all(row["ok"] for release in releases for row in release["files"]) else 1
+        print(dry_run_report(releases, collection))
+        return 0 if all(row["ok"] for release in releases for row in release["files"] or []) else 1
     except (ValueError, KeyError, OSError) as error:
         print(f"error: {error!r}" if isinstance(error, KeyError) else f"error: {error}", file=sys.stderr)
         return 1

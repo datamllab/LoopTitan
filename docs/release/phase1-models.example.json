@@ -1,0 +1,170 @@
+{
+  "results": "../results/phase1.json",
+  "dataset": "../evidence/p1-dclm-source.json",
+  "collection": {
+    "title": "LoopTitan Phase 1",
+    "description": "Eight designs of ordinary and looped MoE, each trained with AdamW and with Muon on the same data, schedule and seed."
+  },
+  "models": [
+    {
+      "repo": "looptitan-p1-moe12-adamw",
+      "config": "recipes/phase1/m0-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-muon",
+      "config": "recipes/phase1/m0-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-finer-adamw",
+      "config": "recipes/shape/g-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-finer-muon",
+      "config": "recipes/shape/g-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-adamw",
+      "config": "recipes/shape/u-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-muon",
+      "config": "recipes/shape/u-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-layout-adamw",
+      "config": "recipes/shape/r-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-layout-muon",
+      "config": "recipes/shape/r-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-twin-adamw",
+      "config": "recipes/phase1/m4-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-twin-muon",
+      "config": "recipes/phase1/m4-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-loop6x2-adamw",
+      "config": "recipes/phase1/m3-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-loop6x2-muon",
+      "config": "recipes/phase1/m3-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-loop6x2-unmatched-adamw",
+      "config": "recipes/methods/m0-loop-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-loop6x2-unmatched-muon",
+      "config": "recipes/methods/m0-loop-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-2e-adamw",
+      "config": "recipes/phase1/m0-2e-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-2e-muon",
+      "config": "recipes/phase1/m0-2e-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    }
+  ]
+}
