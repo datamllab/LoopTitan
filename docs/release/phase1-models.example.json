@@ -1,0 +1,186 @@
+{
+  "results": "../results/phase1.json",
+  "dataset": "../evidence/p1-dclm-source.json",
+  "collection": {
+    "title": "LoopTitan Phase 1",
+    "description": "Eight designs of ordinary and looped MoE, each trained with AdamW and with Muon on the same data, schedule and seed."
+  },
+  "models": [
+    {
+      "repo": "looptitan-p1-moe12-adamw",
+      "title": "Ordinary MoE, 12 layers",
+      "config": "recipes/phase1/m0-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-muon",
+      "title": "Ordinary MoE, 12 layers",
+      "config": "recipes/phase1/m0-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-finer-adamw",
+      "title": "Ordinary MoE with finer experts",
+      "config": "recipes/shape/g-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-finer-muon",
+      "title": "Ordinary MoE with finer experts",
+      "config": "recipes/shape/g-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-adamw",
+      "title": "Ordinary MoE, deeper and narrower, 18 layers",
+      "config": "recipes/shape/u-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-muon",
+      "title": "Ordinary MoE, deeper and narrower, 18 layers",
+      "config": "recipes/shape/u-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-layout-adamw",
+      "title": "Ordinary MoE, 18 layers, fewer experts in the middle",
+      "config": "recipes/shape/r-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe18-layout-muon",
+      "title": "Ordinary MoE, 18 layers, fewer experts in the middle",
+      "config": "recipes/shape/r-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-twin-adamw",
+      "title": "Untied twin of the loop",
+      "config": "recipes/phase1/m4-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-twin-muon",
+      "title": "Untied twin of the loop",
+      "config": "recipes/phase1/m4-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-loop6x2-adamw",
+      "title": "Looped MoE: the middle 6 layers run twice",
+      "config": "recipes/phase1/m3-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-loop6x2-muon",
+      "title": "Looped MoE: the middle 6 layers run twice",
+      "config": "recipes/phase1/m3-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-loop6x2-unmatched-adamw",
+      "title": "Ordinary MoE with one more visit, outside matched budgets",
+      "config": "recipes/methods/m0-loop-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-loop6x2-unmatched-muon",
+      "title": "Ordinary MoE with one more visit, outside matched budgets",
+      "config": "recipes/methods/m0-loop-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-2e-adamw",
+      "title": "Ordinary MoE with twice the experts, outside matched budgets",
+      "config": "recipes/phase1/m0-2e-adamw.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    },
+    {
+      "repo": "looptitan-p1-moe12-2e-muon",
+      "title": "Ordinary MoE with twice the experts, outside matched budgets",
+      "config": "recipes/phase1/m0-2e-muon.json",
+      "export_dir": "",
+      "evaluation": {
+        "validation": "",
+        "test": ""
+      },
+      "files": {}
+    }
+  ]
+}
