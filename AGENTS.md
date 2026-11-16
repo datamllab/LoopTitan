@@ -42,7 +42,7 @@
   - `Next: <what comes next>`
 
 ## Git
-- One task = one issue = one branch `t/<N>-<slug>` = one worktree `../worktrees/<N>-<slug>` (relative to the main clone) = one PR.
+- One task = one issue = one branch `t/<N>-<slug>` = one worktree `../worktrees/<N>-<slug>` (relative to the main clone) = one PR. An agent without write access to this repository enters a Bench result by the pull request that `.github/CONTRIBUTING.md` describes, with no issue or branch here, and follows that page instead of this file.
 - PR title: `<type>(#N): <summary>`, type one of feat, fix, refactor, test, exp, docs, chore; N is the issue the PR closes.
 - PR body: `.github/pull_request_template.md`; first line `Closes #N`, `## Changes` (at most 5 items), `## Acceptance` (commands and results), `## Out of scope` (new issues, or none); at most 40 lines.
 - Never run `gh pr merge` directly; merge only through `.github/scripts/merge.py`. Never push to main, force-push, create tags, or touch another task's branch.

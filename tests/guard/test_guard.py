@@ -209,6 +209,38 @@ def test_check_passes_filled_pr_template():
     assert run(body=body) == []
 
 
+# --- check: a pull request that only adds Bench submission files
+
+SUBMISSION = "eval/bench/submissions/p2-entry"
+
+
+def test_submission_only_needs_no_issue_title_or_scope():
+    files = [f(f"{SUBMISSION}/submission.json", "added"), f(f"{SUBMISSION}/lr-0.0003/train.log", "added")]
+    assert run(files=files, title="New P2 entry", body="A Bench entry.", issue=None) == []
+
+
+def test_submission_files_still_follow_the_file_rules():
+    files = [f(f"{SUBMISSION}/submission.json", "added"), f(f"{SUBMISSION}/NOTES.txt", "added")]
+    one(run(files=files, title="New P2 entry", body="", issue=None), "forbidden file name")
+
+
+@pytest.mark.parametrize("other", [
+    f(f"{SUBMISSION}/submission.json", "modified"),
+    f(f"{SUBMISSION}/train.log", "removed"),
+    f(f"{SUBMISSION}/train.log", "renamed", prev="eval/bench/submissions/old/train.log"),
+    f("eval/bench/tracks.json", "modified"),
+    f("src/pkg/a.py", "added"),
+])
+def test_any_other_change_removes_the_submission_exemption(other):
+    files = [f(f"{SUBMISSION}/submission.json", "added"), other]
+    msgs = run(files=files, title="New P2 entry", body="", issue=None)
+    assert any("exactly one" in m for m in msgs) and any("PR title" in m for m in msgs), msgs
+
+
+def test_repo_guard_toml_names_the_submission_folder():
+    assert repo_cfg()["submissions"] == "eval/bench/submissions/**"
+
+
 # --- check: one failure each
 
 def one(msgs, *needles):
@@ -393,6 +425,23 @@ def test_guard_workflow():
     assert {"GH_TOKEN", "PR_NUMBER", "REPO"} <= set(run_step["env"])
 
 
+def test_bench_workflow_is_safe_for_forks():
+    """Submission folders from forks: read-only token, no secrets, the validator from the base commit."""
+    text = (ROOT / ".github" / "workflows" / "bench.yml").read_text()
+    wf = yaml.safe_load(text)
+    assert triggers(wf) == {"pull_request": {"paths": ["eval/bench/submissions/**"]}}
+    assert wf["permissions"] == {"contents": "read"}
+    assert "${{" not in text  # no secrets, no PR-controlled expressions
+    steps = wf["jobs"]["validate"]["steps"]
+    assert "permissions" not in wf["jobs"]["validate"]
+    checkout = next(s for s in steps if s.get("uses") == "actions/checkout@v4")
+    assert checkout["with"]["persist-credentials"] is False and "ref" not in checkout["with"]
+    runs = [s["run"] for s in steps if "run" in s]
+    assert 'worktree add --detach "$RUNNER_TEMP/base" HEAD^1' in runs[0]
+    assert runs[1].startswith("python -I - <<'PY'") and 'base / "scripts/bench.py"' in runs[1]
+    assert "cwd=base" in runs[1]
+
+
 def test_test_workflow():
     """The contract only: job `test` runs the suite on PRs and on pushes to main. Adopters edit the
     install line freely, so dependencies and their versions are not checked."""
@@ -489,6 +538,14 @@ def test_main_fail_and_summary(tmp_path):
     assert p.returncode == 1
     assert "guard: " in p.stdout and "src/x.py" in p.stdout
     assert "src/x.py" in summary
+
+
+def test_main_passes_a_submission_only_pr_without_issue(tmp_path):
+    r = {"repos/o/r/pulls/7": {"number": 7, "title": "P2 entry", "body": "Entry by a contributor."},
+         "repos/o/r/pulls/7/files": [[f("eval/bench/submissions/p2-entry/submission.json", "added")]]}
+    p, summary = run_main(tmp_path, r)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert "All checks passed." in summary
 
 
 def test_main_missing_issue(tmp_path):

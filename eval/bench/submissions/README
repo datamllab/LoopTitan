@@ -1,0 +1,9 @@
+Looped MoE Bench entries, one folder per entry.
+
+Each folder is the `submission` folder that `scripts/bench.py run` or `sweep` writes:
+`submission.json`, which declares the sha256 of every other file, and each run's evidence.
+`scripts/bench.py validate --dir` checks a folder; `scripts/bench.py leaderboard` ranks them.
+A merged folder is a record and is kept whatever its verdict: failed and negative results included.
+
+How to add an entry: .github/CONTRIBUTING.md
+What the check binds and what it cannot verify: docs/comparison.md, "Benchmark submission folder"

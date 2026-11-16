@@ -1,0 +1,94 @@
+name: bench
+
+# Checks each submission folder that a pull request adds or changes under eval/bench/submissions/
+# with `scripts/bench.py validate --dir` and writes the report to the job summary. The job fails
+# only when an entry is not a complete record: a `missing-evidence` reason, no readable report, a
+# symbolic link, anything directly under eval/bench/submissions/ that is not a folder (its README
+# aside), or a folder name outside [a-z0-9-]+. Any other verdict passes; .github/CONTRIBUTING.md
+# gives the merge rule.
+#
+# Safe for pull requests from forks: `pull_request` runs with a read-only token and no secrets.
+# The validator, the frozen tracks and the pins come from the base commit (the first parent of the
+# test merge commit), checked out apart from the PR's files; the PR's files are only read and hashed,
+# and no Python runs with the PR checkout on its import path (`python -I`, the validator's cwd is base).
+on:
+  pull_request:
+    paths: ["eval/bench/submissions/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: pr
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Base commit
+        run: git -C pr worktree add --detach "$RUNNER_TEMP/base" HEAD^1
+      - name: Validate changed submission folders
+        working-directory: pr
+        run: |
+          python -I - <<'PY'
+          import json, os, re, subprocess, sys
+          from pathlib import Path
+
+          prefix = "eval/bench/submissions/"
+          base = Path(os.environ["RUNNER_TEMP"]) / "base"
+          changed = subprocess.run(["git", "diff", "--name-only", "-z", "--no-renames", "HEAD^1", "HEAD", "--", prefix],
+                                   capture_output=True, text=True, check=True).stdout.split("\0")
+          names = sorted({path[len(prefix):].split("/")[0] for path in changed if path})
+          rows, details, incomplete = [], [], []
+          for name in names:
+              shown, path = re.sub(r"[^A-Za-z0-9._-]", "?", name)[:80], prefix + name  # no raw names in log or summary
+              if not os.path.lexists(path):
+                  rows.append(f"| `{shown}` | removed | |")
+                  continue
+              if name == "README" and os.path.isfile(path) and not os.path.islink(path):
+                  continue  # the folder's own note
+              if os.path.islink(path) or not os.path.isdir(path):
+                  incomplete.append(name)
+                  rows.append(f"| `{shown}` | not checked | not a submission folder: entries directly under {prefix} are folders |")
+                  continue
+              if not re.fullmatch(r"[a-z0-9-]+", name):
+                  incomplete.append(name)
+                  rows.append(f"| `{shown}` | not checked | the folder name must be lowercase letters, digits and hyphens |")
+                  continue
+              folder = Path(path).resolve()
+              links = [os.path.join(d, n) for d, dirs, files in os.walk(folder) for n in dirs + files
+                       if os.path.islink(os.path.join(d, n))]
+              if links:
+                  incomplete.append(name)
+                  rows.append(f"| `{name}` | not checked | symbolic links: {len(links)}; a submission holds regular files only |")
+                  continue
+              p = subprocess.run([sys.executable, str(base / "scripts/bench.py"), "validate", "--dir", str(folder)],
+                                 cwd=base, capture_output=True, text=True)
+              try:
+                  report = json.loads(p.stdout) if p.returncode in (0, 1) else None
+              except ValueError:
+                  report = None
+              if report is None:
+                  incomplete.append(name)
+                  rows.append(f"| `{name}` | no report | the validator stopped: see the step log |")
+                  print(f"{name}:\n{p.stdout}{p.stderr}")
+                  continue
+              complete = "missing-evidence" not in report["reasons"]
+              if not complete:
+                  incomplete.append(name)
+              rows.append(f"| `{name}` | `{report['verdict']}` (track {report['track']}) | "
+                          f"{'complete' if complete else 'incomplete: missing evidence'} |")
+              details.append(f"<details><summary>{name}</summary>\n\n```json\n{json.dumps(report, indent=1)}\n```\n</details>\n")
+              print(f"{name}: {report['verdict']}")
+          summary = ["## bench", "", "| Folder | Verdict | Record |", "|---|---|---|", *rows, "", *details] if rows \
+              else ["## bench", "", "No submission folder changed."]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write("\n".join(summary) + "\n")
+          sys.exit(1 if incomplete else 0)
+          PY
