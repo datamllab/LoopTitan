@@ -123,3 +123,19 @@ def test_readme_citation_follows_a_preferred_citation_after_regeneration(tmp_pat
     after = readme.read_text()
     assert block.findall(after) == [readme_figures.bibtex(paper) + "\n"] and "@software" not in after
     assert block.sub("", after) == block.sub("", before)  # nothing else changes
+
+
+def test_capsules_link_only_to_places_that_exist():
+    """Homepage, Models and Paper are placeholders without a link until release; the other four lead to their place."""
+    row = re.findall(r'(?:<a href="([^"]+)">)?<picture><source[^>]*capsule-(\w+)-dark\.svg', README.read_text())
+    assert [key for _, key in row] == ["homepage", "docs", "models", "paper", "results", "record", "contribute"]
+    links = dict((key, href) for href, key in row)
+    assert not links["homepage"] and not links["models"] and not links["paper"]
+    for key in ("docs", "results", "record", "contribute"):
+        path, _, anchor = links[key].partition("#")
+        if links[key].startswith("https://"):
+            assert links[key] == "https://github.com/datamllab/LoopTitan/issues"
+            continue
+        file = (ROOT / path) if path else README
+        assert file.exists(), links[key]
+        assert not anchor or anchor in anchors(file), links[key]

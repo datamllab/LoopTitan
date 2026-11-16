@@ -6,7 +6,8 @@ Writes SVG files to docs/assets/: each figure in a light and a dark variant (REA
 follows the reader's colour scheme by itself. Every value drawn comes from the repository: the frozen
 recipes (recipes/), the lineage of scripts/lineage.py, the cost model (moeloop.comparison), the CPU
 record docs/evidence/qwen3-cpu.json, the Phase 1 results docs/results/phase1.json, pyproject.toml and
-eval/bench/tracks.json; the layout (positions, sizes, axis ranges) is chosen in this script. It also
+eval/bench/tracks.json; the layout (positions, sizes, axis ranges) is chosen in this script. The destination
+capsules place the marks of docs/assets/brand/ and docs/assets/brand/external/ unchanged. It also
 writes README.md's BibTeX block (between the citation markers) from CITATION.cff with bibtex(), the entry
 the model cards carry too. The mark
 comes from the lockup files in docs/assets/brand/, placed as they are. --check writes nothing and exits 1
@@ -336,6 +337,12 @@ def banner(t):
         css = ".lk-d{display:none}@media (prefers-color-scheme: dark){.lk{display:none}.lk-d{display:inline}}"
     else:
         out = [lockup("medium-indigo" if t is LIGHT else "medium-dark", cx - lw / 2, top, lh)[0]]
+    # one soft light behind the whole group: a single ellipse, brightest at its centre
+    gy, grx, gry = (h / 2, 176, 112) if narrow else (h / 2, 380, 128)
+    out.insert(0, '<defs><radialGradient id="glow" cx="50%" cy="50%" r="50%">' + "".join(
+        f'<stop offset="{o}" style="stop-color:{t["acc"]};stop-opacity:{a}"/>'
+        for o, a in [(0, .085), (.4, .06), (.75, .022), (1, 0)]) + '</radialGradient></defs>'
+        f'<ellipse cx="{num(cx)}" cy="{num(gy)}" rx="{grx}" ry="{gry}" fill="url(#glow)"/>')
     if narrow:
         out.append(text(cx, 112, "A common ground for", 27, t["ink"], 650, "middle", ls=-.8))
         out.append(text(cx, 145, "looped MoE research.", 27, t["ink"], 650, "middle", ls=-.8))
@@ -357,6 +364,49 @@ def badge(label, value, t):
     body = (mlabel(0, 14, label, t) + text(kw + 8, 14, value, 12, t["ink"], 500, mono=True) +
             line(0, 21.5, end, 21.5, t["hair"], 1))
     return svg(end + 12, 22, f"{label}: {value}", f"{label}: {value}", t, body)
+
+
+# The README's destination capsules, in row order: (key, label, colour family, mark). Marks of other organisations
+# are their own files in docs/assets/brand/external/, placed unchanged (SOURCES.md there gives source and terms).
+PLACES = [("homepage", "Homepage", "ours", "brand/looptitan-shell-small"), ("docs", "Documentation", "ours", "octicons-book-16"),
+          ("models", "Models", "hf", "huggingface-logo"), ("paper", "Paper", "plain", "octicons-file-16"),
+          ("results", "Results", "ours", "bars"), ("record", "Record", "github", "octicons-issue-opened-16"),
+          ("contribute", "Contribute", "github", "octicons-git-pull-request-16")]
+# per family and theme: (ground, border, mark colour); LoopTitan's own places take the identity's indigo
+HUES = {"ours": {"light": ("#F2F4FD", "#C8CFF5", "#3346D3"), "dark": ("#151A2E", "#2C3672", "#7486F2")},
+        "hf": {"light": ("#FFF8DD", "#F3D77A", None), "dark": ("#241F0E", "#5E4F1C", None)},
+        "plain": {"light": ("#F5F6F8", "#D5D8DE", "#16181D"), "dark": ("#161B22", "#363D48", "#E7EBF1")},
+        "github": {"light": ("#EEF7F1", "#B5DCC1", "#1A7F37"), "dark": ("#0F2418", "#21543A", "#3FB950")}}
+
+
+def placed(file, x, y, size, colour=None):
+    """An SVG file of docs/assets/, unchanged, scaled into a size x size box at (x, y); colour fills a one-colour icon."""
+    src = (ASSETS / file).read_text()
+    vw, vh = (float(v) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', src).groups())
+    inner = re.search(r"<svg[^>]*>(.*)</svg>", src, re.S).group(1)
+    k = size / max(vw, vh)
+    fill = f' style="fill:{colour}"' if colour else ""
+    return f'<g transform="translate({num(x + (size - vw * k) / 2)} {num(y + (size - vh * k) / 2)}) scale({k:.5f})"{fill}>{inner}</g>'
+
+
+def capsule(key, label, family, mark, primary, t):
+    """A destination capsule: the place's mark and name on its colour's light ground, one height and one type."""
+    h, size = 32, 13
+    ground, border, colour = HUES[family]["light" if t is LIGHT else "dark"]
+    ink = t["ink"]
+    if primary:
+        ground, border, ink, colour = t["acc"], None, t["on_acc"], t["on_acc"]
+    tw = len(label) * size * .66  # generous: the widest common fallback fonts
+    w = round(10 + 16 + 7 + tw + 14)
+    out = [rect(.5, .5, w - 1, h - 1, (h - 1) / 2, ground, border)]
+    if mark == "bars":  # results: bars of a result, the last in the loop's colour
+        out += [rect(11.5 + i * 4.6, 22 - bh, 3.2, bh, 1, colour if i == 2 else ink) for i, bh in enumerate([6, 9, 12])]
+    elif mark.startswith("brand/"):
+        out.append(placed(f"{mark}-{'white' if t is LIGHT else 'ink'}.svg", 10, 8.5, 15))
+    else:
+        out.append(placed(f"brand/external/{mark}.svg", 10, 8, 16, colour))
+    out.append(text(33 + tw / 2, 21, label, size, ink, 500, "middle"))
+    return svg(w + 6, h, label, label, t, "".join(out))  # 6 px of air after each capsule
 
 
 def hero(t):
@@ -1203,6 +1253,9 @@ def figures():
                        ("results", results_fig), ("flow", flow_fig)]:
         for variant, theme in [("light", LIGHT), ("dark", DARK), ("narrow", AUTO)]:
             out[f"{name}-{variant}.svg"] = draw(theme)
+    for i, (key, label, family, mark) in enumerate(PLACES):
+        for variant, theme in [("light", LIGHT), ("dark", DARK)]:
+            out[f"capsule-{key}-{variant}.svg"] = capsule(key, label, family, mark, i == 0, theme)
     for key, (label, value) in badges().items():
         for variant, theme in [("light", LIGHT), ("dark", DARK)]:
             out[f"badge-{key}-{variant}.svg"] = badge(label, value, theme)

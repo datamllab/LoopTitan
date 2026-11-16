@@ -42,3 +42,16 @@ def test_banners_place_the_brand_lockups_as_they_are():
     light, dark, narrow = (readme_figures.banner(t) for t in (readme_figures.LIGHT, readme_figures.DARK, readme_figures.AUTO))
     assert inner("medium-indigo") in light and inner("medium-dark") in dark
     assert inner("medium-indigo") in narrow and inner("medium-dark") in narrow
+
+
+def test_capsules_place_the_marks_as_they_are():
+    import re
+    import readme_figures
+    for key, label, family, mark in readme_figures.PLACES:
+        if mark == "bars":
+            continue
+        for theme in (readme_figures.LIGHT, readme_figures.DARK):
+            name = f"{mark}-{'white' if theme is readme_figures.LIGHT else 'ink'}" if mark.startswith("brand/") else f"brand/external/{mark}"
+            text = (ROOT / "docs" / "assets" / f"{name}.svg").read_text()
+            inner = re.search(r"<svg[^>]*>(.*)</svg>", text, re.S).group(1)
+            assert inner in readme_figures.capsule(key, label, family, mark, False, theme), (key, name)

@@ -7,10 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="#documentation">Documentation</a> &nbsp;·&nbsp;
-  <a href="docs/results/phase1.md">Results</a> &nbsp;·&nbsp;
-  <a href="https://github.com/datamllab/LoopTitan/issues">Record</a> &nbsp;·&nbsp;
-  <a href=".github/CONTRIBUTING.md">Contribute</a>
+  <!-- Homepage, Models and Paper get their links when they are public -->
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture><a href="#documentation"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models" height="32"></picture><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper" height="32"></picture><a href="docs/results/phase1.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
 </p>
 
 <p align="center">
