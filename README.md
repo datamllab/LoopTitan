@@ -83,29 +83,25 @@ Compare the loop of [Phase 1](#studies-run-on-looptitan) with its untied twin, w
 ```console
 $ python scripts/compare_recipes.py compare \
     recipes/phase1/m3-adamw.json recipes/phase1/m4-adamw.json --seq-len 4096
+  …
   "matched": {
     "logical_kv_bytes": {
-      "basis": "analytical_estimate",
-      "candidate": 25952256,
-      "reference": 25952256,
+      …
       "relative_difference": 0.0,
       "relative_tolerance": 0.05
     },
     "training_flops_per_token": {
-      "basis": "analytical_estimate",
-      "candidate": 3213955008,
-      "reference": 3217300416,
+      …
       "relative_difference": -0.0010398183468857637,
       "relative_tolerance": 0.05
     },
     "unique_non_embedding_parameters": {
-      "basis": "analytical_estimate",
-      "candidate": 1329281184,
-      "reference": 1314771744,
+      …
       "relative_difference": 0.01103571024112304,
       "relative_tolerance": 0.05
     }
   },
+  …
 ```
 
 Build a looped model, run it and cost it:
@@ -279,7 +275,7 @@ Later phases join this list when they are released.
 
 Each study is an issue that declares its arms, controlled settings and budget before the runs ([#225](https://github.com/datamllab/LoopTitan/issues/225)). [`scripts/results.py`](scripts/results.py) checks the runs of a study against its declared design ([#232](https://github.com/datamllab/LoopTitan/issues/232)). Failed runs and short checks stay in the record ([#243](https://github.com/datamllab/LoopTitan/issues/243), [protocol](docs/protocol.md#state-and-decisions)). The [issues](https://github.com/datamllab/LoopTitan/issues) are a copy of the development record under the original issue numbers, with pull-request records among them ([#199](https://github.com/datamllab/LoopTitan/issues/199)).
 
-The benchmark is a frozen protocol of four tracks ([`eval/bench/tracks.json`](eval/bench/tracks.json)). A checker binds a submission folder to its files and lists what it cannot check ([benchmark](docs/comparison.md#benchmark-submission-folder)). It does not yet accept outside entries.
+The benchmark is a frozen protocol of four tracks ([`eval/bench/tracks.json`](eval/bench/tracks.json)). A checker binds a submission folder to its files and lists what it cannot check ([benchmark](docs/comparison.md#benchmark-submission-folder)). Anyone can enter a result by pull request; the [`bench` workflow](.github/workflows/bench.yml) checks it, and every complete record is merged ([contributing](.github/CONTRIBUTING.md)).
 
 ## Add a configuration
 

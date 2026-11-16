@@ -417,14 +417,17 @@ def hero(t):
 # ---- pillars
 
 def pillar_designs(t):
-    """Many configurations, one model (local box 256 x 140)."""
-    out, ys = [], [34, 64, 93, 121]
-    for node, y in zip(["phase1/m3", "methods/huginn", "methods/ouro", "methods/expert-tying"], ys):
-        g, gw = glyph(node, 22, y, t, .46, label=False)
+    """Many designs, one model (local box 256 x 140): three looped designs, drawn as in the lineage figure."""
+    out = []
+    for node, y in zip(["phase1/m3", "methods/huginn", "methods/ouro"], [31, 75, 118]):
+        g, gw = glyph(node, 24, y, t, .56, label=False)
         out.append(g)
-        out.append(path(f"M{num(22 + gw + 8)} {y}C{num(22 + gw + 50)} {y} 112 74 146 74", t["hair"], 1.2))
-    out.append(rect(146, 57, 96, 34, 10, t["tint"], t["acc3"], 1))
-    out.append(text(194, 78.5, "ModelConfig", 12, t["acc"], 500, "middle", mono=True))
+        visits = recipe(node)["model"]["num_visits"]
+        out.append(text(24 + gw + 10, y + 4.3, f"×{visits}", 12, t["acc"], 600, mono=True))
+        x = 24 + gw + 34
+        out.append(path(f"M{num(x)} {y}C{num(x + 30)} {y} 120 75 146 75", t["hair"], 1.2))
+    out.append(rect(146, 58, 96, 34, 10, t["tint"], t["acc3"], 1))
+    out.append(text(194, 79.5, "ModelConfig", 12, t["acc"], 500, "middle", mono=True))
     return "".join(out)
 
 
