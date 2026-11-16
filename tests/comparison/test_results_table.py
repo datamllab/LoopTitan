@@ -1,5 +1,6 @@
 """Phase 1 results (scripts/results_table.py): the data names existing configurations and the generated table is current."""
 import json
+import re
 import subprocess
 import sys
 
@@ -68,10 +69,15 @@ def test_the_check_reports_a_rerun_at_the_protocol_learning_rate_or_without_its_
     assert any("rerun note leaves out" in line for line in found)
 
 
-def test_every_row_source_has_a_url_and_covers_its_configurations_own_source():
-    data = json.loads(json.dumps(DATA))
-    row = next(row for group in data["groups"] for row in group["rows"] if row["runs"]["adamw"]["config"].startswith("recipes/methods/"))
-    row["sources"] = ["recipes/p2_moe.json"]
-    found = results_table.problems(data)
-    assert any("recipes/p2_moe.json: its source field has no url" in line for line in found)
-    assert any(row["runs"]["adamw"]["config"] in line and "not among the row's sources" in line for line in found)
+def test_source_marks_follow_the_lineage_in_ascending_order():
+    nodes = results_table.lineage.lineage()
+    smelt = results_table.published(results_table.ROOT / "recipes/p2_smelt.json")
+    for config in ("phase1/m3", "phase1/m4", "phase1/m7", "phase1/m5", "shape/u", "shape/r",
+                   "methods/smelt-v3", "methods/latentloop-residual", "methods/m0-loop"):
+        assert smelt in results_table.sources(f"recipes/{config}-adamw.json", nodes)
+    for config in ("phase1/m0", "shape/g", "phase1/m0-2e"):
+        assert results_table.sources(f"recipes/{config}-adamw.json", nodes) == []
+    for line in results_table.TABLE.read_text().splitlines():
+        if line.startswith("| ["):
+            numbers = [int(mark) for mark in re.findall(r"\[(\d+)\]\(#sources\)", line.split(" | ")[1])]
+            assert numbers == sorted(numbers)

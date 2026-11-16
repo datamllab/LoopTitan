@@ -1,14 +1,13 @@
 {
-  "protocol": "Protocol: every row is trained on the same data (5.0B tokens of the P2 track's DCLM manifest) with the same schedule (4,769 updates of 1,048,576 tokens, warmup-stable-decay) and seed 42. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3; [#180](https://github.com/datamllab/LoopTitan/issues/180)); the same grid on the shared middle loop, at the end of the chain, selects the same value. Every other row inherits it without a search of its own; the one later learning-rate check, for one row under AdamW, is reported in a note and not used in the table.",
-  "not_shown": "This page shows a subset of the Phase 1 record. Other configurations trained with the same protocol are not shown: `phase1/m1`, `phase1/m1s`, `phase1/m2` and `phase1/m6` ([#200](https://github.com/datamllab/LoopTitan/issues/200)), `phase1/m4-elr` and `phase1/m7-elr` ([#266](https://github.com/datamllab/LoopTitan/issues/266)), `shape/m0r` ([#218](https://github.com/datamllab/LoopTitan/issues/218)), `shape/d24` and `shape/d36` ([#242](https://github.com/datamllab/LoopTitan/issues/242)), `shape/m0lr` and `shape/m0i` ([#252](https://github.com/datamllab/LoopTitan/issues/252)). The studies are [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216) and [#225](https://github.com/datamllab/LoopTitan/issues/225).",
+  "protocol": "Protocol: every row is trained on the same data (5.0B tokens of the P2 track's DCLM manifest) with the same schedule (4,769 updates of 1,048,576 tokens, warmup-stable-decay) and seed 42. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3; [#180](https://github.com/datamllab/LoopTitan/issues/180)); the same grid on the chain-end loop selects the same value. Every row of the table uses that inherited value without a search of its own; learning-rate variants and checks in the record are not in the table (listed below, and one rerun at another learning rate is a note under AdamW).",
+  "not_shown": "This page shows a subset of the Phase 1 record. Not shown, trained with the same data, schedule and learning rate: `phase1/m1`, `phase1/m1s`, `phase1/m2` and `phase1/m6` ([#200](https://github.com/datamllab/LoopTitan/issues/200)), `shape/m0r` ([#218](https://github.com/datamllab/LoopTitan/issues/218)), `shape/d24` and `shape/d36` ([#242](https://github.com/datamllab/LoopTitan/issues/242)) and `shape/m0i` ([#252](https://github.com/datamllab/LoopTitan/issues/252)). Not shown, learning-rate variants of shown rows: `phase1/m4-elr` and `phase1/m7-elr`, with the middle layers' expert learning rate ×√2 ([#266](https://github.com/datamllab/LoopTitan/issues/266)), and `shape/m0lr`, with the middle layers' output-projection learning rate ×0.5 ([#252](https://github.com/datamllab/LoopTitan/issues/252)). The learning-rate grids and checks are in [#180](https://github.com/datamllab/LoopTitan/issues/180) and [#243](https://github.com/datamllab/LoopTitan/issues/243); the studies are [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216) and [#225](https://github.com/datamllab/LoopTitan/issues/225).",
   "groups": [
     {
-      "title": "Matched budgets: one-change chain from ordinary MoE to shared middle loop",
+      "title": "Matched budgets: one-change chain from ordinary MoE (`phase1/m0`) to chain-end loop (`phase1/m3`)",
       "matched": true,
       "rows": [
         {
           "design": "ordinary MoE: 12 layers at width 1280, 64 experts per layer, expert hidden size 432, top-8",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/phase1/m0-adamw.json", "lr": 1.2e-3, "test_bpb": 0.999533036509, "validation_bpb": 1.001293235707, "issue": 180, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.0, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/phase1/m0-muon.json", "lr": 1.7e-3, "test_bpb": 0.974376387577, "validation_bpb": 0.976141255042, "issue": 180, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.0, "logical_kv_bytes": 0.0}}
@@ -16,7 +15,6 @@
         },
         {
           "design": "finer experts: 12 layers at width 1280, 72 experts per layer, expert hidden size 384, top-9",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/shape/g-adamw.json", "lr": 1.2e-3, "test_bpb": 0.995308896885, "validation_bpb": 0.997201590606, "issue": 218, "budgets": {"unique_non_embedding_parameters": 9.3e-05, "training_flops_per_token": 0.000235, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/shape/g-muon.json", "lr": 1.7e-3, "test_bpb": 0.973517236523, "validation_bpb": 0.975192893735, "issue": 218, "budgets": {"unique_non_embedding_parameters": 9.3e-05, "training_flops_per_token": 0.000235, "logical_kv_bytes": 0.0}}
@@ -24,7 +22,6 @@
         },
         {
           "design": "deeper and narrower: 18 layers at width 1056, 58 experts per layer, expert hidden size 384, top-8",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/shape/u-adamw.json", "lr": 1.2e-3, "test_bpb": 0.992618892702, "validation_bpb": 0.994387816242, "issue": 218, "budgets": {"unique_non_embedding_parameters": -0.002745, "training_flops_per_token": 0.023291, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/shape/u-muon.json", "lr": 1.7e-3, "test_bpb": 0.970165183317, "validation_bpb": 0.971958702235, "issue": 218, "budgets": {"unique_non_embedding_parameters": -0.002745, "training_flops_per_token": 0.023291, "logical_kv_bytes": 0.03125}}
@@ -32,15 +29,13 @@
         },
         {
           "design": "expert layout: 18 layers at width 1056, 88 experts in each of the first 3 and last 3 layers, 44 in each of the middle 12, expert hidden size 384",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/shape/r-adamw.json", "lr": 1.2e-3, "test_bpb": 0.993624425968, "validation_bpb": 0.995441655728, "issue": 218, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/shape/r-muon.json", "lr": 1.7e-3, "test_bpb": 0.971013475153, "validation_bpb": 0.972742042504, "issue": 218, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}}
           }
         },
         {
-          "design": "untied twin of the shared middle loop: 18 layers at width 1056, 88 experts in each of the first 3 and last 3 layers, 44 in each of the middle 12, expert hidden size 384, middle residual ×0.5",
-          "sources": [],
+          "design": "untied twin of the chain-end loop: 18 layers at width 1056, 88 experts in each of the first 3 and last 3 layers, 44 in each of the middle 12, expert hidden size 384, middle residual ×0.5",
           "runs": {
             "adamw": {"config": "recipes/phase1/m4-adamw.json", "lr": 1.2e-3, "test_bpb": 0.990645370887, "validation_bpb": 0.992399533907, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/phase1/m4-muon.json", "lr": 1.7e-3, "test_bpb": 0.971042933634, "validation_bpb": 0.972988429190, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}}
@@ -48,7 +43,6 @@
         },
         {
           "design": "shared experts: 12 layers at width 1056, 88 experts per layer, expert hidden size 384; the middle 6 looped twice, residual ×0.5; attention, router and norms per visit",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/phase1/m7-adamw.json", "lr": 1.2e-3, "test_bpb": 0.994194004900, "validation_bpb": 0.996015140994, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008761, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/phase1/m7-muon.json", "lr": 1.7e-3, "test_bpb": 0.971189137661, "validation_bpb": 0.972990268040, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008761, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
@@ -56,15 +50,13 @@
         },
         {
           "design": "shared experts and router: 12 layers at width 1056, 88 experts per layer, expert hidden size 384; the middle 6 looped twice, residual ×0.5; attention and norms per visit",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/phase1/m5-adamw.json", "lr": 1.2e-3, "test_bpb": 0.990328911102, "validation_bpb": 0.992225344322, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/phase1/m5-muon.json", "lr": 1.7e-3, "test_bpb": 0.969497620041, "validation_bpb": 0.971184134669, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
           }
         },
         {
-          "design": "shared middle loop: 12 layers at width 1056, 88 experts per layer, expert hidden size 384; the middle 6 looped twice, residual ×0.5; every part shared across visits",
-          "sources": ["recipes/p2_smelt.json"],
+          "design": "chain-end loop: 12 layers at width 1056, 88 experts per layer, expert hidden size 384; the middle 6 looped twice, residual ×0.5; every part shared across visits",
           "runs": {
             "adamw": {"config": "recipes/phase1/m3-adamw.json", "lr": 1.2e-3, "test_bpb": 0.990543902055, "validation_bpb": 0.992211368459, "issue": 180, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/phase1/m3-muon.json", "lr": 1.7e-3, "test_bpb": 0.970676475726, "validation_bpb": 0.972424873017, "issue": 180, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
@@ -78,7 +70,6 @@
       "rows": [
         {
           "design": "10 layers at width 1056, 88 experts per outer layer and 134 per middle layer, expert hidden size 384; the middle 4 looped 3 times, residual ×1/3",
-          "sources": ["recipes/methods/smelt-v3-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/smelt-v3-adamw.json", "lr": 1.2e-3, "test_bpb": 0.992698288947, "validation_bpb": 0.994244511671, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.001052, "training_flops_per_token": 0.025494, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/methods/smelt-v3-muon.json", "lr": 1.7e-3, "test_bpb": 0.970857639780, "validation_bpb": 0.972628215126, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.001052, "training_flops_per_token": 0.025494, "logical_kv_bytes": 0.03125}}
@@ -86,7 +77,6 @@
         },
         {
           "design": "9 layers at width 1056, 88 experts per outer layer and 179 per middle layer, expert hidden size 384; the middle 3 looped 4 times, residual ×1/4",
-          "sources": ["recipes/methods/smelt-v4-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/smelt-v4-adamw.json", "lr": 1.2e-3, "test_bpb": 0.992454155119, "validation_bpb": 0.994376711440, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.000141, "training_flops_per_token": 0.026583, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/methods/smelt-v4-muon.json", "lr": 1.7e-3, "test_bpb": 0.972644299885, "validation_bpb": 0.974199881808, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.000141, "training_flops_per_token": 0.026583, "logical_kv_bytes": 0.03125}}
@@ -94,7 +84,6 @@
         },
         {
           "design": "12 layers at width 1056, 88 experts per layer, expert hidden size 384; the middle 6 looped twice, residual ×0.25 on the first visit and ×1 on the second",
-          "sources": ["recipes/methods/latentloop-residual-adamw.json", "recipes/p2_smelt.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/latentloop-residual-adamw.json", "lr": 1.2e-3, "test_bpb": 0.9920193187228835, "validation_bpb": 0.9938531270793741, "issue": 254, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
             "muon": {"config": "recipes/methods/latentloop-residual-muon.json", "lr": 1.7e-3, "test_bpb": 0.9702825551133963, "validation_bpb": 0.9721782564847266, "issue": 254, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
@@ -102,7 +91,6 @@
         },
         {
           "design": "6 layers at width 1280, 130 experts per layer, expert hidden size 432; the middle 2 looped 4 times",
-          "sources": ["recipes/methods/meta-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/meta-adamw.json", "lr": 1.2e-3, "test_bpb": 1.002253935769, "validation_bpb": 1.003939984562, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.001305, "training_flops_per_token": 0.001937, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/meta-muon.json", "lr": 1.7e-3, "test_bpb": 0.978252203264, "validation_bpb": 0.980126420437, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.001305, "training_flops_per_token": 0.001937, "logical_kv_bytes": 0.0}}
@@ -110,7 +98,6 @@
         },
         {
           "design": "8 layers at width 1280, 64 experts per outer layer and 128 per middle layer, expert hidden size 432; the middle 4 looped twice, attention per visit",
-          "sources": ["recipes/methods/foil-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/foil-adamw.json", "lr": 1.2e-3, "test_bpb": 0.997245718435, "validation_bpb": 0.999034473894, "issue": 232, "budgets": {"unique_non_embedding_parameters": -8e-06, "training_flops_per_token": 0.001252, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/foil-muon.json", "lr": 1.7e-3, "test_bpb": 0.973549889042, "validation_bpb": 0.975301242136, "issue": 232, "budgets": {"unique_non_embedding_parameters": -8e-06, "training_flops_per_token": 0.001252, "logical_kv_bytes": 0.0}}
@@ -118,7 +105,6 @@
         },
         {
           "design": "12 layers at width 1280, expert hidden size 432; each 4 consecutive layers share one bank of 256 experts; attention, router and norms per layer",
-          "sources": ["recipes/methods/expert-tying-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/expert-tying-adamw.json", "lr": 1.2e-3, "test_bpb": 1.003948820124, "validation_bpb": 1.005800463430, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002237, "training_flops_per_token": 0.005634, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/expert-tying-muon.json", "lr": 1.7e-3, "test_bpb": 0.982450633096, "validation_bpb": 0.984286700538, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002237, "training_flops_per_token": 0.005634, "logical_kv_bytes": 0.0}}
@@ -126,7 +112,6 @@
         },
         {
           "design": "4 layers at width 1280, 86 experts per layer, expert hidden size 984; the middle 2 looped with linear input re-injection; training samples the loop count per micro-batch (Poisson-lognormal, mean 4) from a random start, with gradients through the last 2 loops; evaluated at 4 loops from a zero start",
-          "sources": ["recipes/methods/huginn-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/huginn-adamw.json", "lr": 1.2e-3, "test_bpb": 1.435139237564, "validation_bpb": 1.438454788998, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}, "rerun_at_other_lr": {"lr": 3e-4, "test_bpb": 1.049098117310, "validation_bpb": 1.051026447487, "issue": 243, "note": "At the protocol learning rate the loss of this configuration fell slowly under AdamW; a short check over four learning rates (1.5e-4, 3e-4, 6e-4 and 1.2e-3, 597 updates each) chose 3e-4, and the full run at 3e-4 gave test BPB 1.049098 and validation BPB 1.051026"}},
             "muon": {"config": "recipes/methods/huginn-muon.json", "lr": 1.7e-3, "test_bpb": 0.985059801320, "validation_bpb": 0.986724804487, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}}
@@ -134,7 +119,6 @@
         },
         {
           "design": "5 layers at width 1280, 39 experts per layer, expert hidden size 1728, top-2; the middle 1 looped 8 times with diagonal-decay input injection",
-          "sources": ["recipes/methods/sandwich-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/sandwich-adamw.json", "lr": 1.2e-3, "test_bpb": 1.015433481894, "validation_bpb": 1.017309326632, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.003364, "training_flops_per_token": 0.024306, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/sandwich-muon.json", "lr": 1.7e-3, "test_bpb": 0.990708580887, "validation_bpb": 0.992556873982, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.003364, "training_flops_per_token": 0.024306, "logical_kv_bytes": 0.0}}
@@ -142,7 +126,6 @@
         },
         {
           "design": "4 layers at width 1280, 196 experts per layer, expert hidden size 432; all 4 looped 3 times with a router per visit and EMA state updates",
-          "sources": ["recipes/methods/loom-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/loom-adamw.json", "lr": 1.2e-3, "test_bpb": 1.007496905303, "validation_bpb": 1.009360833202, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000214, "training_flops_per_token": 0.003873, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/loom-muon.json", "lr": 1.7e-3, "test_bpb": 0.991848118810, "validation_bpb": 0.993527533120, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000214, "training_flops_per_token": 0.003873, "logical_kv_bytes": 0.0}}
@@ -150,7 +133,6 @@
         },
         {
           "design": "4 layers at width 640, 562 experts per layer, expert hidden size 304; all 4 looped 3 times; trained on the expected loss over an exit distribution (entropy weight 0.1), evaluated after 3 loops",
-          "sources": ["recipes/methods/ouro-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/ouro-adamw.json", "lr": 1.2e-3, "test_bpb": 1.033282560795, "validation_bpb": 1.035037467598, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000606, "training_flops_per_token": -0.000229, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/ouro-muon.json", "lr": 1.7e-3, "test_bpb": 1.013632448644, "validation_bpb": 1.015111272543, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000606, "training_flops_per_token": -0.000229, "logical_kv_bytes": 0.0}}
@@ -158,7 +140,6 @@
         },
         {
           "design": "6 layers at width 1280, 129 experts per layer, expert hidden size 432; all 6 looped twice with per-visit LoRA (rank 160) on attention",
-          "sources": ["recipes/methods/relaxed-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/relaxed-adamw.json", "lr": 1.2e-3, "test_bpb": 0.997343294033, "validation_bpb": 0.999244143457, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002697, "training_flops_per_token": 0.031016, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/methods/relaxed-muon.json", "lr": 1.7e-3, "test_bpb": 0.978307147104, "validation_bpb": 0.980032718508, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002697, "training_flops_per_token": 0.031016, "logical_kv_bytes": 0.0}}
@@ -172,7 +153,6 @@
       "rows": [
         {
           "design": "ordinary MoE looped: 12 layers at width 1280, 64 experts per layer, expert hidden size 432; the middle 6 looped twice, residual ×0.5",
-          "sources": ["recipes/methods/m0-loop-adamw.json"],
           "runs": {
             "adamw": {"config": "recipes/methods/m0-loop-adamw.json", "lr": 1.2e-3, "test_bpb": 0.984730236518028, "validation_bpb": 0.9864235507986127, "issue": 247, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.314562, "logical_kv_bytes": 0.5}},
             "muon": {"config": "recipes/methods/m0-loop-muon.json", "lr": 1.7e-3, "test_bpb": 0.9621342043802388, "validation_bpb": 0.9640687712678565, "issue": 247, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.314562, "logical_kv_bytes": 0.5}}
@@ -180,7 +160,6 @@
         },
         {
           "design": "ordinary MoE with twice the experts: 12 layers at width 1280, 128 experts per layer, expert hidden size 432",
-          "sources": [],
           "runs": {
             "adamw": {"config": "recipes/phase1/m0-2e-adamw.json", "lr": 1.2e-3, "test_bpb": 0.985240512760, "validation_bpb": 0.986998166867, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.967165, "training_flops_per_token": 0.001878, "logical_kv_bytes": 0.0}},
             "muon": {"config": "recipes/phase1/m0-2e-muon.json", "lr": 1.7e-3, "test_bpb": 0.964524735252, "validation_bpb": 0.966378721501, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.967165, "training_flops_per_token": 0.001878, "logical_kv_bytes": 0.0}}
