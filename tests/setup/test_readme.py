@@ -76,7 +76,7 @@ def test_no_cjk_characters():
 
 
 def test_bibtex_entry_equals_the_model_card_entry():
-    """README, model cards and CITATION.cff give one citation: the card's entry is rendered from the cff."""
+    """README, model cards and CITATION.cff give one citation, rendered from the cff by hf_release.bibtex."""
     block = re.compile(r"^```bibtex\n(.*?)^```", re.M | re.S)
     plan = json.loads((ROOT / "docs" / "release" / "phase1-models.example.json").read_text())
     plan["results"] = str(ROOT / "docs" / "results" / "phase1.json")
@@ -87,6 +87,7 @@ def test_bibtex_entry_equals_the_model_card_entry():
     assert len(entry) == 1
     assert entry == block.findall(card)
     cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
+    assert entry[0] == hf_release.bibtex(cff) + "\n"  # one function renders both
     assert f"@software{{{cff['title'].lower()}," in entry[0] and f"title = {{{{{cff['title']}}}}}," in entry[0]  # double braces keep the capitals
     assert f"author = {{{{{cff['authors'][0]['name']}}}}}" in entry[0]
     assert f"version = {{{cff['version']}}}" in entry[0] and f"url = {{{cff['url']}}}" in entry[0]

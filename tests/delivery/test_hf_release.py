@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+import yaml
 
 import hf_release
 import readme_figures as figures
@@ -415,6 +416,24 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
         assert link in card
     assert "@software{looptitan," in card and "author = {{The LoopTitan authors}}" in card
     assert str(single_plan.parent) not in card and str(ROOT) not in card
+
+
+PAPER = ("@misc{looptitan2026,\n  title = {{A Paper Title With Capitals}},\n  author = {{The LoopTitan authors}},\n"
+         "  year = {2026},\n  eprint = {2611.00001},\n  archivePrefix = {arXiv},\n  primaryClass = {cs.LG},\n"
+         "  url = {https://arxiv.org/abs/2611.00001}\n}")
+
+
+def test_card_cites_the_preferred_citation_of_citation_cff_and_only_that(single_plan, monkeypatch):
+    fixture = ROOT / "tests" / "delivery" / "fixtures" / "citation-paper.cff"
+    cff = yaml.safe_load(fixture.read_text())
+    assert hf_release.bibtex(cff) == PAPER
+    monkeypatch.setattr(hf_release, "CITATION", fixture)
+    card = hf_release.load_plan(single_plan, NAMESPACE)[0]["card"]
+    assert f"## Citation\n\n```bibtex\n{PAPER}\n```\n" in card and "@software" not in card
+    journal = cff["preferred-citation"] | {"journal": "Journal of Tests", "identifiers": []}
+    assert hf_release.bibtex(cff | {"preferred-citation": journal}) == (
+        "@article{looptitan2026,\n  title = {{A Paper Title With Capitals}},\n  author = {{The LoopTitan authors}},\n"
+        "  year = {2026},\n  journal = {Journal of Tests},\n  url = {https://arxiv.org/abs/2611.00001}\n}")
 
 
 def test_unmatched_row_says_so():

@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, cite the paper."
+type: software
+title: "LoopTitan"
+authors:
+  - name: "The LoopTitan authors"
+repository-code: "https://github.com/datamllab/LoopTitan"
+url: "https://github.com/datamllab/LoopTitan"
+version: "1.0.0rc1"
+license: MIT
+preferred-citation:
+  type: article
+  title: "A Paper Title With Capitals"
+  authors:
+    - name: "The LoopTitan authors"
+  year: 2026
+  identifiers:
+    - type: other
+      value: "arXiv:2611.00001 [cs.LG]"
+  url: "https://arxiv.org/abs/2611.00001"

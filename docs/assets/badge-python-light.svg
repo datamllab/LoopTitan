@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="156" height="22" viewBox="0 0 156 22" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="145" height="22" viewBox="0 0 145 22" role="img" aria-labelledby="title desc">
 <title id="title">python: 3.11 · 3.12</title>
 <desc id="desc">python: 3.11 · 3.12</desc>
 <style>.s{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace}</style>
-<rect x="0.5" y="0.5" width="155.24" height="21" rx="11" style="fill:#FFFFFF;stroke:#D5D8DE;stroke-width:1"/><path d="M59.04 .5H145.24A10.5 10.5 0 0 1 145.24 21.5H59.04Z" style="fill:#F2F4FD"/><path d="M59.04 1L59.04 21" style="fill:none;stroke:#D5D8DE;stroke-width:1;stroke-linecap:round;stroke-linejoin:round"/><text class="s" x="29.52" y="15.2" text-anchor="middle" style="font-size:12px;font-weight:400;fill:#5B616E">python</text><text class="s" x="107.64" y="15.2" text-anchor="middle" style="font-size:12px;font-weight:600;fill:#3346D3">3.11 · 3.12</text>
+<text class="m" x="0" y="14" text-anchor="start" style="font-size:11px;font-weight:500;fill:#5B616E;letter-spacing:0.66px">PYTHON</text><text class="m" x="52.22" y="14" text-anchor="start" style="font-size:12px;font-weight:500;fill:#16181D">3.11 · 3.12</text><path d="M0 21.5L133 21.5" style="fill:none;stroke:#D5D8DE;stroke-width:1;stroke-linecap:round;stroke-linejoin:round"/>
 </svg>
