@@ -395,12 +395,17 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
     assert '- "looped-moe"' in card and '- "muon"' in card and '- "mlfoundations/dclm-baseline-1.0-parquet"' in card
     assert f"    - name: Test BPB\n      type: bpb\n      value: {run['test_bpb']:.6f}" in card
     assert f"    - name: Validation BPB\n      type: bpb\n      value: {run['validation_bpb']:.6f}" in card
-    assert "![12 layers stored, 18 run](banner.svg)" in card and "# looptitan-p1-loop6x2-muon" in card
-    assert "Chain-end loop: 12 layers at width 1056" in card and "with Muon at learning rate 1.7e-3" in card
+    assert "![12 layers stored, 18 run](banner.svg)" in card
+    assert "\n# Looped MoE: the middle 6 layers run twice\n\nMuon · LoopTitan Phase 1\n\nChain-end loop: 12 layers at width 1056" in card
     assert f"| 0.970676 | 0.972425 | {1000 * (run['test_bpb'] - reference['test_bpb']):+.2f} mBPB |" in card
-    assert "| -3.70 mBPB |" in card and "| -0.3% | +2.4% | +3.1% |" in card
-    assert "Matched: all three within 5% of the ordinary MoE (Muon)." in card and RESULTS["protocol"] in card
-    assert "revision `817d6752765f6a41261085171dd546b104f60626` (CC-BY-4.0)" in card
+    assert "| -3.70 mBPB |" in card and "Matched budgets: all three within 5% of the ordinary MoE (Muon)." in card
+    assert ("![Budgets against the ordinary MoE (Muon): unique non-embedding parameters -0.27%, training FLOPs per "
+            "token +2.44%, KV cache +3.12%; tolerance ±5%](budgets.svg)") in card
+    assert ("5.0B tokens of [mlfoundations/dclm-baseline-1.0-parquet](https://huggingface.co/datasets/mlfoundations/"
+            "dclm-baseline-1.0-parquet) at revision `817d6752765f6a41261085171dd546b104f60626` (CC-BY-4.0): 4,769 updates "
+            "of 1,048,576 tokens in sequences of 4,096, warmup-stable-decay schedule, seed 42. Muon at learning rate "
+            "1.7e-3, inherited from the ordinary MoE, where it was tuned once per optimizer") in card
+    assert RESULTS["protocol"] not in card and "every row" not in card and card.lower().count("chain-end") == 1
     assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card and "trust_remote_code=True" in card
     for link in ("https://github.com/datamllab/LoopTitan/blob/main/recipes/phase1/m3-muon.json",
                  "https://github.com/datamllab/LoopTitan/blob/main/docs/results/phase1.md",
@@ -416,8 +421,23 @@ def test_unmatched_row_says_so():
     plan["models"] = [model for model in plan["models"] if model["repo"] == "looptitan-p1-moe12-2e-adamw"]
     plan["results"], plan["dataset"] = str(ROOT / "docs/results/phase1.json"), str(ROOT / "docs/evidence/p1-dclm-source.json")
     card = hf_release.single_releases(plan, EXAMPLE.parent, NAMESPACE)[0]["card"]
-    assert "Not matched: at least one differs from the ordinary MoE (AdamW) by more than 5%." in card
-    assert "| +96.7% | +0.2% | +0.0% |" in card and '- "moe"' in card and "![12 layers](banner.svg)" in card
+    assert "# Ordinary MoE with twice the experts, outside matched budgets\n\nAdamW · LoopTitan Phase 1" in card
+    assert ("Outside matched budgets: more than 5% from the ordinary MoE (AdamW) in unique non-embedding "
+            "parameters (+96.7%).") in card and '- "moe"' in card and "![12 layers](banner.svg)" in card
+    reference = [model for model in json.loads(EXAMPLE.read_text())["models"] if model["repo"] == "looptitan-p1-moe12-muon"]
+    card = hf_release.single_releases({**plan, "models": reference}, EXAMPLE.parent, NAMESPACE)[0]["card"]
+    assert "Muon at learning rate 1.7e-3, tuned on this model, once per optimizer" in card
+
+
+def test_budgets_figure_uses_the_readme_band_and_marks_values_outside_it():
+    def draw(config, optimizer):
+        run = RUNS[config]
+        return hf_release.budgets(config, f"recipes/phase1/m0-{optimizer}.json", run, optimizer)
+    inside, outside = draw("recipes/phase1/m3-muon.json", "muon"), draw("recipes/methods/m0-loop-adamw.json", "adamw")
+    square = 'width="10" height="10" rx="2" style="fill:#16181D"'
+    assert "within ±5%" in inside and square not in inside and inside.count('r="5.5"') == 3
+    assert "outside ±5%" in outside and outside.count(square) == 2 and outside.count('r="5.5"') == 1
+    assert "+31.46%" in outside and "+50.00%" in outside and "tolerance ±5%" in outside
 
 
 def test_banner_draws_layers_and_the_loop_from_the_configuration():
@@ -475,7 +495,7 @@ def test_single_upload_commits_card_banner_and_files_then_the_collection(single_
     releases = hf_release.load_plan(single_plan, NAMESPACE)
     assert [call.kwargs["repo_id"] for call in api.create_commit.call_args_list] == repos
     first = dict(api.create_commit.call_args_list[0].kwargs["operations"])
-    assert set(first) == {"README.md", "banner.svg", "config.json", "model.safetensors", "eval/validation.json", "eval/test.json"}
+    assert set(first) == {"README.md", "banner.svg", "budgets.svg", "config.json", "model.safetensors", "eval/validation.json", "eval/test.json"}
     assert first["README.md"] == releases[0]["card"].encode() and first["banner.svg"] == releases[0]["assets"]["banner.svg"]
     plan = json.loads(EXAMPLE.read_text())["collection"]
     api.create_collection.assert_called_once_with(title=plan["title"], namespace=NAMESPACE, description=plan["description"],

@@ -6,13 +6,15 @@ Example: python scripts/hf_release.py plan.json --namespace my-org            # 
 
 A plan of single models (docs/release/phase1-models.example.json) names a results file
 (docs/results/phase1.json), the dataset's source receipt, a collection (title, description) and a
-list of `models`. Each model gives its repo name, the `config` path that binds it to one run of the
+list of `models`. Each model gives its repo name, a `title` in plain words, the `config` path that binds it to one run of the
 results file, its local `export_dir`, the exact `files` to upload with their SHA-256, and its
 `evaluation`: the names, among those files, of the `python -m moeloop.evaluate` outputs for the
 validation and test splits. Their `bpb` must equal the run's validation_bpb and test_bpb to 6
-decimals, or the whole run is refused. The card and a banner (banner.svg, drawn from the
-configuration) are generated; every number on them comes from the results file and the
-configuration, and the reference of the BPB difference is the ordinary MoE under the same optimizer.
+decimals, or the whole run is refused. The card, a banner (banner.svg) and a budgets
+figure (budgets.svg), both drawn with the README figures' functions, are generated; every number on
+them comes from the results file, the recipe and the P2 track, and the reference of the BPB
+difference and of the budgets is the ordinary MoE under the same optimizer. The collection title
+names the release on each card.
 A model whose `export_dir` is still empty is rendered in the dry-run and refused by `--upload`.
 With `--upload`, after the repos exist, one collection in the namespace lists them in plan order.
 
@@ -39,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -48,9 +51,10 @@ import yaml
 
 from check_release import require
 from moeloop.bench import load_tracks
+from moeloop.comparison import compare_recipes
 from recipe_delivery import read_json, sha256
 import readme_figures as figures
-from results_table import METRICS, OPTIMIZERS, REFERENCE, lr, signed
+from results_table import METRICS, OPTIMIZERS, REFERENCE, lr, signed, spec
 
 ROOT = Path(__file__).resolve().parents[1]
 ROLES = {"looped": "candidate", "control": "reference"}
@@ -153,13 +157,13 @@ def single_releases(plan, base, namespace):
     """One release per model of the plan, in plan order, bound to its run of the results file."""
     results = read_json(base / plan["results"])
     page = (base / plan["results"]).resolve().relative_to(ROOT).with_suffix(".md").as_posix()
-    runs = {run["config"]: (group, row, optimizer, run) for group in results["groups"] for row in group["rows"]
+    runs = {run["config"]: (row, optimizer, run) for group in results["groups"] for row in group["rows"]
             for optimizer, run in row["runs"].items()}
     dataset, cff = read_json(base / plan["dataset"]), yaml.safe_load((ROOT / "CITATION.cff").read_text())
     releases = []
     for model in plan["models"]:
         require(model["config"] in runs, f"{model['repo']}: {model['config']} is not a run of {plan['results']}")
-        group, row, optimizer, run = runs[model["config"]]
+        row, optimizer, run = runs[model["config"]]
         files = None
         if model["export_dir"]:
             files = checked_files(model, base, None)
@@ -169,12 +173,12 @@ def single_releases(plan, base, namespace):
                 bpb = read_json(base / model["export_dir"] / name)["bpb"]
                 require(f"{bpb:.6f}" == f"{expected:.6f}", f"{model['repo']}: {split} BPB {bpb:.6f} of {name} "
                         f"differs from {expected:.6f} in {plan['results']}")
-        reference = REFERENCE.format(optimizer)
-        config = read_json(ROOT / model["config"])["model"]
-        card = model_card(f"{namespace}/{model['repo']}", model["config"], group, row, optimizer, run,
-                          runs[reference][3], results["protocol"], page, dataset, cff, config)
+        reference, recipe = REFERENCE.format(optimizer), read_json(ROOT / model["config"])
+        card = model_card(f"{namespace}/{model['repo']}", model, row, optimizer, run, runs[reference][2],
+                          plan["collection"]["title"], page, dataset, cff, recipe)
         releases.append({"repo_id": f"{namespace}/{model['repo']}", "label": model["config"], "card": card,
-                         "assets": {"banner.svg": banner(model["config"], config).encode()},
+                         "assets": {"banner.svg": banner(model["config"], recipe["model"]).encode(),
+                                    "budgets.svg": budgets(model["config"], reference, run, OPTIMIZERS[optimizer]).encode()},
                          "files": files})
     return releases
 
@@ -290,43 +294,48 @@ def render_card(role, model, repos, facts, source, base):
     return "\n".join(lines)
 
 
-BUDGET_NAMES = {"unique_non_embedding_parameters": "Unique non-embedding parameters",
-                "training_flops_per_token": "Training FLOPs per token", "logical_kv_bytes": "KV cache"}
+BUDGET_NAMES = {"unique_non_embedding_parameters": "unique non-embedding parameters",
+                "training_flops_per_token": "training FLOPs per token", "logical_kv_bytes": "KV cache"}
 
 
-def model_card(repo_id, config_path, group, row, optimizer, run, reference, protocol, page, dataset, cff, config):
-    """Markdown card of one model: every number comes from its row of the results file or its configuration."""
-    repo, name, looped = cff["repository-code"], OPTIMIZERS[optimizer], config["num_visits"] > 1
-    short = repo_id.split("/")[1]
+def model_card(repo_id, model, row, optimizer, run, reference, release, page, dataset, cff, recipe):
+    """Markdown card of one model: every number comes from its row of the results file, its recipe or the track."""
+    repo, name, config, train = cff["repository-code"], OPTIMIZERS[optimizer], recipe["model"], recipe["run"]
     tolerance = load_tracks()["P2"].budget["tolerance"]
+    outside = {key: value for key, value in run["budgets"].items() if abs(value) > tolerance}
     authors = " and ".join("{" + a["name"] + "}" if "name" in a else f"{a['family-names']}, {a['given-names']}"
                            for a in cff["authors"])
-    tags = ["looptitan", "mixture-of-experts", "looped-moe" if looped else "moe", "custom_code", optimizer]
+    tags = ["looptitan", "mixture-of-experts", "looped-moe" if config["num_visits"] > 1 else "moe", "custom_code", optimizer]
     lines = ["---", f"license: {cff['license'].lower()}", "library_name: transformers", "pipeline_tag: text-generation",
              "tags:", *[f"- {json.dumps(tag)}" for tag in tags], "datasets:", f"- {json.dumps(dataset['id'])}",
-             "model-index:", f"- name: {json.dumps(short)}", "  results:",
+             "model-index:", f"- name: {json.dumps(model['repo'])}", "  results:",
              "  - task:", "      type: text-generation", "    dataset:", f"      name: {json.dumps(dataset['id'])}",
              f"      type: {json.dumps(dataset['id'])}", "    metrics:"]
     for split in ("test", "validation"):
         lines += [f"    - name: {split.capitalize()} BPB", "      type: bpb", f"      value: {run[f'{split}_bpb']:.6f}"]
-    lines += ["---", "", f"![{banner_text(config)}](banner.svg)", "", f"# {short}", "",
-              f"{row['design'][0].upper()}{row['design'][1:]}.", "",
-              f"Trained from scratch with {name} at learning rate {lr(run['lr'])} in Phase 1 of "
-              f"[{cff['title']}]({repo}). A base language model, not instruction tuned.", "",
+    lines += ["---", "", f"![{banner_text(config)}](banner.svg)", "", f"# {model['title']}", "", f"{name} · {release}", "",
+              f"{row['design'][0].upper()}{row['design'][1:]}. A base language model trained from scratch, "
+              "not instruction tuned.", "",
               "## Results", "", f"| Test BPB | Validation BPB | Δ test vs ordinary MoE ({name}) |", "|---:|---:|---:|",
               f"| {run['test_bpb']:.6f} | {run['validation_bpb']:.6f} | "
               f"{signed(1000 * (run['test_bpb'] - reference['test_bpb']), 2)} mBPB |", "",
               "Bits per byte on the complete held-out test and validation splits after the last update. "
               f"The ordinary MoE is [`{reference['config']}`]({repo}/blob/main/{reference['config']}); "
               "1 mBPB is 0.001 BPB.", "", "## Budgets", "",
-              f"Matched: all three within {tolerance:.0%} of the ordinary MoE ({name})." if group["matched"] else
-              f"Not matched: at least one differs from the ordinary MoE ({name}) by more than {tolerance:.0%}.", "",
-              "| " + " | ".join(BUDGET_NAMES[key] for key in METRICS) + " |", "|---:|---:|---:|",
-              "| " + " | ".join(f"{signed(100 * run['budgets'][key], 1)}%" for key in METRICS) + " |", "",
-              "## Training", "", protocol, "",
-              f"Data: [{dataset['id']}](https://huggingface.co/datasets/{dataset['id']}) at revision "
-              f"`{dataset['revision']}` ({dataset['license']['id']}). All rows, variants and notes: "
-              f"[Phase 1 results]({repo}/blob/main/{page}).", "",
+              f"Outside matched budgets: more than {tolerance:.0%} from the ordinary MoE ({name}) in " +
+              " and ".join(f"{BUDGET_NAMES[key]} ({signed(100 * value, 1)}%)" for key, value in outside.items()) + "."
+              if outside else f"Matched budgets: all three within {tolerance:.0%} of the ordinary MoE ({name}).", "",
+              f"![{budgets_text(run, name, tolerance)}](budgets.svg)", "",
+              "## Training", "",
+              f"{train['successful_updates'] * train['global_batch_positions'] / 1e9:.1f}B tokens of "
+              f"[{dataset['id']}](https://huggingface.co/datasets/{dataset['id']}) at revision `{dataset['revision']}` "
+              f"({dataset['license']['id']}): {train['successful_updates']:,} updates of {train['global_batch_positions']:,} "
+              f"tokens in sequences of {train['seq_len']:,}, {train['schedule']['name'].replace('_', '-')} schedule, "
+              f"seed {train['seed']}. {name} at learning rate {lr(recipe['optimizer']['base_lr'])}, " +
+              ("tuned on this model, once per optimizer" if model["config"] == reference["config"] else
+               "inherited from the ordinary MoE, where it was tuned once per optimizer") +
+              f" ([#{reference['issue']}]({repo}/issues/{reference['issue']})). The full protocol: "
+              f"[results page]({repo}/blob/main/{page}).", "",
               "## Use", "", "```python", "import torch", "from transformers import AutoModelForCausalLM, AutoTokenizer", "",
               f"repo = {json.dumps(repo_id)}", "tokenizer = AutoTokenizer.from_pretrained(repo)",
               "model = AutoModelForCausalLM.from_pretrained(repo, trust_remote_code=True).eval()",
@@ -335,8 +344,8 @@ def model_card(repo_id, config_path, group, row, optimizer, run, reference, prot
               "print(tokenizer.decode(out[0], skip_special_tokens=True))", "```", "",
               "The model runs Python code from this repository: read it first, or pin `revision=`.", "",
               "## Links", "", f"- Code: [{cff['title']}]({repo})",
-              f"- Configuration: [`{config_path}`]({repo}/blob/main/{config_path})",
-              f"- Documentation: [docs]({repo}/tree/main/docs)", f"- Results: [Phase 1 results]({repo}/blob/main/{page})",
+              f"- Configuration: [`{model['config']}`]({repo}/blob/main/{model['config']})",
+              f"- Documentation: [docs]({repo}/tree/main/docs)", f"- Results: [results page]({repo}/blob/main/{page})",
               f"- Run record: [#{run['issue']}]({repo}/issues/{run['issue']})", "",
               "## Citation", "", "```bibtex", f"@software{{{cff['title'].lower()},", f"  title = {{{cff['title']}}},",
               f"  author = {{{authors}}},", f"  version = {{{cff['version']}}},", f"  url = {{{repo}}}", "}", "```", "",
@@ -359,6 +368,34 @@ def banner(config_path, config):
                        figures.card(0, 0, w, h, figures.LIGHT) +
                        f'<g transform="translate({figures.num((w - scale * total) / 2)} 145) scale({figures.num(scale)})">{body}</g>' +
                        figures.text(w / 2, h - 20, banner_text(config), 14, figures.LIGHT["mid"], 400, "middle"))
+
+
+def budgets_text(run, name, tolerance):
+    return (f"Budgets against the ordinary MoE ({name}): " +
+            ", ".join(f"{BUDGET_NAMES[key]} {100 * run['budgets'][key]:+.2f}%" for key in METRICS) +
+            f"; tolerance ±{tolerance:.0%}")
+
+
+def budgets(config_path, reference_path, run, name):
+    """The three budgets in the README's band drawing, light variant, as the P2 track counts them; a budget
+    outside its tolerance is drawn as the homepage's out-of-band mark, an ink square past the band's end."""
+    track, t = load_tracks()["P2"], figures.LIGHT
+    result = compare_recipes(spec(reference_path), spec(config_path), seq_len=track.seq_len,
+                             tolerance=track.budget["tolerance"], **track.budget["accounting"])
+    entries = result["matched"] | result["measured-different"]
+    w, h, x, span = 880, 248, 28, 800
+    inside = all(abs(entry["relative_difference"]) <= entry["relative_tolerance"] for entry in entries.values())
+    out = [figures.card(0, 0, w, h, t), figures.text(x, 42, f"Budgets against the ordinary MoE ({name})", 14, t["ink"], 600),
+           figures.text(x + span, 42, f"{'within' if inside else 'outside'} ±{figures.pct(track.budget['tolerance'])}",
+                        13, t["acc"] if inside else t["ink"], 600, "end", mono=True)]
+    for i, (key, label) in enumerate(figures.BUDGETS):
+        entry, y = entries[key], 92 + i * 54
+        row = figures.budget_row(t, entry, key, label, x, y, span)
+        if abs(entry["relative_difference"]) > entry["relative_tolerance"]:
+            row[-1] = figures.rect(x + span / 2 + math.copysign(span / 2 + 16, entry["relative_difference"]) - 5,
+                                   y + 13, 10, 10, 2, t["ink"])
+        out += row
+    return figures.svg(w, h, "Budgets", budgets_text(run, name, track.budget["tolerance"]), t, "".join(out))
 
 
 # --- dry-run and upload -------------------------------------------------------------------
