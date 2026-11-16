@@ -39,7 +39,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -50,6 +49,7 @@ import yaml
 from check_release import require
 from moeloop.bench import load_tracks
 from recipe_delivery import read_json, sha256
+import readme_figures as figures
 from results_table import METRICS, OPTIMIZERS, REFERENCE, lr, signed
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -174,7 +174,7 @@ def single_releases(plan, base, namespace):
         card = model_card(f"{namespace}/{model['repo']}", model["config"], group, row, optimizer, run,
                           runs[reference][3], results["protocol"], page, dataset, cff, config)
         releases.append({"repo_id": f"{namespace}/{model['repo']}", "label": model["config"], "card": card,
-                         "assets": {"banner.svg": banner(config, read_json(ROOT / reference)["model"]).encode()},
+                         "assets": {"banner.svg": banner(model["config"], config).encode()},
                          "files": files})
     return releases
 
@@ -344,50 +344,21 @@ def model_card(repo_id, config_path, group, row, optimizer, run, reference, prot
     return "\n".join(lines)
 
 
-def layer_params(config, region):
-    part = config.get(region) or {}
-    return 3 * (part.get("num_experts") or config["num_experts"]) * (part.get("hidden_dim") or config["hidden_dim"]) * config["dim"]
-
-
 def banner_text(config):
     stored = config["prefix_cells"] + config["num_cells"] + config["suffix_cells"]
     run = stored + (config["num_visits"] - 1) * config["num_cells"]
     return f"{stored} layers stored, {run} run" if run > stored else f"{stored} layers"
 
 
-def banner(config, reference):
-    """The model as bars on a shaft, in the light colours of the README figures: one bar per stored layer,
-    its area the layer's expert parameters relative to a layer of the ordinary MoE (`reference`); the
-    looped layers in indigo under an arc with the visit count."""
-    unit = layer_params(reference, None)
-    regions = ["prefix"] * config["prefix_cells"] + ["core"] * config["num_cells"] + ["suffix"] * config["suffix_cells"]
-    sizes = [(region, 30 * math.sqrt(layer_params(config, region) / unit), 96 * math.sqrt(layer_params(config, region) / unit))
-             for region in regions]
-    looped, w, h, cy, gap = config["num_visits"] > 1, 880, 280, 160, 12
-    x = (w - sum(bw for _, bw, _ in sizes) - gap * (len(sizes) - 1)) / 2
-    out = [f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="20" style="fill:#FAFBFC;stroke:#E3E5E9"/>',
-           f'<path d="M48 {cy}H{w - 48}M{w - 55} {cy - 6}L{w - 48} {cy}L{w - 55} {cy + 6}" '
-           'style="fill:none;stroke:#D5D8DE;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"/>']
-    core = []
-    for region, bw, bh in sizes:
-        fill = "#3346D3" if looped and region == "core" else "#16181D"
-        out.append(f'<rect x="{x:.1f}" y="{cy - bh / 2:.1f}" width="{bw:.1f}" height="{bh:.1f}" rx="6" style="fill:{fill}"/>')
-        if looped and region == "core":
-            core.append((x + bw / 2, cy - bh / 2))
-        x += bw + gap
-    if core:
-        (x2, top), x1, c = core[0], core[-1][0], 64
-        top -= 8
-        out.append(f'<path d="M{x1:.1f} {top:.1f}C{x1:.1f} {top - c:.1f} {x2:.1f} {top - c:.1f} {x2:.1f} {top:.1f}'
-                   f'M{x2 - 6:.1f} {top - 8:.1f}L{x2:.1f} {top:.1f}L{x2 + 6:.1f} {top - 8:.1f}" '
-                   'style="fill:none;stroke:#3346D3;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/>')
-        out.append(f'<text x="{(x1 + x2) / 2:.1f}" y="{top - .75 * c - 12:.1f}" text-anchor="middle" '
-                   f'style="font-size:26px;font-weight:650;fill:#3346D3">×{config["num_visits"]}</text>')
-    out.append(f'<text x="{w / 2}" y="{h - 22}" text-anchor="middle" style="font-size:14px;fill:#5B616E">'
-               f'{banner_text(config)}</text>')
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img">\n'
-            f'<title>{banner_text(config)}</title>\n<style>text{{font-family:-apple-system, BlinkMacSystemFont, '
-            f"'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif}}</style>\n" + "\n".join(out) + "\n</svg>\n")
+def banner(config_path, config):
+    """The README's model glyph of the configuration, light variant, enlarged on a card: one bar per stored
+    layer, its area the layer's expert parameters; looped layers in indigo under an arc with the visit count."""
+    w, h, scale = 880, 280, 2.2
+    body, total = figures.glyph(config_path.removeprefix("recipes/").rsplit("-", 1)[0], 0, 0, figures.LIGHT, k=2)
+    return figures.svg(w, h, banner_text(config), banner_text(config), figures.LIGHT,
+                       figures.card(0, 0, w, h, figures.LIGHT) +
+                       f'<g transform="translate({figures.num((w - scale * total) / 2)} 145) scale({figures.num(scale)})">{body}</g>' +
+                       figures.text(w / 2, h - 20, banner_text(config), 14, figures.LIGHT["mid"], 400, "middle"))
 
 
 # --- dry-run and upload -------------------------------------------------------------------

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 import hf_release
+import readme_figures as figures
 
 ROOT = Path(__file__).resolve().parents[2]
 NAMESPACE = "acme"
@@ -420,12 +421,14 @@ def test_unmatched_row_says_so():
 
 
 def test_banner_draws_layers_and_the_loop_from_the_configuration():
-    reference = json.loads((ROOT / "recipes/phase1/m0-muon.json").read_text())["model"]
-    looped = hf_release.banner(json.loads((ROOT / "recipes/phase1/m3-muon.json").read_text())["model"], reference)
-    plain = hf_release.banner(reference, reference)
-    bar = 'rx="6" style="fill:{}"'.format
-    assert looped.count(bar("#3346D3")) == 6 and looped.count(bar("#16181D")) == 6 and "×2</text>" in looped
-    assert plain.count(bar("#16181D")) == 12 and "#3346D3" not in plain and "12 layers</text>" in plain
+    def draw(config):
+        return hf_release.banner(config, json.loads((ROOT / config).read_text())["model"])
+    looped, plain = draw("recipes/phase1/m3-muon.json"), draw("recipes/phase1/m0-muon.json")
+    acc, bar = (f"fill:{figures.LIGHT[key]}\"/>" for key in ("acc", "bar"))
+    assert looped.count(acc) == 6 and looped.count(bar) == 6 and "×2</text>" in looped
+    assert "12 layers stored, 18 run</text>" in looped and "#3346D3" not in plain
+    assert plain.count(bar) == 12 and "12 layers</text>" in plain
+    assert figures.glyph("phase1/m3", 0, 0, figures.LIGHT, k=2)[0] in looped  # the README's drawing, light variant
 
 
 def test_evaluation_bpb_must_reproduce_the_results(single_plan):
