@@ -1,4 +1,4 @@
-"""scripts/bench.py on frozen specs: parsing, fixed settings, the LR rule, validate and leaderboard.
+"""scripts/bench.py on frozen specs: parsing, fixed settings, the LR rule, the submission folder, validate and leaderboard.
 
 Track P2 has one calibrated LR per optimizer, so ``run`` is its whole submission; ``sweep`` and the LR
 rule are tested on Track M, which keeps its three-point grid.
@@ -6,6 +6,7 @@ rule are tested on Track M, which keeps its three-point grid.
 No GPU: ``bench_cli.launch`` is replaced by a fake that writes the files a finished
 ``recipe_experiments.py run --evaluate`` leaves behind.
 """
+import hashlib
 import importlib
 import json
 import math
@@ -14,6 +15,7 @@ from pathlib import Path
 import pytest
 
 torch = pytest.importorskip("torch")
+pytest.importorskip("torchtitan")  # bench.py records the trainer's package versions.
 
 from moeloop import bench
 
@@ -84,13 +86,17 @@ def launched(monkeypatch, tmp_path, track):
         files = {"spec.json": spec.to_dict(),
                  "request.json": {"world_size": 8, "local_batch_size": 16, "gradient_accumulation_steps": 2,
                                   "manifest": str(manifest), "manifest_fingerprint": track.data["manifest_fingerprint"],
-                                  "source": {"commit": "a" * 40, "dirty": False}},
+                                  "source": {"commit": "a" * 40, "dirty": False},
+                                  "runtime": {"python": "3.12", "torch": torch.__version__, "cuda": None}},
                  "outcome.json": {"status": "completed", "completed_updates": steps,
-                                  "full_checkpoint": f"checkpoint/step-{steps}"},
-                 "process-1.json": {"log_sha256": "3" * 64}}
+                                  "full_checkpoint": f"checkpoint/step-{steps}"}}
+        log = f"step=1 CE=11.9 lr={lr}\n".encode()
+        (output / "process-1.log").write_bytes(log)
+        files["process-1.json"] = {"log_sha256": hashlib.sha256(log).hexdigest()}
         for split, labels in (("validation", "selection_label_tokens"), ("test", "ranking_label_tokens")):
             files[f"eval-{split}.json"] = {
                 "split": split, "seq_len": track.seq_len, "complete_split": True, "valid_tokens": track.evaluation[labels],
+                "manifest_fingerprint": track.data["manifest_fingerprint"],
                 "bpb": state["bpb"](lr) + (0.005 if split == "test" else 0), "byte_table_sha256": track.evaluation["byte_table_sha256"],
                 "tokenizer": {key: track.tokenizer[key] for key in ("id", "revision", "vocab_size")}}
         for name, value in files.items():
@@ -106,7 +112,7 @@ def sweep(tmp_path, manifest, arm):
     output = tmp_path / arm
     bench_cli.main(["sweep", "--track", "M", "--spec", str(ROOT / f"recipes/p1/{arm}.json"), "--gpus", "8",
                     "--output", str(output), "--manifest", str(manifest)])
-    return output / "submission.json"
+    return output / "submission"
 
 
 def run_p2(tmp_path, manifest, arm, lr):
@@ -114,7 +120,7 @@ def run_p2(tmp_path, manifest, arm, lr):
     output = tmp_path / f"p2-{arm}"
     bench_cli.main(["run", "--spec", str(ROOT / f"recipes/phase1/{arm}.json"), "--lr", str(lr), "--gpus", "8",
                     "--output", str(output), "--manifest", str(manifest)])
-    return output / "submission.json"
+    return output / "submission"
 
 
 @pytest.mark.parametrize("arm", ["m0-adamw", "m3-adamw"])
@@ -123,19 +129,22 @@ def test_sweep_extends_the_edge_and_submits_an_eligible_track_m_entry(launched, 
     run_dir = tmp_path / "run_dir"
     run_dir.mkdir()
     monkeypatch.setenv("RUN_DIR", str(run_dir))
-    path = sweep(tmp_path, manifest, arm)
+    folder = sweep(tmp_path, manifest, arm)
     # Grid, then 1.2e-3 beyond the upper edge, then 2.4e-3 because 1.2e-3 became the edge.
     assert lrs == [1.5e-4, 3e-4, 6e-4, 1.2e-3, 2.4e-3]
-    value = json.loads(path.read_text())
+    value = json.loads((folder / "submission.json").read_text())
     assert [trial["lr"] for trial in value["lr_trials"]] == lrs
+    # The selected trial is the top of the folder; the others have their own run folders.
+    assert [trial["run"] for trial in value["lr_trials"]] == ["lr-0.00015", "lr-0.0003", "lr-0.0006", ".", "lr-0.0024"]
     assert value["recipe"]["optimizer"]["base_lr"] == 1.2e-3 and value["seeds"][0]["test_bpb"] == pytest.approx(1.005)
     report = json.loads(capsys.readouterr().out)
     assert report["verdict"] == "eligible", report["reasons"]
     assert all(abs(entry["relative_difference"]) <= 0.05 for entry in report["budgets"].values())
-    assert bench_cli.main(["validate", str(path)]) == 0
+    assert bench_cli.main(["validate", "--dir", str(folder)]) == 0
     metrics = json.loads((run_dir / "metrics.json").read_text())
-    assert (metrics["lr"], metrics["lr_trials"]) == (1.2e-3, 5) and len(metrics) == 8
+    assert (metrics["lr"], metrics["lr_trials"], metrics["completed_updates"]) == (1.2e-3, 5, 4769) and len(metrics) == 9
     config = json.loads((run_dir / "config.json").read_text())
+    assert config == json.loads((folder / "config.json").read_text())
     assert config["optimizer"]["base_lr"] == 1.2e-3 and config["launch"]["world_size"] == 8
     sweep(tmp_path, manifest, arm)  # A rerun reads the finished trials and launches nothing.
     assert len(lrs) == 5
@@ -143,8 +152,7 @@ def test_sweep_extends_the_edge_and_submits_an_eligible_track_m_entry(launched, 
 
 def test_run_at_the_p2_lr_is_an_eligible_entry_without_trials(launched, tmp_path, capsys):
     for arm, lr in (("m3-adamw", 1.2e-3), ("m3-muon", 1.7e-3)):
-        path = run_p2(tmp_path, launched["manifest"], arm, lr)
-        value = json.loads(path.read_text())
+        value = json.loads((run_p2(tmp_path, launched["manifest"], arm, lr) / "submission.json").read_text())
         assert value["lr_trials"] == [] and value["seeds"][0]["final_update"] == launched["track"].horizon_updates
         assert value["recipe"]["optimizer"]["base_lr"] == lr
         report = json.loads(capsys.readouterr().out)
@@ -164,7 +172,7 @@ def test_run_launches_one_lr_and_one_lr_is_not_the_grid(launched, tmp_path, caps
     bench_cli.main(["run", "--track", "M", "--spec", str(ROOT / "recipes/p1/m3-muon.json"), "--lr", "1.2e-3", "--gpus", "8",
                     "--output", str(tmp_path / "one"), "--manifest", str(manifest)])
     assert lrs == [1.2e-3]
-    value = json.loads((tmp_path / "one/submission.json").read_text())
+    value = json.loads((tmp_path / "one/submission/submission.json").read_text())
     assert value["recipe"]["optimizer"]["muon"]["lr"] == value["recipe"]["optimizer"]["base_lr"] == 1.2e-3
     report = json.loads(capsys.readouterr().out)
     assert report["verdict"] == "protocol-mismatch"
@@ -181,7 +189,7 @@ def test_run_launches_one_lr_and_one_lr_is_not_the_grid(launched, tmp_path, caps
 ])
 def test_sweep_downward_extension_and_ties_reach_the_final_selection(launched, tmp_path, capsys, curve, expected, selected):
     launched["bpb"] = curve
-    value = json.loads(sweep(tmp_path, launched["manifest"], "m0-adamw").read_text())
+    value = json.loads((sweep(tmp_path, launched["manifest"], "m0-adamw") / "submission.json").read_text())
     assert launched["lrs"] == expected
     assert value["recipe"]["optimizer"]["base_lr"] == selected
     assert [trial["lr"] for trial in value["lr_trials"]] == sorted(expected)
@@ -194,7 +202,7 @@ def test_run_on_track_l_is_an_eligible_entry_without_trials(launched, tmp_path, 
     bench_cli.main(["run", "--track", "L", "--spec", str(ROOT / "recipes/p1_moe.json"), "--lr", "3e-4", "--gpus", "8",
                     "--output", str(tmp_path / "one"), "--manifest", str(launched["manifest"])])
     assert launched["lrs"] == [3e-4]
-    value = json.loads((tmp_path / "one/submission.json").read_text())
+    value = json.loads((tmp_path / "one/submission/submission.json").read_text())
     assert value["lr_trials"] == [] and value["seeds"][0]["final_update"] == track.horizon_updates
     report = json.loads(capsys.readouterr().out)
     assert report["verdict"] == "eligible", report["reasons"]
@@ -202,9 +210,9 @@ def test_run_on_track_l_is_an_eligible_entry_without_trials(launched, tmp_path, 
 
 def test_validate_a_budget_mismatched_spec(launched, tmp_path, capsys):
     manifest = launched["manifest"]
-    path = run_p2(tmp_path, manifest, "m0-2e-adamw", 1.2e-3)  # Twice the expert parameters, outside the budget by design.
+    folder = run_p2(tmp_path, manifest, "m0-2e-adamw", 1.2e-3)  # Twice the expert parameters, outside the budget by design.
     capsys.readouterr()
-    assert bench_cli.main(["validate", str(path)]) == 1
+    assert bench_cli.main(["validate", "--dir", str(folder)]) == 1
     report = json.loads(capsys.readouterr().out)
     assert report["verdict"] == "budget-mismatch"
     assert any(line.startswith("unique_non_embedding_parameters differs") for line in report["reasons"]["budget-mismatch"])
@@ -212,9 +220,11 @@ def test_validate_a_budget_mismatched_spec(launched, tmp_path, capsys):
 
 def test_leaderboard_of_two_submissions(launched, tmp_path):
     manifest = launched["manifest"]
-    paths = [run_p2(tmp_path, manifest, arm, 1.2e-3) for arm in ("m0-adamw", "m3-adamw")]
-    value = json.loads(paths[1].read_text())
-    paths[1].write_text(json.dumps(value | {"seeds": [value["seeds"][0] | {"test_bpb": 0.99}], "gpu_hours": 7.5}))
+    paths = [run_p2(tmp_path, manifest, "m0-adamw", 1.2e-3)]
+    launched["bpb"] = lambda lr: 0.985  # The second arm's evaluation outputs carry test BPB 0.99.
+    paths.append(run_p2(tmp_path, manifest, "m3-adamw", 1.2e-3))
+    value = json.loads((paths[1] / "submission.json").read_text())
+    (paths[1] / "submission.json").write_text(json.dumps(value | {"gpu_hours": 7.5}))  # Reported, not bound to a file.
     assert bench_cli.main(["leaderboard", *map(str, paths), "--output", str(tmp_path / "board")]) == 0
     board = json.loads((tmp_path / "board/leaderboard.json").read_text())
     assert [(row["rank"], row["submission"], row["n_seeds"]) for row in board["rows"]] == [
@@ -224,3 +234,113 @@ def test_leaderboard_of_two_submissions(launched, tmp_path):
     assert table[0].startswith("| Track | Rank | Submission | Test BPB |")
     assert table[2] == "| P2 | 1 | phase1-m3-adamw | 0.9900 | 1 |  | 1.000 | 1 | 7.50 |  |"
     assert table[3].startswith("| P2 | 2 | phase1-m0-adamw | 1.0050 | 1 |  |")
+
+
+def validate_dir(folder, capsys):
+    capsys.readouterr()
+    code = bench_cli.main(["validate", "--dir", str(folder)])
+    report = json.loads(capsys.readouterr().out)
+    assert code == (0 if report["verdict"] == "eligible" else 1)
+    return report
+
+
+def rehash(folder, name):
+    """Declare a changed file's new sha256, as a forger would."""
+    value = json.loads((folder / "submission.json").read_text())
+    value["files"][name] = bench.sha256(folder / name)
+    (folder / "submission.json").write_text(json.dumps(value))
+
+
+def edit(path, change):
+    path.write_text(json.dumps(change(json.loads(path.read_text()))))
+
+
+def test_made_up_submission_folder_is_rejected_and_not_ranked(tmp_path, track, capsys):
+    """Placeholder hashes, a configuration of {"x": 1} and an unrecorded commit around a frozen recipe."""
+    folder = tmp_path / "made-up"
+    folder.mkdir()
+    (folder / "config.json").write_text(json.dumps({"x": 1}))
+    (folder / "submission.json").write_text(json.dumps({
+        "name": "made-up", "track": "P2", "recipe": json.loads((ROOT / "recipes/phase1/m0-adamw.json").read_text()),
+        "files": {"config.json": bench.sha256(folder / "config.json"), "train.log": "1" * 64},
+        "source_commit": "0" * 40, "manifest_fingerprint": track.data["manifest_fingerprint"],
+        "tokenizer": dict(track.tokenizer), "evaluation": dict(track.evaluation),
+        "seeds": [{"seed": 42, "final_update": track.horizon_updates, "validation_bpb": 0.5, "test_bpb": 0.5,
+                   "log_sha256": "1" * 64, "checkpoint_sha256": "2" * 64, "run": "."}]}))
+    report = validate_dir(folder, capsys)
+    assert report["verdict"] == "missing-evidence"
+    assert report["reasons"] == {"missing-evidence": [
+        "train.log: declared sha256 has no file in the folder",
+        "seed 42: run evidence ['metrics.json', 'eval-validation.json', 'eval-test.json', 'train.log'] "
+        "is not a file matching its declared sha256"]}
+    assert bench_cli.main(["leaderboard", str(folder), "--output", str(tmp_path / "board")]) == 0
+    board = json.loads((tmp_path / "board/leaderboard.json").read_text())
+    assert board["rows"] == [] and board["excluded"][0]["verdict"] == "missing-evidence"
+
+
+def test_a_folder_written_by_run_is_eligible_and_says_what_it_checked(launched, tmp_path, capsys):
+    folder = run_p2(tmp_path, launched["manifest"], "m0-adamw", 1.2e-3)
+    assert sorted(path.name for path in folder.iterdir()) == [
+        "config.json", "eval-test.json", "eval-validation.json", "metrics.json", "submission.json", "train.log"]
+    value = json.loads((folder / "submission.json").read_text())
+    assert sorted(value["files"]) == ["config.json", "eval-test.json", "eval-validation.json", "metrics.json", "train.log"]
+    assert value["seeds"][0]["log_sha256"] == value["files"]["train.log"]
+    config = json.loads((folder / "config.json").read_text())
+    assert config["trainer"] == bench.trainer_pins() | {"torch": torch.__version__}
+    report = validate_dir(folder, capsys)
+    assert report["verdict"] == "eligible", report["reasons"]
+    assert report["checked"][0] == "sha256 of the 5 files in the folder against the 5 declared"
+    assert report["checked"][1].startswith("seed 42: config.json in '.' against the declared recipe")
+    assert report["unchecked"][-1] == f"seed 42: checkpoint sha256 {value['seeds'][0]['checkpoint_sha256']} " \
+                                      "at no URL declared: not checked here"
+    assert any("needs rerunning training" in line for line in report["unchecked"])
+
+
+@pytest.mark.parametrize("tamper, verdict, reason", [
+    # An edited metric: in an evaluation output, in metrics.json, or in the declaration.
+    (lambda f: edit(f / "eval-test.json", lambda v: v | {"bpb": 0.9}),
+     "missing-evidence", "eval-test.json: file does not match its declared sha256"),
+    (lambda f: edit(f / "metrics.json", lambda v: v | {"test_bpb": 0.9}),
+     "missing-evidence", "metrics.json: file does not match its declared sha256"),
+    (lambda f: (edit(f / "eval-test.json", lambda v: v | {"bpb": 0.9}), rehash(f, "eval-test.json")),
+     "protocol-mismatch", "seed 42: eval-test.json bpb is 0.9, expected 1.005"),
+    (lambda f: edit(f / "submission.json", lambda v: v | {"seeds": [v["seeds"][0] | {"test_bpb": 0.9}]}),
+     "protocol-mismatch", "seed 42: eval-test.json bpb is 1.005, expected 0.9"),
+    # An edited config: unhashed, or rehashed and then disagreeing with the recipe, the track or the pins.
+    (lambda f: edit(f / "config.json", lambda v: v | {"run": v["run"] | {"seed": 43}}),
+     "missing-evidence", "config.json: file does not match its declared sha256"),
+    (lambda f: (edit(f / "config.json", lambda v: v | {"run": v["run"] | {"seed": 43}}), rehash(f, "config.json")),
+     "protocol-mismatch", "seed 42: config.json run.seed is 43, the declared recipe has 42"),
+    (lambda f: (edit(f / "config.json", lambda v: v | {"optimizer": v["optimizer"] | {"base_lr": 6e-4}}),
+                rehash(f, "config.json")),
+     "protocol-mismatch", "seed 42: config.json optimizer.base_lr is 0.0006, the declared recipe has 0.0012"),
+    (lambda f: (edit(f / "config.json", lambda v: v | {"launch": v["launch"] | {"local_batch_size": 8}}),
+                rehash(f, "config.json")),
+     "protocol-mismatch", "seed 42: config.json launch global batch positions is 524288, expected 1048576"),
+    (lambda f: (edit(f / "config.json", lambda v: v | {"trainer": v["trainer"] | {"torchtitan": "0.2.0"}}),
+                rehash(f, "config.json")),
+     "protocol-mismatch", "seed 42: config.json trainer.torchtitan is '0.2.0', expected '0.3.0'"),
+    (lambda f: (edit(f / "config.json", lambda v: v | {"source": v["source"] | {"commit": "b" * 40}}),
+                rehash(f, "config.json")),
+     "protocol-mismatch", f"seed 42: config.json source.commit is {'b' * 40!r}, expected {'a' * 40!r}"),
+    # A missing file, an undeclared one, and a declaration without the captured config.
+    (lambda f: (f / "train.log").unlink(), "missing-evidence", "train.log: declared sha256 has no file in the folder"),
+    (lambda f: (f / "notes.txt").write_text("x"), "missing-evidence", "notes.txt: file has no declared sha256"),
+    (lambda f: ((f / "config.json").unlink(), edit(f / "submission.json", lambda v: v | {
+        "files": {k: h for k, h in v["files"].items() if k != "config.json"}})),
+     "missing-evidence", "seed 42: run evidence ['config.json'] is not a file matching its declared sha256"),
+])
+def test_each_kind_of_tampering_has_its_verdict(launched, tmp_path, capsys, tamper, verdict, reason):
+    folder = run_p2(tmp_path, launched["manifest"], "m0-adamw", 1.2e-3)
+    tamper(folder)
+    report = validate_dir(folder, capsys)
+    assert report["verdict"] == verdict and reason in report["reasons"][verdict], report["reasons"]
+
+
+def test_an_edited_lr_trial_in_a_sweep_folder_is_caught(launched, tmp_path, capsys):
+    folder = sweep(tmp_path, launched["manifest"], "m0-adamw")
+    assert validate_dir(folder, capsys)["verdict"] == "eligible"
+    edit(folder / "submission.json", lambda v: v | {"lr_trials": [v["lr_trials"][0] | {"validation_bpb": 0.5}]
+                                                                  + v["lr_trials"][1:]})
+    report = validate_dir(folder, capsys)
+    assert "LR trial 0.00015: eval-validation.json bpb is 1.09, expected 0.5" in report["reasons"]["protocol-mismatch"]

@@ -3,8 +3,8 @@
 
     python scripts/bench.py run --spec recipes/phase1/m0-adamw.json --lr 1.2e-3 --gpus 8 --output DIR
     python scripts/bench.py sweep --track M --spec recipes/p1/m3-muon.json --gpus 8 --output DIR
-    python scripts/bench.py validate DIR/submission.json
-    python scripts/bench.py leaderboard A/submission.json B/submission.json --output DIR
+    python scripts/bench.py validate --dir DIR/submission
+    python scripts/bench.py leaderboard A/submission B/submission --output DIR
 
 ``run`` and ``sweep`` take a frozen recipe spec (default track P2) and write it to
 ``DIR/spec.json`` with the track's fixed optimizer settings for its optimizer filled in
@@ -16,9 +16,14 @@ lr_selection rule: lowest full-validation BPB, ties to the smaller LR, and while
 is on an edge one more trial beyond it (x2 above, /2 below). ``run`` launches one LR.
 Track P2 has one calibrated LR per optimizer, so a P2 submission is a single ``run`` at that LR.
 On a track with one LR per optimizer, ``run`` at that LR is the whole submission, with
-no LR trials. Both write ``DIR/submission.json`` (the selected trial is the seed-42 run)
-and print its ``moeloop.bench.validate`` report. Under ``scripts/run.py`` they write, at
-the end, ``$RUN_DIR/config.json`` (the selected spec and launch topology) and
+no LR trials. Both write the submission folder ``DIR/submission`` (replacing an earlier
+one) and print its ``moeloop.bench.validate`` report. The folder holds the selected
+trial, which is the seed-42 run, at its top and every other LR trial in ``lr-<LR>/``; each
+run has its captured ``config.json`` (spec, launch topology, source and runtime from the
+trial's request, trainer package versions), ``metrics.json``, ``eval-validation.json``,
+``eval-test.json`` and ``train.log`` (the last training launch's log), and
+``submission.json`` declares the sha256 of every file. Under ``scripts/run.py`` they
+also write, at the end, ``$RUN_DIR/config.json`` (the selected run's) and
 ``metrics.json`` (BPB, LR, GPU hours of all trials, budget residuals); the trials do not
 see ``RUN_DIR``.
 
@@ -28,17 +33,20 @@ directory and rerun bench.py, which launches that LR afresh, or resume it by han
 ``recipe_experiments.py run --resume``: bench.py never resumes, and relaunching over a
 partial directory fails.
 
-``validate`` prints the report of one submission and exits 1 unless it is eligible.
-``leaderboard`` validates every submission and writes ``leaderboard.json``
+``validate --dir`` prints the report of one submission folder (its reasons, what it
+checked and what it cannot check without rerunning) and exits 1 unless it is eligible.
+``leaderboard`` validates every submission folder and writes ``leaderboard.json``
 (``moeloop.bench.leaderboard``) and ``leaderboard.md``.
 """
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import math
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -80,7 +88,8 @@ def trial(output: Path, manifest: Path, lr: float, gpus: int) -> dict:
              "final_update": outcome["completed_updates"], "validation_bpb": bpb["validation"], "test_bpb": bpb["test"],
              "log_sha256": process["log_sha256"],
              "checkpoint_sha256": digest(directory / outcome["full_checkpoint"] / ".metadata"),
-             "gpu_hours": (time.monotonic() - started) * gpus / 3600}
+             "gpu_hours": (time.monotonic() - started) * gpus / 3600,
+             "trainer": {name: importlib.metadata.version(name) for name in bench.trainer_pins()}}
     write_json(path, value)
     return value
 
@@ -100,8 +109,30 @@ def next_lr(trials: dict[float, float]) -> float | None:
     return None
 
 
+def write_run(folder: Path, directory: Path, track: bench.Track, trials: list[dict], record: dict) -> None:
+    """One run's evidence: captured config, metrics, evaluation outputs and training log."""
+    spec = json.loads((directory / "spec.json").read_text())
+    request = json.loads((directory / "request.json").read_text())
+    config = {key: spec[key] for key in ("name", "model", "training", "optimizer", "inference", "run")}
+    config["launch"] = {key: request[key] for key in
+                        ("world_size", "local_batch_size", "gradient_accumulation_steps", "manifest_fingerprint")}
+    config |= {"source": request["source"], "runtime": request["runtime"], "trainer": record["trainer"],
+               "bench": {"track": track.name, "trial_lrs": [t["lr"] for t in trials]}}
+    write_json(folder / "config.json", config)
+    write_json(folder / "metrics.json", {"completed_updates": record["final_update"], "lr": record["lr"],
+        "validation_bpb": record["validation_bpb"], "test_bpb": record["test_bpb"], "gpu_hours": record["gpu_hours"]})
+    for split in ("validation", "test"):
+        shutil.copyfile(directory / f"eval-{split}.json", folder / f"eval-{split}.json")
+    shutil.copyfile(sorted(directory.glob("process-*.json"))[-1].with_suffix(".log"), folder / "train.log")
+
+
 def submit(output: Path, track: bench.Track, trials: list[dict], selected: dict) -> dict:
-    """Write DIR/submission.json from the selected trial's output, print its report; RUN_DIR records."""
+    """Write the folder DIR/submission from the trials' outputs, print its report; RUN_DIR records."""
+    folder = output / "submission"
+    shutil.rmtree(folder, ignore_errors=True)
+    runs = {t["lr"]: "." if t["lr"] == selected["lr"] else f"lr-{t['lr']}" for t in trials}
+    for t in trials:
+        write_run(folder / runs[t["lr"]], output / f"lr-{t['lr']}", track, trials, t)
     directory = output / f"lr-{selected['lr']}"
     recipe = json.loads((directory / "spec.json").read_text())
     request = json.loads((directory / "request.json").read_text())
@@ -109,7 +140,9 @@ def submit(output: Path, track: bench.Track, trials: list[dict], selected: dict)
     manifest = json.loads(Path(request["manifest"]).read_text())
     searched = len(track.lr_grid[recipe["optimizer"]["name"]]) > 1  # A one-LR track takes no LR trials.
     value = {
-        "name": recipe["name"], "track": track.name, "recipe": recipe, "config": request,
+        "schema_version": 2, "name": recipe["name"], "track": track.name, "recipe": recipe,
+        "files": {path.relative_to(folder).as_posix(): bench.sha256(path)
+                  for path in sorted(folder.rglob("*")) if path.is_file()},
         "source_commit": request["source"]["commit"], "manifest_fingerprint": request["manifest_fingerprint"],
         "tokenizer": test["tokenizer"] | {"tokenizer_json_sha256": manifest["tokenizer"]["files"]["tokenizer/tokenizer.json"]},
         "evaluation": {"metric": "bpb", "complete_split": validation["complete_split"] and test["complete_split"],
@@ -117,21 +150,17 @@ def submit(output: Path, track: bench.Track, trials: list[dict], selected: dict)
                        "selection_label_tokens": validation["valid_tokens"], "ranking_split": test["split"],
                        "ranking_label_tokens": test["valid_tokens"], "byte_table_sha256": test["byte_table_sha256"]},
         "seeds": [{key: selected[key] for key in
-                   ("seed", "final_update", "validation_bpb", "test_bpb", "log_sha256", "checkpoint_sha256")}],
+                   ("seed", "final_update", "validation_bpb", "test_bpb", "log_sha256", "checkpoint_sha256")} | {"run": "."}],
         "lr_trials": [{key: t[key] for key in ("lr", "seed", "final_update", "validation_bpb", "log_sha256")}
-                      for t in trials] if searched else [],
+                      | {"run": runs[t["lr"]]} for t in trials] if searched else [],
         "gpu_hours": math.fsum(t["gpu_hours"] for t in trials)}
-    write_json(output / "submission.json", value)
-    report = bench.validate(bench.Submission.from_dict(value), track)
+    write_json(folder / "submission.json", value)
+    report = bench.validate(bench.Submission.from_dict(value), track, folder)
     print(json.dumps(report.to_dict(), indent=1))
     if os.environ.get("RUN_DIR"):
         run_dir = Path(os.environ["RUN_DIR"])
-        config = {key: recipe[key] for key in ("name", "model", "training", "optimizer", "inference", "run")}
-        config["launch"] = {key: request[key] for key in
-                            ("world_size", "local_batch_size", "gradient_accumulation_steps", "manifest_fingerprint")}
-        write_json(run_dir / "config.json", config | {"bench": {"track": track.name, "trial_lrs": [t["lr"] for t in trials]}})
-        write_json(run_dir / "metrics.json", {
-            "validation_bpb": selected["validation_bpb"], "test_bpb": selected["test_bpb"], "lr": selected["lr"],
+        shutil.copyfile(folder / "config.json", run_dir / "config.json")
+        write_json(run_dir / "metrics.json", json.loads((folder / "metrics.json").read_text()) | {
             "lr_trials": len(trials), "gpu_hours": value["gpu_hours"],
             **{f"budget_residual_{key}": entry["relative_difference"] for key, entry in report.budgets.items()}})
     return value
@@ -153,9 +182,9 @@ def sweep(args, track: bench.Track, spec: dict) -> None:
     submit(args.output, track, [trials[lr] for lr in sorted(trials)], selected)
 
 
-def validate(path: Path) -> bench.Report:
-    value = bench.Submission.from_dict(json.loads(path.read_text()))
-    return bench.validate(value, bench.load_tracks()[value.track])
+def validate(folder: Path) -> bench.Report:
+    value = bench.Submission.from_dict(json.loads((folder / "submission.json").read_text()))
+    return bench.validate(value, bench.load_tracks()[value.track], folder)
 
 
 def cell(value, digits: int) -> str:
@@ -190,9 +219,11 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--manifest", type=Path,
                              default=Path(os.environ.get("MOELOOP_DATA", "data/prepared")) / "manifest.json",
                              help="prepared data manifest (default: $MOELOOP_DATA/manifest.json)")
-    sub.add_parser("validate", help="check one submission JSON").add_argument("submission", type=Path)
+    sub.add_parser("validate", help="check one submission folder").add_argument(
+        "--dir", type=Path, required=True, dest="folder",
+        help="submission folder: submission.json and the files whose sha256 it declares")
     command = sub.add_parser("leaderboard", help="leaderboard JSON and Markdown of eligible submissions")
-    command.add_argument("submissions", type=Path, nargs="+")
+    command.add_argument("submissions", type=Path, nargs="+", help="submission folders")
     command.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -210,7 +241,7 @@ def main(argv=None) -> int:
             sweep(args, track, spec)
         return 0
     if args.command == "validate":
-        report = validate(args.submission)
+        report = validate(args.folder)
         print(json.dumps(report.to_dict(), indent=1))
         return 0 if report.verdict == "eligible" else 1
     board = bench.leaderboard([validate(path) for path in args.submissions])

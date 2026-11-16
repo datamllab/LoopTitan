@@ -153,3 +153,21 @@ print(leaderboard([report])["rows"])
 随机深度/尾段梯度的训练work按上文 `sampled_depth_matrix_v1` 取期望，p50/p95的单次成本另列；nominal固定深度示例只是一次前向，不是实际工作。每microbatch实际r/min(k,r)及真实token计数由训练进度另记录。参数owner、固定推理KV和cache资格独立报告，uncached预算不表示实现了缓存。不同训练objective的loss不直接排名，使用有明确推理策略的共同terminal LM heldout。
 
 [新增方法证据](evidence/recipes-v2.json)按冻结估计器的默认dense-S²矩阵口径记录理论成本，和实际native GPUHr分开；#6特定document统计预算保持原身份。该证据早于采样深度的成本模型，其中 Huginn 的 `training_per_token` 仍是 `None`（`fixed_terminal_matrix_v1` 的 nominal 记录）；证据记录不改写，现在重新估计会得到上面的期望值。
+
+## Benchmark submission folder
+
+A Bench entry is a folder, and `python scripts/bench.py validate --dir FOLDER` judges the folder rather than a JSON file alone. `scripts/bench.py run` and `sweep` write it to `DIR/submission`:
+
+| File | Content |
+|---|---|
+| `submission.json` | the entry: recipe, identities, per-seed and per-LR-trial values, `files` (the sha256 of every other file, by path), and for each seed and trial its `run` folder (`.` for the top) |
+| `config.json` | the run's captured configuration: the spec as launched, launch topology, data manifest fingerprint, source commit and dirty flag, runtime, trainer package versions |
+| `metrics.json` | completed updates, validation and test BPB, LR, GPU hours |
+| `eval-validation.json`, `eval-test.json` | the evaluation output of each split, as written by `moeloop.evaluate` |
+| `train.log` | the log of the last training launch |
+
+The selected run (seed 42) sits at the top; on a track with an LR grid every other trial has the same files in `lr-<LR>/`. Checkpoints stay outside the folder: a seed names its checkpoint by `checkpoint_sha256` and an optional `checkpoint_url`.
+
+The check binds the declaration to these files. It recomputes the sha256 of every file and compares it with `files`: a declared file that is absent, a file that does not match its hash, or a file with no declared hash is `missing-evidence`. For each seed and trial it then compares the captured `config.json` with the declared recipe (seed, LR, schedule and number of updates, global batch, model, optimizer) and with the frozen track (launch topology against the global batch, data manifest, pinned trainer versions from the `train` extra of `pyproject.toml`, the declared source commit on a clean tree), and the evaluation outputs and `metrics.json` with the declared final update and BPB and with the track's tokenizer and evaluation identity; any disagreement is `protocol-mismatch`. A submission is `eligible` only when every declared hash has its file, every file matches, and every captured configuration agrees. The in-memory `moeloop.bench.validate(submission, track)` without a folder checks the declaration only and is never `eligible`.
+
+The report lists under `checked` what was compared and under `unchecked` what cannot be checked without rerunning: that training this configuration produced these outputs, the BPB against the trained weights, that the source commit exists (the check uses no network), the data behind the manifest fingerprint, and each checkpoint not in the folder, named by hash and URL. Anyone who edits a file and its declared hash together produces a consistent folder; the folder makes a claim inspectable and comparable, and only a rerun reproduces it.

@@ -1,4 +1,9 @@
-"""Bench tracks, the four verdicts with real analytical budgets, and leaderboard arithmetic."""
+"""Bench tracks, the four verdicts with real analytical budgets, and leaderboard arithmetic.
+
+These tests check the declaration rules on in-memory submissions without a folder, so every
+report also carries ``bench.NO_FOLDER``; ``declared`` drops it. The folder binding is tested
+in test_bench_cli.py on folders written by ``scripts/bench.py run``.
+"""
 import copy
 import hashlib
 import inspect
@@ -31,7 +36,7 @@ def submission(track, arm="c_a0_r1", **changes):
                "log_sha256": "3" * 64} for lr, bpb in zip(grid, (1.03, 1.01, 1.02)) if len(grid) > 1]
     recipe["optimizer"] |= {"base_lr": grid[len(grid) // 2], "max_norm": 1.0}  # C-grid recipes leave max_norm to the trainer default.
     values = {
-        "name": arm, "track": track.name, "recipe": recipe, "config": {"job": "resolved"},
+        "name": arm, "track": track.name, "recipe": recipe,
         "source_commit": "a" * 40, "manifest_fingerprint": track.data["manifest_fingerprint"],
         "tokenizer": dict(track.tokenizer), "evaluation": dict(track.evaluation),
         "seeds": [{"seed": seed, "final_update": track.horizon_updates, "validation_bpb": bpb,
@@ -48,6 +53,13 @@ def p1_submission(track, name):
         {"seed": 42, "final_update": 19537, "validation_bpb": 1.0, "test_bpb": 1.0,
          "log_sha256": "1" * 64, "checkpoint_sha256": "2" * 64}])
     return replace(value, recipe=json.loads((ROOT / f"recipes/{name}.json").read_text()))
+
+
+def declared(report):
+    """The reasons about the declaration itself; without a folder the report is never eligible."""
+    assert report.verdict != "eligible" and bench.NO_FOLDER in report.reasons["missing-evidence"]
+    reasons = {key: tuple(line for line in value if line != bench.NO_FOLDER) for key, value in report.reasons.items()}
+    return {key: value for key, value in reasons.items() if value}
 
 
 @pytest.fixture
@@ -136,8 +148,7 @@ def test_track_references_resolve_from_recipe_constructors(tracks):
 def test_eligible_submission_with_real_budgets(tracks):
     track = tracks["S"]
     report = bench.validate(submission(track), track)
-    assert report.verdict == "eligible" and report.reasons == {}
-    assert report.seed_test_bpb == pytest.approx({42: 1.015, 43: 1.005, 44: 1.025})  # test, never validation
+    assert declared(report) == {} and report.seed_test_bpb == {}
     params = report.budgets["unique_non_embedding_parameters"]
     assert params["candidate"] - params["reference"] == 6 * 512 * 8  # 2 banks x 3 extra visit routers, d x E
     assert report.budgets["training_flops_per_token"]["relative_difference"] == 0
@@ -148,7 +159,7 @@ def test_budget_mismatch_reports_the_relative_difference(tracks):
     track = tracks["S"]
     report = bench.validate(submission(track, arm="c_a1_r1"), track)
     assert report.verdict == "budget-mismatch" and report.seed_test_bpb == {}
-    assert report.reasons == {"budget-mismatch": (
+    assert declared(report) == {"budget-mismatch": (
         "unique_non_embedding_parameters differs by +0.1494 (tolerance 0.05)",)}
 
 
@@ -159,7 +170,7 @@ def test_unknown_training_flops_are_missing_evidence(tracks):
     sampled.recipe["training"]["grad_visits"] = 1
     report = bench.validate(sampled, track)
     assert report.verdict == "missing-evidence"
-    assert report.reasons == {"missing-evidence": (
+    assert declared(report) == {"missing-evidence": (
         "training_flops_per_token is unknown: Missing supported cost estimate; unknown is never matched.",)}
     assert report.budgets["training_flops_per_token"]["candidate"] is None
 
@@ -219,7 +230,6 @@ def test_protocol_mismatches(tracks, change, reason):
     (lambda s: replace(s, lr_trials=(s.lr_trials[0] | {"log_sha256": None},) + s.lr_trials[1:]),
      "LR trial 0.00015: log_sha256 must be a 64-hex sha256"),
     (lambda s: replace(s, source_commit=None), "source_commit must be a 40-hex git commit"),
-    (lambda s: replace(s, config=None), "resolved config is missing"),
     (lambda s: replace(s, evaluation={k: v for k, v in s.evaluation.items() if k != "byte_table_sha256"}),
      "evaluation.byte_table_sha256 is missing"),
     (lambda s: replace(s, lr_trials=()), "LR trials are missing for grid [0.00015, 0.0003, 0.0006]"),
@@ -279,10 +289,10 @@ def test_lr_selection_reads_validation_bpb_only(tracks):
     # Validation selects 3e-4; a test-split argmin (6e-4 here) must not move the selection.
     trials = tuple(t | {"test_bpb": {1.5e-4: 1.2, 3e-4: 1.1, 6e-4: 0.9}[t["lr"]]}
                    for t in submission(track).lr_trials)
-    assert bench.validate(submission(track, lr_trials=trials), track).verdict == "eligible"
+    assert declared(bench.validate(submission(track, lr_trials=trials), track)) == {}
     tied = tuple(t | {"validation_bpb": 1.0} for t in trials)
     report = bench.validate(submission(track, lr_trials=tied), track)
-    assert report.reasons == {"protocol-mismatch": (  # A tie goes to the smaller LR, here an edge.
+    assert declared(report) == {"protocol-mismatch": (  # A tie goes to the smaller LR, here an edge.
         "lowest validation BPB is at the edge LR 0.00015; add the trial at 7.5e-05 and repeat until the minimum is interior",
         "optimizer.base_lr 0.0003 is not the selected LR 0.00015")}
 
@@ -291,7 +301,7 @@ def test_lr_selection_reads_validation_bpb_only(tracks):
 def test_frozen_p1_recipes_are_eligible_on_track_l(tracks, name, parameters, flops):
     track = tracks["L"]
     report = bench.validate(p1_submission(track, name), track)
-    assert report.verdict == "eligible", report.reasons
+    assert declared(report) == {}
     relative = {metric: entry["relative_difference"] for metric, entry in report.budgets.items()}
     assert relative == pytest.approx({"unique_non_embedding_parameters": parameters,
                                       "training_flops_per_token": flops, "logical_kv_bytes": 0.0}, abs=1e-6)
@@ -326,22 +336,19 @@ def lr_submission(track, optimizer, base_lr, trials):
 def test_edge_minimum_must_be_bracketed_by_x2_steps(tracks, optimizer, base_lr, trials, reason):
     track = tracks["S"]
     report = bench.validate(lr_submission(track, optimizer, base_lr, trials), track)
-    if reason is None:
-        assert report.verdict == "eligible", report.reasons
-    else:
-        assert report.reasons == {"protocol-mismatch": (reason,)}
+    assert declared(report) == ({} if reason is None else {"protocol-mismatch": (reason,)})
 
 
 def test_single_lr_tracks_take_no_trials(tracks):
     track = tracks["L"]
     value = p1_submission(track, "p1_moe")
-    assert bench.validate(value, track).verdict == "eligible"
+    assert declared(bench.validate(value, track)) == {}
     with_trials = replace(value, lr_trials=({"lr": 3e-4, "seed": 42, "final_update": 19537, "validation_bpb": 1.0},))
-    assert bench.validate(with_trials, track).reasons == {"protocol-mismatch": (
+    assert declared(bench.validate(with_trials, track)) == {"protocol-mismatch": (
         "track L fixes AdamW LR 0.0003; LR trials are not part of it",)}
     muon = replace(value, recipe=value.recipe | {"optimizer": value.recipe["optimizer"] | {
         "name": "Muon", "muon": track.optimizers["fixed"]["Muon"]["muon"] | {"lr": 3e-4}}})
-    assert bench.validate(muon, track).reasons == {"protocol-mismatch": (
+    assert declared(bench.validate(muon, track)) == {"protocol-mismatch": (
         "optimizer.base_lr 0.0003 is not the track LR 0.0006",)}
 
 
@@ -361,7 +368,7 @@ def test_non_lr_optimizer_settings_are_fixed(tracks, change, reason):
     track = tracks["S"]
     value = lr_submission(track, "Muon", 6e-4, [(3e-4, 1.03), (6e-4, 1.01), (1.2e-3, 1.02)])
     value = replace(value, recipe=value.recipe | {"optimizer": change(value.recipe["optimizer"])})
-    assert bench.validate(value, track).reasons == {"protocol-mismatch": (reason,)}
+    assert declared(bench.validate(value, track)) == {"protocol-mismatch": (reason,)}
 
 
 def test_method_level_expert_settings_are_free_but_reported(tracks):
@@ -370,10 +377,8 @@ def test_method_level_expert_settings_are_free_but_reported(tracks):
     value = replace(value, recipe=value.recipe | {"optimizer": value.recipe["optimizer"] | {
         "expert_lr_multiplier": 0.5, "expert_group_size": 4}})
     report = bench.validate(value, track)
-    assert report.verdict == "eligible"
+    assert declared(report) == {}
     assert (report.expert_lr_multiplier, report.expert_group_size, report.gpu_hours, report.core) == (0.5, 4, 2.5, 0.12)
-    row = bench.leaderboard([report])["rows"][0]
-    assert (row["expert_lr_multiplier"], row["expert_group_size"]) == (0.5, 4)
 
 
 def test_muon_settings_are_the_pinned_dist_muon_defaults(tracks):
@@ -395,9 +400,7 @@ def test_p1_recipes_are_eligible_on_track_m_under_its_wsd_rules(tracks, name):
     assert value.recipe["run"]["schedule"] | {"total_steps": 4769} == {
         "name": "warmup_stable_decay", "coordinate": "successful_optimizer_updates", "total_steps": 4769,
         "warmup_steps": 95, "decay_ratio": 0.2, "decay_type": "linear", "min_lr_factor": 0.0}
-    report = bench.validate(value, track)
-    assert report.verdict == "eligible", report.reasons
-    assert report.seed_test_bpb == pytest.approx({42: 1.015, 43: 1.005, 44: 1.025})
+    assert declared(bench.validate(value, track)) == {}
 
 
 @pytest.mark.parametrize("name, differences", [("p2_moe", ("+0.8498", "+1.0491", "+0.6000")),
@@ -405,7 +408,7 @@ def test_p1_recipes_are_eligible_on_track_m_under_its_wsd_rules(tracks, name):
 def test_p2_recipes_are_budget_mismatch_on_track_l(tracks, name, differences):
     track = tracks["L"]
     report = bench.validate(p1_submission(track, name), track)
-    assert report.reasons == {"budget-mismatch": tuple(
+    assert declared(report) == {"budget-mismatch": tuple(
         f"{metric} differs by {difference} (tolerance 0.05)" for metric, difference in
         zip(("unique_non_embedding_parameters", "training_flops_per_token", "logical_kv_bytes"), differences))}
 
@@ -419,6 +422,19 @@ def test_one_seed_42_is_eligible_on_every_track(tracks, name):
         value = submission(track, arm={"S": "c_a0_r1", "M": "p1_moe", "P2": "p2_moe"}[name], seeds=[
             {"seed": 42, "final_update": track.horizon_updates, "validation_bpb": 1.0, "test_bpb": 1.0,
              "log_sha256": "1" * 64, "checkpoint_sha256": "2" * 64}])
+    assert declared(bench.validate(value, track)) == {}
+
+
+def test_a_made_up_submission_without_files_is_not_ranked(tracks):
+    """Placeholder hashes and an unrecorded commit around a frozen recipe: nothing binds them to a run."""
+    track = tracks["P2"]
+    value = bench.Submission.from_dict({
+        "name": "made-up", "track": "P2", "recipe": json.loads((ROOT / "recipes/phase1/m0-adamw.json").read_text()),
+        "source_commit": "0" * 40, "manifest_fingerprint": track.data["manifest_fingerprint"],
+        "tokenizer": dict(track.tokenizer), "evaluation": dict(track.evaluation),
+        "seeds": [{"seed": 42, "final_update": track.horizon_updates, "validation_bpb": 0.5, "test_bpb": 0.5,
+                   "log_sha256": "1" * 64, "checkpoint_sha256": "2" * 64}]})
     report = bench.validate(value, track)
-    assert report.verdict == "eligible", report.reasons
-    assert report.seed_test_bpb == {42: 1.0}
+    assert report.reasons == {"missing-evidence": (bench.NO_FOLDER,)}
+    assert bench.leaderboard([report])["rows"] == []
+    assert any("not checked here" in line for line in report.unchecked)
