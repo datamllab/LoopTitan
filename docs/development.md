@@ -1,21 +1,21 @@
-# 实现与贡献
+# Implementation and contribution
 
-按[架构](architecture.md)开发。多个开发者或 subagents 按不重叠文件分工，由集成者审阅。局部接口、测试和实现细节自主迭代；研究问题、方法交付、资源和正式比较条件的实质变化单独说明。CVSM 服务正式对照实验。
+Develop according to the [architecture](architecture.md). Several developers or subagents divide the work by files that do not overlap, and an integrator reviews it. Local interfaces, tests and implementation details iterate autonomously. Substantive changes to research questions, method deliverables, resources and formal comparison conditions are stated separately. CVSM serves formal controlled experiments.
 
-核心保持普通函数、模块和显式循环。已有构件的新组合增加 recipe；局部新算子增加小模块；真正不同的状态更新保留专用短 forward。新 forward 改变参数 owner 或 cache 发生次数时，补有限的 runtime/export 接入。不要为了目录扁平把全部职责塞入巨文件，也不要为未知需求预建 GraphExecutor/Policy/插件平台。
+The core stays as plain functions, modules and explicit loops. A new combination of existing building blocks adds a recipe. A new local operator adds a small module. A truly different state update keeps its own short forward. When a new forward changes the parameter owners or the number of cache occurrences, add a bounded runtime/export integration. Do not put all responsibilities into one huge file only to keep the directory flat. Do not build a GraphExecutor, a Policy or a plugin platform in advance for unknown needs.
 
-新方法先提供可独立导入的 `*_spec()`，写清来源、原文保留与适配；用 `compare_recipes.py inspect/diff/compare` 检查实际配置。九个命名方法的边界见[配方](recipes.md)，成本估算和正式比较问题见[比较](comparison.md)；写完 `*_spec()` 先跑[一致性测试](#一致性测试与诊断)。`loom/injected` 的旧组件别名不能当成完整方法贡献。
+A new method first provides a `*_spec()` that can be imported on its own. The spec states its source, what it keeps from the original and what it adapts. Use `compare_recipes.py inspect/diff/compare` to check the actual configuration. [Recipes](recipes.md) gives the boundaries of the nine named methods. [Comparison](comparison.md) gives the cost estimates and the formal comparison questions. When you finish a `*_spec()`, run the [conformance tests](#conformance-tests-and-diagnostics) first. The legacy component aliases `loom/injected` do not count as a complete method contribution.
 
-## 开发环境和检查
+## Development environment and checks
 
-控制协议环境：
+The control protocol environment:
 
 ```sh
 uv sync --frozen
 uv run --frozen python -m pytest -q
 ```
 
-模型环境按 README 安装 CPU Torch 与 HF/data extras 即可验证纯模型、数据和独立消费者；原生 adapter 检查再安装 train extra 与该 pin 需要的 Triton：
+For the model environment, install CPU Torch and the HF/data extras as the README says. This is enough to check the plain model, the data and the independent consumers. For the native adapter checks, also install the train extra and the Triton that this pin needs:
 
 ```sh
 uv pip install -e '.[data,hf,train,report]' 'triton==3.8.0' 'pytest==8.3.3'
@@ -24,11 +24,11 @@ python scripts/compare_baselines.py --output /tmp/qwen3-reference.json
 git diff --check
 ```
 
-CI 分开验证 Torch-free 控制接口和完整 CPU 模型/原生接入；依赖 Torch 的测试在文件顶部用 `pytest.importorskip("torch")`，控制环境跳过它们，由模型环境的 job 覆盖。测试应验证实际语义：shared gradient 等于各次调用之和、不同循环顺序确实不同、no-grad/anchor 路径、packing/cursor、官方 baseline、真实 FSDP/AC/chunked loss、独立 HF 进程。避免逐行复制实现来增加测试数量。
+CI checks the Torch-free control interface and the complete CPU model/native integration separately. Tests that depend on Torch use `pytest.importorskip("torch")` at the top of the file. The control environment skips them, and the model environment job covers them. Tests should check actual semantics. Examples: a shared gradient equals the sum over its calls; different loop orders really differ; no-grad/anchor paths; packing/cursor; the official baseline; real FSDP/AC/chunked loss; a separate HF process. Do not copy the implementation line by line to increase the number of tests.
 
-## 一致性测试与诊断
+## Conformance tests and diagnostics
 
-[`moeloop.testing.check_recipe`](../src/moeloop/testing.py) 是给任何 recipe 的一致性测试套件，用小几何实例化后在 CPU 上运行：
+[`moeloop.testing.check_recipe`](../src/moeloop/testing.py) is the conformance test suite for any recipe. It instantiates the recipe at a small geometry and runs it on a CPU:
 
 ```python
 from moeloop.recipes import smelt_spec
@@ -36,23 +36,32 @@ from moeloop.testing import check_recipe
 
 spec = smelt_spec(vocab_size=128, dim=32, hidden_dim=64, num_heads=4,
                   num_kv_heads=2, num_experts=4, max_seq_len=64)
-report = check_recipe(spec)  # 有检查失败时抛 ConformanceError，其 report 列出每项结果
+report = check_recipe(spec)  # raises ConformanceError when a check fails; its report lists each result
 print({name: check["status"] for name, check in report["checks"].items()})
 ```
 
-六项检查是 `ownership`（参数 owner 唯一、不共享存储）、`shared_gradients`（共享梯度等于各次调用之和）、`cost_calls`（成本模型的调用数和参数数等于一次真实前向）、`cache`（分块 cache 解码等于完整重算，KV 槽位和字节等于成本模型；不用 cache 的 recipe 为 not_applicable）、`hf_roundtrip`（`save_pretrained`/`from_pretrained` 后 logits 相同）和 `identity`（从 JSON 重建的 spec 保持 continuation identity 和初始权重）。它复用 `tests/model` 与 `tests/hf` 的 oracle，检查的是 `LoopedLM(spec.model)` 在 float32 CPU 参考路径上的契约，不说明质量、训练稳定性、原生 GPU kernel 或导出命令行；自写的 forward（见[扩展](extensions.md)）也不在其中。
+The six checks are:
 
-训练出模型之后，[`moeloop.diagnostics`](../src/moeloop/diagnostics.py) 读逐轮行为（logit lens、残差更新、路由重叠、有效深度），命令见[训练文档](training.md#导出评测和生成)；Looped MoE Bench 的提交用 `moeloop.bench.validate` 自查，见[比较](comparison.md#looped-moe-bench)。诊断用来理解模型，不构成方法资格。
+- `ownership`: parameter owners are unique and do not share storage.
+- `shared_gradients`: a shared gradient equals the sum over its calls.
+- `cost_calls`: the call counts and parameter counts of the cost model equal one real forward.
+- `cache`: chunked cache decoding equals full recomputation, and the KV slots and bytes equal the cost model. A recipe that does not use a cache gets not_applicable.
+- `hf_roundtrip`: the logits are the same after `save_pretrained`/`from_pretrained`.
+- `identity`: a spec rebuilt from JSON keeps the continuation identity and the initial weights.
 
-## GPU 开发与调试
+The suite reuses the oracles of `tests/model` and `tests/hf`. It checks the contract of `LoopedLM(spec.model)` on the float32 CPU reference path. It says nothing about quality, training stability, native GPU kernels or the export command line. A hand-written forward (see [Extensions](extensions.md)) is also outside it.
 
-GPU 训练只消费已授权、已分配的资源。部署地址、节点和凭证不进入公共 recipe。
+After you train a model, [`moeloop.diagnostics`](../src/moeloop/diagnostics.py) reads the per-visit behaviour (logit lens, residual updates, routing overlap, effective depth). For the commands, see the section on export, evaluation and generation in the [training documentation](training.md). A Looped MoE Bench submission checks itself with `moeloop.bench.validate`; see [Comparison](comparison.md#looped-moe-bench). Diagnostics help you understand a model. They are not method qualification.
 
-在同一可用环境中连续调试，复用数据/cache；调通后固定实际源码身份，以干净进程运行资格。每次 attempt 保留源码 hash、配置、命令、runtime 和原始结果，失败不覆盖。把 durable checkpoint、tokenizer/data manifest、HF 和 evidence 到已核实持久目录；不把临时容器路径当成交接成果。
+## GPU development and debugging
 
-## 方法资格与工程 probes
+GPU training uses only authorized and allocated resources. Deployment addresses, nodes and credentials do not go into public recipes.
 
-四方法的真实文本资格入口消费给定 manifest 和可见 GPU，不管理集群：
+Debug continuously in the same available environment, and reuse the data and cache. When it works, fix the actual source identity and run the qualification in a clean process. Each attempt keeps the source hash, configuration, command, runtime and raw results. A failure does not overwrite them. Put the durable checkpoint, the tokenizer/data manifest, the HF export and the evidence into a verified persistent directory. Do not hand over a temporary container path as a result.
+
+## Method qualification and engineering probes
+
+The real-text qualification entry point for the four methods uses a given manifest and the visible GPUs. It does not manage the cluster:
 
 ```sh
 export MOELOOP_DATA=/data/dclm-qwen3-v1
@@ -62,11 +71,11 @@ python scripts/recipe_qualification.py --stage v1 \
 python scripts/check_release.py --stage v1 --evidence "$MOELOOP_EVIDENCE" --engineering-only
 ```
 
-上述命令只创建并核对四方法工程资格，`--engineering-only` 不代表完整 V1 验收。完整 V1 验收还需要实际 P1、公开性能和8/16卡恢复等原始资产组成完整 evidence；对该完整目录运行 `python scripts/check_release.py --stage v1 --evidence "$MOELOOP_FULL_EVIDENCE"`，不加 engineering-only。已完成范围和原始资产/公开投影的区别见[验证记录](validation.md)。
+The commands above only create and check the engineering qualification of the four methods. `--engineering-only` does not mean complete V1 acceptance. Complete V1 acceptance also needs the raw assets of the actual P1, of public performance and of 8/16-GPU resume, which together make the complete evidence. Run `python scripts/check_release.py --stage v1 --evidence "$MOELOOP_FULL_EVIDENCE"` on that complete directory, without engineering-only. The [validation record](validation.md) gives the completed scope and the difference between raw assets and public projections.
 
-默认目标为四方法各512 successful updates、context2048、global batch16×2048 positions，并检查 native FSDP、完整恢复与实际 checkpoint 的 HF 独立消费。`--pilot` 是有界开发检查，不能计为方法资格。检查器读取真实产物，缺项或不匹配身份必须失败；命令存在不表示运行已完成，结果见[验证记录](validation.md)。
+The default target is 512 successful updates for each of the four methods, context2048 and a global batch of 16×2048 positions. The target also checks native FSDP, full resume and independent HF consumption of the actual checkpoint. `--pilot` is a bounded development check. It does not count as method qualification. The checker reads real artifacts. A missing item or an identity that does not match must fail. A command that exists does not mean that its run is complete. For results, see the [validation record](validation.md).
 
-旧的小型 batch 用于工程接缝回归。`scripts/qualification.py` 不分配资源，只准备离线工程 fixture、核对 durable full checkpoint 和比较 continuation：
+The old small batch is for regression of engineering seams. `scripts/qualification.py` does not allocate resources. It only prepares an offline engineering fixture, checks a durable full checkpoint and compares continuation:
 
 ```sh
 export PYTHONPATH="$PWD/src:$PWD/scripts:$PYTHONPATH"
@@ -79,25 +88,25 @@ torchrun --standalone --nproc-per-node=4 -m moeloop.train \
 python scripts/qualification.py verify --directory "$MOELOOP_OUTPUT" --steps 4
 ```
 
-`shared`、`partial_attention`、`partial_router`、`expert_tying`、`injected`、`dense` 的 2–4 updates 只验证已有组件，不替代四方法真实文本短训。比较连续 4 步与 stop2/resume4 时保持 fixture、source snapshot、topology、horizon16 和 recipe 一致，仅 stop target/明确 checkpoint 加载位置不同：
+The 2–4 updates of `shared`, `partial_attention`, `partial_router`, `expert_tying`, `injected` and `dense` only check existing components. They do not replace the real-text short training of the four methods. When you compare 4 continuous steps with stop2/resume4, keep the fixture, source snapshot, topology, horizon16 and recipe the same. Only the stop target and the explicit checkpoint load location differ:
 
 ```sh
 python scripts/qualification.py compare --uninterrupted /runs/qualification/full4 \
   --resumed /runs/qualification/resumed4 --output /results/continuation.json
 ```
 
-模型张量使用明确数值容差；所有 ranks 的 RNG、cursor、schedule 和离散完成状态严格对应。还要执行实际 native checkpoint 的 export/heldout/cached generation。多机配置必须有真实多节点证据，不能从单机 green 推定。部署地址、节点、凭证和调度资源设置留在使用方，不进入公共 recipe。
+Model tensors use explicit numerical tolerances. The RNG, cursor, schedule and discrete completion state of all ranks must match exactly. Also run export, held-out evaluation and cached generation of the actual native checkpoint. A multi-node configuration needs real multi-node evidence. It cannot be inferred from a green single-machine run. Deployment addresses, nodes, credentials and scheduler resource settings stay with the user and do not go into public recipes.
 
-原生 grouped experts/FlexAttention 的 BF16 数值对照使用[独立脚本](../scripts/compare_native.py)，需要已分配的 CUDA GPU 和固定 TorchTitan 环境：
+The BF16 numerical comparison of native grouped experts/FlexAttention uses an [independent script](../scripts/compare_native.py). It needs an allocated CUDA GPU and the fixed TorchTitan environment:
 
 ```sh
 python scripts/compare_native.py --output /results/native-kernel.json
 ```
 
-脚本固定 seed、document/padding 输入、shared 与 injected suffix 配置，比较模型前向及全部物理 owner 含 balance/z 的梯度。精确路由按每次逻辑调用、每个有效 token 的 expert 集合核对，允许 top-k 返回顺序不同；汇总直方图不能替代此项。梯度必须同时满足张量/全局 relative L2 与 BF16 tensor-peak 的界限；具体阈值、首轮失败和重测的机器记录见[验证记录](validation.md)。保留失败事实与原始结果，修改验收策略后单独重跑，不覆盖旧状态。
+The script fixes the seed, the document/padding inputs, and the shared and injected-suffix configurations. It compares the model forward and the gradients of all physical owners, balance/z included. Exact routing is checked as the expert set per logical call and per valid token. The top-k return order can differ. An aggregate histogram cannot replace this check. Gradients must meet both the per-tensor/global relative L2 bound and the BF16 tensor-peak bound. The [validation record](validation.md) has the exact thresholds and the machine records of the first failure and of the re-test. Keep the failure facts and the raw results. After a change of the acceptance policy, run again separately. Do not overwrite the old state.
 
-## 对外承诺
+## Public commitments
 
-用[验证记录](validation.md)描述具体通过的硬件、版本和支持组合。源码可读或某项 CPU 检查通过，不能证明所有运行组合、性能或科学效果。发现局部执行问题先保留算法并简化/修正实现；改变核心数学或公开支持范围时再讨论。
+Use the [validation record](validation.md) to describe the specific hardware, versions and supported combinations that passed. Readable source code or a passing CPU check does not prove every run combination, performance or scientific effect. When you find a local execution problem, first keep the algorithm and simplify or fix the implementation. Discuss it only when the change affects the core mathematics or the public support scope.
 
-Muon 路径同理：分组规则和单 rank CPU 上真实的一步有测试（`tests/training/test_muon.py`），跨卡数一致的数据流在 1/2/4 个 CPU FSDP rank 上测过（`tests/training/test_topology.py`）；#49 在 4 卡与 8 卡 FSDP 上完成了 Muon 的训练、完整 checkpoint 保存与 WSD 分叉；HSDP `dp_replicate>1`、world 大于专家数的分片边界、空 token 专家和 Muon checkpoint 续训未在该次运行中覆盖。
+The same applies to the Muon path. The grouping rule and one real step on a single CPU rank have tests (`tests/training/test_muon.py`). The data flow that stays the same across GPU counts was tested on 1, 2 and 4 CPU FSDP ranks (`tests/training/test_topology.py`). #49 completed Muon training, a complete checkpoint save and a WSD fork on 4-GPU and 8-GPU FSDP. That run did not cover HSDP `dp_replicate>1`, the sharding boundary where the world size is larger than the number of experts, experts with no tokens, or Muon checkpoint continuation.
