@@ -30,24 +30,24 @@ def test_groups_by_command_without_seed(repo):
     rows = table(out)
     assert set(rows) == {group("method=a"), group("method=b")}
     a, b = rows[group("method=a")], rows[group("method=b")]
-    assert (a["n"], a["失败数"], a["acc 均值"], a["acc 标准差"]) == ("3", "0", "2", "1")
-    assert (b["n"], b["acc 均值"], b["acc 标准差"]) == ("3", "20", "10")
-    assert a["loss 均值"] == "0.5" and a["loss 标准差"] == "0"
+    assert (a["n"], a["n_failed"], a["acc mean"], a["acc std"]) == ("3", "0", "2", "1")
+    assert (b["n"], b["acc mean"], b["acc std"]) == ("3", "20", "10")
+    assert a["loss mean"] == "0.5" and a["loss std"] == "0"
     assert a["commit"] == repo.git("rev-parse", "HEAD")[:7]
-    assert out.startswith("#5 的结果：6 个 run，2 组，按去掉 seed 的命令分组。")
-    assert "commit 不同" not in out and "环境不同" not in out
+    assert out.startswith("Results of #5: 6 runs in 2 groups, grouped by command with the seed removed.")
+    assert "Commit differs" not in out and "Env lock differs" not in out
 
 
 def test_metric_selection(repo):
     repo.run("seed=1")
     row = table(repo.results("--metric", "acc"))[group()]
-    assert "acc 均值" in row and "loss 均值" not in row
+    assert "acc mean" in row and "loss mean" not in row
 
 
 def test_single_seed_shows_dash_for_std(repo):
     repo.run("method=a", "seed=4")
     row = table(repo.results())[group("method=a")]
-    assert (row["n"], row["acc 均值"], row["acc 标准差"]) == ("1", "4", "—")
+    assert (row["n"], row["acc mean"], row["acc std"]) == ("1", "4", "—")
 
 
 def finished(repo, start, cfg=None, status="FINISHED", **cvsm):
@@ -60,7 +60,7 @@ def finished(repo, start, cfg=None, status="FINISHED", **cvsm):
 
 
 def spec_check(out):
-    return out.split("\n规格核对：\n", 1)[1]
+    return out.split("\nSpec check:\n", 1)[1]
 
 
 SPEC = """### Question
@@ -105,24 +105,24 @@ def test_spec_check_lists_each_deviation(repo, tmp_path):
     r6 = finished(repo, 6000, cfg=common | {"method": "b", "seed": "2"}, status="FAILED", exit_code="1")
     (tmp_path / "spec.md").write_text(SPEC)
     out = repo.results("--spec", str(tmp_path / "spec.md"))
-    assert table(out)["python t.py"]["arm"] == "base、ours、deep、无"
-    assert "\n标注：\n- 无\n" in out  # the flags are unchanged
-    assert spec_check(out) == f"""- 读不懂的规格行：Arms：broken line
-- Controlled 行没有写理由：wd=0
-- `lr=0.1` 不成立：1 个 run，{r3}（0.2）
-- `seed in 1,2` 不成立：1 个 run，{r5}（3）
-- `optim.name="adamw"`：1 个 run 未记录 `optim.name`：{r5}
-- `wd=0` 不成立：1 个 run，{r5}（1）
-- `optim.betas in [0.9,0.999],[0.9,0.95]` 不成立：1 个 run，{r3}（[0.5, 0.5]）
-- 1 个 run 不属于任何 arm：{r5}
-- 1 个 run 属于多个 arm：{r4}（ours、deep）
-- arm ours 缺 `seed in 1,2` 的取值：2
-- arm deep 缺 `seed in 1,2` 的取值：2
-- arm ours 缺 `optim.betas in [0.9,0.999],[0.9,0.95]` 的取值：[0.9,0.999]
-- arm deep 缺 `optim.betas in [0.9,0.999],[0.9,0.95]` 的取值：[0.9,0.999]
-- 未声明的差异 `warmup`：100（5 个 run）、200（1 个 run）
-- 没有 run 的 arm：c
-- Adaptable `batch`：base 取 32（1 个 run）、64（1 个 run）；ours 取 32（3 个 run）；deep 取 32（1 个 run）
+    assert table(out)["python t.py"]["arm"] == "base, ours, deep, none"
+    assert "\nFlags:\n- none\n" in out  # the flags are unchanged
+    assert spec_check(out) == f"""- Unreadable spec line: Arms: broken line
+- Controlled line without a reason: wd=0
+- `lr=0.1` does not hold for 1 run: {r3} (0.2)
+- `seed in 1,2` does not hold for 1 run: {r5} (3)
+- `optim.name="adamw"`: 1 run with no recorded `optim.name`: {r5}
+- `wd=0` does not hold for 1 run: {r5} (1)
+- `optim.betas in [0.9,0.999],[0.9,0.95]` does not hold for 1 run: {r3} ([0.5, 0.5])
+- 1 run with no matching arm: {r5}
+- 1 run in more than one arm: {r4} (ours, deep)
+- Arm ours is missing values of `seed in 1,2`: 2
+- Arm deep is missing values of `seed in 1,2`: 2
+- Arm ours is missing values of `optim.betas in [0.9,0.999],[0.9,0.95]`: [0.9,0.999]
+- Arm deep is missing values of `optim.betas in [0.9,0.999],[0.9,0.95]`: [0.9,0.999]
+- Undeclared difference `warmup`: 100 (5 runs), 200 (1 run)
+- Arms with no run: c
+- Adaptable `batch`: base: 32 (1 run), 64 (1 run); ours: 32 (3 runs); deep: 32 (1 run)
 """
     assert not {r1, r2, r6} & set(re.findall(r"[0-9a-f]{32}", spec_check(out)))  # r6 failed: seed 2 stays missing
 
@@ -135,8 +135,8 @@ def test_runs_breaking_a_controlled_line_cover_no_value(repo):
     unrecorded = finished(repo, 5000, cfg={"method": "b", "seed": "2"})
     spec = "### Arms\n\nbase: method=a\nours: method=b\n\n### Controlled\n\nlr=0.1  # x\nseed in 1,2  # y\n"
     assert spec_check(repo.results("--spec", "-", input=spec)) == (
-        f"- `lr=0.1`：1 个 run 未记录 `lr`：{unrecorded}\n- `lr=0.1` 不成立：1 个 run，{wrong}（0.2）\n"
-        "- arm ours 缺 `seed in 1,2` 的取值：2\n")
+        f"- `lr=0.1`: 1 run with no recorded `lr`: {unrecorded}\n- `lr=0.1` does not hold for 1 run: {wrong} (0.2)\n"
+        "- Arm ours is missing values of `seed in 1,2`: 2\n")
 
 
 def test_spec_from_stdin_without_deviations(repo):
@@ -146,23 +146,23 @@ def test_spec_from_stdin_without_deviations(repo):
     for start, (method, seed) in enumerate([("a", 1), ("a", 2), ("b", 1), ("b", 2)]):
         finished(repo, start, cfg={"method": method, "seed": str(seed), "lr": "0.1", "optim.name": "adamw"})
     out = repo.results("--spec", "-", input=spec)
-    assert spec_check(out) == "- 没有偏差\n"
-    assert table(out)["python t.py"]["arm"] == "base、ours"
+    assert spec_check(out) == "- No deviations\n"
+    assert table(out)["python t.py"]["arm"] == "base, ours"
 
 
 def test_problems_of_the_spec_itself(repo):
     out = repo.results("--spec", "-", input="### Comparison\n\na vs b\n", issue=99)
-    assert spec_check(out) == "- 规格里没有 Arms 一节\n- 规格里没有 Controlled 一节\n"
+    assert spec_check(out) == "- No Arms section in the spec\n- No Controlled section in the spec\n"
     spec = "### Arms\n\nbase: lr=0.1\n\n### Controlled\n\nlr=0.1  # x\n\n### Adaptable\n\nlr  # y\n"
     out = repo.results("--spec", "-", input=spec, issue=99)
-    assert spec_check(out) == ("- `lr` 出现在多节：Arms、Controlled、Adaptable\n- 没有 run 的 arm：base\n"
-                               "- Adaptable `lr`：没有属于 arm 的 run\n")
+    assert spec_check(out) == ("- `lr` is in more than one section: Arms, Controlled, Adaptable\n- Arms with no run: base\n"
+                               "- Adaptable `lr`: no run in an arm\n")
 
 
 def test_no_spec_is_said(repo):
     finished(repo, 1000, cfg={"method": "a"})
     out = repo.results()
-    assert spec_check(out) == "- 没有给出规格（--spec）\n" and "arm" not in table(out)["python t.py"]
+    assert spec_check(out) == "- No spec given (--spec)\n" and "arm" not in table(out)["python t.py"]
 
 
 def recorded_config(repo, timeout=10):
@@ -182,7 +182,7 @@ def test_a_running_run_is_checked_once_its_config_is_recorded(repo):
         run_id = repo.only_run().info.run_id
         out = repo.results("--spec", "-", input="### Arms\n\nbase: method=a\n\n### Controlled\n\n"
                                                 "seed in 1,2  # two seeds\n")
-        assert spec_check(out) == f"- 1 个 run 不属于任何 arm：{run_id}\n- 没有 run 的 arm：base\n"
+        assert spec_check(out) == f"- 1 run with no matching arm: {run_id}\n- Arms with no run: base\n"
         assert p.poll() is None and repo.only_run().info.status == "RUNNING"
     finally:
         hold.write_text("go")
@@ -198,7 +198,7 @@ def test_different_commits_are_flagged_with_diff_stat(repo):
     finished(repo, 1000, commit=first)
     out = repo.results()
     assert table(out)["python t.py"]["commit"] == f"{first[:7]}, {second[:7]}"  # ordered by run start
-    assert f"- commit 不同：{first[:7]}, {second[:7]}；`git diff --stat {first[:7]} {second[:7]}`：" in out
+    assert f"- Commit differs: {first[:7]}, {second[:7]}; `git diff --stat {first[:7]} {second[:7]}`:" in out
     assert "shared.py" in out and "1 file changed" in out
 
 
@@ -206,9 +206,9 @@ def test_different_env_and_data_are_flagged(repo):
     finished(repo, 1000, env_lock_sha="a" * 64, data_manifest_sha="c" * 64)
     finished(repo, 2000, env_lock_sha="b" * 64, data_manifest_sha="c" * 64)
     out = repo.results()
-    assert "- 环境不同：aaaaaaaa, bbbbbbbb" in out and "数据不同" not in out
+    assert "- Env lock differs: aaaaaaaa, bbbbbbbb" in out and "Data manifest differs" not in out
     finished(repo, 3000, env_lock_sha="b" * 64, data_manifest_sha="d" * 64)
-    assert "- 数据不同：cccccccc, dddddddd" in repo.results()
+    assert "- Data manifest differs: cccccccc, dddddddd" in repo.results()
 
 
 def test_failed_and_incomplete_runs_are_counted(repo):
@@ -217,10 +217,10 @@ def test_failed_and_incomplete_runs_are_counted(repo):
     stuck = repo.record(3000, status="RUNNING", issue="5", command="python other.py", seed="", host="h")
     out = repo.results()
     row = table(out)[group("fail_seed=2")]
-    assert (row["n"], row["失败数"], row["acc 均值"]) == ("1", "1", "1")
-    assert f"- 1 个 run 未完成（还在跑或已被杀）：{stuck}" in out
+    assert (row["n"], row["n_failed"], row["acc mean"]) == ("1", "1", "1")
+    assert f"- 1 run not finished (still running or killed): {stuck}" in out
     other = table(out)["python other.py"]
-    assert (other["n"], other["失败数"], other["commit"]) == ("0", "0", "无")
+    assert (other["n"], other["n_failed"], other["commit"]) == ("0", "0", "none")
 
 
 def test_sigkilled_run_is_incomplete(repo):
@@ -231,7 +231,7 @@ def test_sigkilled_run_is_incomplete(repo):
     p.communicate(timeout=120)
     os.kill(int(hold.with_suffix(".pid").read_text()), signal.SIGKILL)
     out = repo.results()
-    assert f"- 1 个 run 未完成（还在跑或已被杀）：{repo.only_run().info.run_id}" in out
+    assert f"- 1 run not finished (still running or killed): {repo.only_run().info.run_id}" in out
 
 
 def test_deleted_runs_are_flagged(repo):
@@ -240,26 +240,26 @@ def test_deleted_runs_are_flagged(repo):
     repo.client.delete_run(gone)
     out = repo.results()
     assert table(out)[group()]["n"] == "2"
-    assert f"- 1 个 run 已在 MLflow 中删除，但仍计入上表：{gone}" in out
+    assert f"- 1 run deleted in MLflow but still counted in the table: {gone}" in out
 
 
 def test_missing_env_lock_is_flagged(repo):
     repo.run()
     out = repo.results()
-    assert "- 1 个 run 缺环境锁文件：uv.lock" in out
+    assert "- 1 run with missing env lock files: uv.lock" in out
 
 
 def test_dirty_runs_are_flagged(repo):
     (repo.root / "scratch.py").write_text("1\n")
     repo.run()
     out = repo.results()
-    assert f"- 1 个 run 的工作区不干净（见产物 diff.patch 和 untracked.txt）：{repo.only_run().info.run_id}" in out
+    assert f"- 1 run with a dirty working tree (see the artifacts diff.patch and untracked.txt): {repo.only_run().info.run_id}" in out
 
 
 def test_bad_metrics_file_is_flagged_not_fatal(repo):
     repo.run("metrics=list")
     out = repo.results()
-    assert f"- 1 个 run 成功退出但没有指标：{repo.only_run().info.run_id}" in out
+    assert f"- 1 run with exit code 0 and no metrics: {repo.only_run().info.run_id}" in out
 
 
 def test_other_issues_are_ignored(repo):
@@ -268,17 +268,17 @@ def test_other_issues_are_ignored(repo):
     assert [p.communicate(timeout=120) and p.returncode for p in procs] == [0, 0, 0]
     assert set(table(repo.results(issue=5))) == {group()}
     assert set(table(repo.results(issue=15))) == {group("method=b")}
-    assert repo.results(issue=[5, 5]).startswith("#5 的结果：1 个 run")
+    assert repo.results(issue=[5, 5]).startswith("Results of #5: 1 run in 1 group,")
     out = repo.results(issue=[5, 15])
-    assert set(table(out)) == {group(), group("method=b")} and out.startswith("#5、#15 的结果：2 个 run")
+    assert set(table(out)) == {group(), group("method=b")} and out.startswith("Results of #5, #15: 2 runs")
 
 
 def test_no_runs_still_prints_a_table(repo):
     out = repo.results(issue=99)
-    assert "| 命令 |" in out and table(out) == {}
-    assert out.endswith("标注：\n- 无\n\n规格核对：\n- 没有给出规格（--spec）\n")
+    assert "| command |" in out and table(out) == {}
+    assert out.endswith("Flags:\n- none\n\nSpec check:\n- No spec given (--spec)\n")
     out = repo.results(env={"MLFLOW_EXPERIMENT_NAME": "no-such-experiment"})
-    assert "| 命令 |" in out and table(out) == {}
+    assert "| command |" in out and table(out) == {}
 
 
 def test_missing_mlflow_is_a_clear_error(repo):

@@ -39,7 +39,7 @@ def f(name, status="modified", prev=None):
 
 
 def verdict(word="pass", sha=HEAD[:7]):
-    return f"Verdict: {word} @ {sha}\n\n审查意见。"
+    return f"Verdict: {word} @ {sha}\n\nReview text."
 
 
 def run(body=BODY, files=None, comments=None, issue="default"):
@@ -193,7 +193,7 @@ def test_main_merges_when_allowed(tmp_path):
     p, calls = run_main(tmp_path, responses())
     assert p.returncode == 0, p.stdout + p.stderr
     assert merge_calls(calls) == [MERGE_CMD]
-    assert "已合并" in p.stdout
+    assert "merged PR #7 (squash" in p.stdout
 
 
 def test_main_refuses(tmp_path):
@@ -201,7 +201,7 @@ def test_main_refuses(tmp_path):
     assert p.returncode == 2, p.stdout + p.stderr
     assert merge_calls(calls) == []
     lines = p.stdout.strip().splitlines()
-    assert lines[-1] == "等人合并"
+    assert lines[-1] == "waiting for a human to merge"
     assert any("Merge" in line for line in lines)
     assert any("AGENTS.md" in line for line in lines)
     assert any(OLD[:7] in line for line in lines)
@@ -250,7 +250,7 @@ def test_human_merges_despite_failing_checks(tmp_path):
     p, calls = run_main(tmp_path, data, ("7", "--human"))
     assert p.returncode == 0, p.stdout + p.stderr
     assert merge_calls(calls) == [MERGE_CMD]
-    assert "人的指示" in p.stdout
+    assert "on the human's instruction" in p.stdout
 
 
 def test_human_flag_first(tmp_path):

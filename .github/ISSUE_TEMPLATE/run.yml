@@ -1,21 +1,21 @@
-name: 运行任务
-description: 一组实验运行，结果以一条评论贴出。
+name: Run task
+description: A set of experiment runs. The results go into one comment.
 labels: [run]
 body:
   - type: textarea
     id: runs
     attributes:
       label: Runs
-      description: 每行一条命令，包含配置覆盖和 seed；带 Run 命令的选项时写成 `<options> -- <cmd>`，例如 `--gpus 4 -- python train.py seed=1`。
+      description: 'One command per line, with its config overrides and seed. For options of the Run command, write `<options> -- <cmd>`, for example `--gpus 4 -- python train.py seed=1`.'
     validations:
       required: true
   - type: input
     id: budget
     attributes:
       label: Budget
-      description: GPU 小时，例如 2。
+      description: GPU hours, for example 2.
   - type: input
     id: report
     attributes:
       label: Report
-      description: 指标名，空格分隔。
+      description: Metric names, separated by spaces.

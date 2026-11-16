@@ -60,15 +60,15 @@ Repeat until every Acceptance command passes and a fresh reviewer finds nothing 
 
 ## 5. Open the PR
 
-Follow `.github/pull_request_template.md` and AGENTS.md Git: an English title, a Chinese body.
+Follow `.github/pull_request_template.md` and AGENTS.md Git: title and body in English.
 
 ```
 gh pr create --base main --head t/N-<slug> --title "<type>(#N): <summary>" --body "$(cat <<'EOF'
 Closes #N
 ## Changes
-- <至多 5 条>
+- <at most 5 items>
 ## Acceptance
-- `<命令>`：<结果>
+- `<command>`: <result>
 ## Out of scope
 none
 EOF
@@ -89,10 +89,10 @@ newest `Verdict:` comment names the PR head (`gh pr view <PR> --json headRefOid 
 
 ```
 gh pr comment <PR> --body "$(cat <<'EOF'
-剩余的 minor 意见与处理建议（合并的指示即批准，由执行合并的 agent 照办）：
-1. <意见>（<审查评论链接>）— 建议：开新 issue「<标题>」；理由：<一行>
-2. <意见> — 建议：并进 #M；理由：<一行>
-3. <意见> — 建议：不处理；理由：<一行>
+Remaining minor findings and proposals (the merge instruction approves them; the merging agent carries them out):
+1. <finding> (<review comment link>) — proposal: new issue "<title>"; reason: <one line>
+2. <finding> — proposal: add to #M; reason: <one line>
+3. <finding> — proposal: no action; reason: <one line>
 EOF
 )"
 ```
@@ -105,9 +105,9 @@ the merge-ready PR is the request; add no label or blocker comment. If `merge.py
 could not read the PR, or the merge itself failed), read its message, fix the cause (checks not
 green yet, head moved, ...) and retry; the same failure 3 times in a row is a blocker.
 
-When the human explicitly says to merge, run `python .github/scripts/merge.py <PR> --human`
-and record `Decision: 合并 PR #<PR> — <人的指示>` on issue N. That instruction, or under
-`Merge: agent` the one naming the task, approves the minor proposals. After either merge:
+When the human explicitly says to merge, run `python .github/scripts/merge.py <PR> --human` and
+record `Decision: merge PR #<PR> — <the human's instruction>` on issue N. That instruction, or
+under `Merge: agent` the one naming the task, approves the minor proposals. After either merge:
 1. Carry out the minor proposals (`gh issue create --label code --parent P ...`, `gh issue comment M`).
 2. Clean up from the main clone; the origin branch is gone if the repo deletes merged branches:
 
@@ -117,4 +117,4 @@ git branch -D t/N-<slug>
 git ls-remote --exit-code --heads origin t/N-<slug> && git push origin --delete t/N-<slug>
 ```
 
-At every stop, report the three lines of AGENTS.md Report in Chinese, with links.
+At every stop, report the three lines of AGENTS.md Report in the human's language, with links.

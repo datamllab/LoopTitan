@@ -108,10 +108,10 @@ def test_study_form():
     # The spec's line formats, which the results command parses (#29).
     desc = {name: fields[name]["attributes"]["description"] for name in STUDY}
     assert "`<arm>: <key>=<value> [<key>=<value> ...]`" in desc["Arms"]
-    assert "`  # <注释>`" in desc["Arms"] and "JSON" in desc["Arms"]
-    assert "`<key>=<value>  # <理由>`" in desc["Controlled"]
-    assert "`<key> in <v1>,<v2>,...  # <理由>`" in desc["Controlled"]
-    assert "`<key>  # <规则>`" in desc["Adaptable"]
+    assert "`  # <comment>`" in desc["Arms"] and "JSON" in desc["Arms"]
+    assert "`<key>=<value>  # <reason>`" in desc["Controlled"]
+    assert "`<key> in <v1>,<v2>,...  # <reason>`" in desc["Controlled"]
+    assert "`<key>  # <rule>`" in desc["Adaptable"]
 
 
 def test_plan_skill_drafts_the_study_form():
@@ -127,8 +127,8 @@ def test_run_form():
     assert fields["Runs"]["type"] == "textarea" and required(fields["Runs"])
     assert "seed" in fields["Runs"]["attributes"]["description"]
     assert "<options> -- <cmd>" in fields["Runs"]["attributes"]["description"]
-    assert "GPU 小时" in fields["Budget"]["attributes"]["description"]
-    assert "指标名" in fields["Report"]["attributes"]["description"]
+    assert "GPU hours" in fields["Budget"]["attributes"]["description"]
+    assert "Metric names" in fields["Report"]["attributes"]["description"]
 
 
 def test_codex_rules_static():
