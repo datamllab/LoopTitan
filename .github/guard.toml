@@ -6,4 +6,6 @@ protected = ["AGENTS.md", ".agents/**", ".codex/**", ".claude/**", ".github/**",
 types = ["feat", "fix", "refactor", "test", "exp", "docs", "chore"]
 max_body_lines = 40
 test_paths = ["tests/**"]
+# A PR that only adds files here needs no issue, Scope or PR format; layout and file-name rules still apply.
+submissions = "eval/bench/submissions/**"
 # max_diff_lines = 400   # optional; counts additions+deletions outside test_paths

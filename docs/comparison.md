@@ -131,7 +131,7 @@ A mechanism ablation on the same base keeps unrelated mechanisms and the evaluat
 
 Budgets are judged with `compare_recipes` from this page. Unique non-embedding parameters, training matrix FLOPs per token and logical KV bytes must each be within 5% of the track's reference recipe. The accounting uses dense S² and no recompute. It counts model work, not the execution policy. For S and M, the LR is selected on the grid by validation BPB. L and P2 have one fixed LR per optimizer and no trials. Ranking uses test BPB only. Seed 42 is required, and other seeds are optional. The leaderboard gives the mean, the range and the number of seeds. GPU hours and throughput are only reported. They are not eligibility conditions.
 
-[`moeloop.bench`](../src/moeloop/bench.py) reads one submission JSON and gives one verdict of `eligible`, `budget-mismatch`, `protocol-mismatch` and `missing-evidence`, with a list of all reasons. `leaderboard` ranks the eligible submissions by mean test BPB:
+[`moeloop.bench`](../src/moeloop/bench.py) checks one submission folder (`submission.json` and the files of the folder) and gives one verdict of `eligible`, `budget-mismatch`, `protocol-mismatch` and `missing-evidence`, with a list of all reasons. `leaderboard` ranks the eligible submissions by mean test BPB:
 
 ```python
 import json
@@ -144,7 +144,7 @@ print(report.verdict, report.reasons)
 print(leaderboard([report])["rows"])
 ```
 
-The snippet checks the declaration alone, so its verdict is never `eligible`. A submission is judged as a folder: `validate(submission, track, folder)`, or `scripts/bench.py validate --dir`, hashes the files the submission declares and compares their content with the declaration and the track, as [Benchmark submission folder](#benchmark-submission-folder) describes. It does not re-run training or evaluation and it does not judge quality; `scripts/bench.py` gives the command line (run, sweep, validate, leaderboard).
+The snippet checks the declaration alone, so its verdict is never `eligible`. A submission is judged as a folder: `validate(submission, track, folder)`, or `scripts/bench.py validate --dir`, hashes every file in the folder, declared or not, and compares their content with the declaration and the track, as [Benchmark submission folder](#benchmark-submission-folder) describes. It does not re-run training or evaluation and it does not judge quality; `scripts/bench.py` gives the command line (run, sweep, validate, leaderboard). To enter a result, follow the [contribution guide](../.github/CONTRIBUTING.md).
 
 ## Cost boundaries of state updates and multi-visit objectives
 

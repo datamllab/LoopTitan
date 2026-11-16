@@ -87,6 +87,11 @@ def check_file(f: dict, scope: list[str] | None, cfg: dict) -> list[str]:
 
 
 def check(pr: dict, files: list[dict], issue: dict | None, cfg: dict) -> list[str]:
+    # A PR that only adds files under `submissions` (an outside entry) needs no issue, Scope or PR format.
+    submissions = cfg.get("submissions")
+    if submissions and files and all(f["status"] == "added" and glob_match(f["filename"], submissions) for f in files):
+        return [msg for f in files for msg in check_file(f, None, cfg)]
+
     fails, body = [], (pr.get("body") or "").replace("\r\n", "\n")
     refs = closing_refs(body, pr.get("repo"))
     n = refs[0] if len(refs) == 1 else None
