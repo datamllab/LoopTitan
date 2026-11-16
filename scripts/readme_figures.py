@@ -6,7 +6,9 @@ Writes SVG files to docs/assets/: each figure in a light and a dark variant (REA
 follows the reader's colour scheme by itself. Every value drawn comes from the repository: the frozen
 recipes (recipes/), the lineage of scripts/lineage.py, the cost model (moeloop.comparison), the CPU
 record docs/evidence/qwen3-cpu.json, the Phase 1 results docs/results/phase1.json, pyproject.toml and
-eval/bench/tracks.json; the layout (positions, sizes, axis ranges) is chosen in this script. The mark
+eval/bench/tracks.json; the layout (positions, sizes, axis ranges) is chosen in this script. It also
+writes README.md's BibTeX block (between the citation markers) from CITATION.cff with bibtex(), the entry
+the model cards carry too. The mark
 comes from the lockup files in docs/assets/brand/, placed as they are. --check writes nothing and exits 1
 if a file differs from what the data gives; tests/setup/test_readme_figures.py runs it. Text uses system
 fonts, because GitHub shows these files as images.
@@ -21,6 +23,8 @@ import re
 import sys
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -31,6 +35,10 @@ import lineage  # noqa: E402
 
 ASSETS = ROOT / "docs" / "assets"
 BRAND = ASSETS / "brand"
+README = ROOT / "README.md"
+CITATION = ROOT / "CITATION.cff"
+# README.md's BibTeX block, between these markers, is rendered from CITATION.cff by bibtex()
+CITE = re.compile(r"(<!-- citation: [^\n]* -->\n```bibtex\n).*?(\n```\n<!-- /citation -->)", re.S)
 SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"
 MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
 
@@ -1136,6 +1144,46 @@ def flow_fig(t):
     return svg(w, int(h), "How research runs here", desc, t, "".join(out))
 
 
+# ---------------------------------------------------------------- citation
+
+def bibtex(cff):
+    """The one BibTeX entry of README.md and of every model card. If CITATION.cff has a preferred-citation (the
+    paper), that entry and only that: @article with its journal, otherwise @misc, with an arXiv identifier
+    "arXiv:<id> [<class>]" as eprint, archivePrefix and primaryClass. Otherwise the software entry."""
+    def authors(entry):
+        return " and ".join("{" + a["name"] + "}" if "name" in a else f"{a['family-names']}, {a['given-names']}"
+                            for a in entry["authors"])
+    paper = cff.get("preferred-citation")
+    if paper is None:
+        kind, key = "software", cff["title"].lower()
+        fields = [("title", "{" + cff["title"] + "}"), ("author", authors(cff)), ("version", cff["version"]),
+                  ("url", cff["url"])]
+    else:
+        year = str(paper.get("year") or paper["date-published"])[:4]
+        kind, key = ("article" if "journal" in paper else "misc"), f"{cff['title'].lower()}{year}"
+        fields = [("title", "{" + paper["title"] + "}"), ("author", authors(paper)), ("year", year)]
+        if "journal" in paper:
+            fields.append(("journal", paper["journal"]))
+        arxiv = [m for item in paper.get("identifiers", [])
+                 if (m := re.fullmatch(r"arXiv:(\S+)(?: \[(\S+)\])?", str(item["value"])))]
+        if arxiv:
+            fields += [("eprint", arxiv[0][1]), ("archivePrefix", "arXiv")]
+            fields += [("primaryClass", arxiv[0][2])] if arxiv[0][2] else []
+        if "doi" in paper:
+            fields.append(("doi", paper["doi"]))
+        if "url" in paper:
+            fields.append(("url", paper["url"]))
+    return f"@{kind}{{{key},\n" + ",\n".join(f"  {name} = {{{value}}}" for name, value in fields) + "\n}"
+
+
+def cited(readme, cff):
+    """README.md's text with the BibTeX block between the citation markers rendered from the cff."""
+    out, n = CITE.subn(lambda m: m[1] + bibtex(cff) + m[2], readme)
+    if n != 1:
+        sys.exit("README.md: the citation markers are missing")
+    return out
+
+
 # ---------------------------------------------------------------- files
 
 def badges():
@@ -1163,7 +1211,7 @@ def figures():
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="write nothing; exit 1 if a figure is not current")
+    parser.add_argument("--check", action="store_true", help="write nothing; exit 1 if a figure or the README citation is not current")
     args = parser.parse_args()
     stale = []
     for name, content in figures().items():
@@ -1173,6 +1221,13 @@ def main() -> None:
                 stale.append(name)
         else:
             path_.write_text(content)
+    readme = README.read_text()
+    current = cited(readme, yaml.safe_load(CITATION.read_text()))
+    if current != readme:
+        if args.check:
+            stale.append("README.md (citation)")
+        else:
+            README.write_text(current)
     if stale:
         sys.exit("not current, run python scripts/readme_figures.py: " + ", ".join(stale))
 

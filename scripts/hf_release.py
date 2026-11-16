@@ -353,37 +353,9 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"- Configuration: [`{model['config']}`]({repo}/blob/main/{model['config']})",
               f"- Documentation: [docs]({repo}/tree/main/docs)", f"- Results: [results page]({repo}/blob/main/{page})",
               f"- Run record: [#{run['issue']}]({repo}/issues/{run['issue']})", "",
-              "## Citation", "", "```bibtex", bibtex(cff), "```", "",
+              "## Citation", "", "```bibtex", figures.bibtex(cff), "```", "",
               "## Licence", "", f"[{cff['license']}]({repo}/blob/main/LICENSE).", ""]
     return "\n".join(lines)
-
-
-def bibtex(cff):
-    """The one BibTeX entry of README.md and of every model card. If CITATION.cff has a preferred-citation (the
-    paper), that entry and only that: @article with its journal, otherwise @misc, with an arXiv identifier
-    "arXiv:<id> [<class>]" as eprint, archivePrefix and primaryClass. Otherwise the software entry."""
-    def authors(entry):
-        return " and ".join("{" + a["name"] + "}" if "name" in a else f"{a['family-names']}, {a['given-names']}"
-                            for a in entry["authors"])
-    paper = cff.get("preferred-citation")
-    if paper is None:
-        kind, key = "software", cff["title"].lower()
-        fields = [("title", "{" + cff["title"] + "}"), ("author", authors(cff)), ("version", cff["version"]),
-                  ("url", cff["url"])]
-    else:
-        year = str(paper.get("year") or paper["date-published"])[:4]
-        kind, key = ("article" if "journal" in paper else "misc"), f"{cff['title'].lower()}{year}"
-        fields = [("title", "{" + paper["title"] + "}"), ("author", authors(paper)), ("year", year)]
-        if "journal" in paper:
-            fields.append(("journal", paper["journal"]))
-        arxiv = [m for item in paper.get("identifiers", [])
-                 if (m := re.fullmatch(r"arXiv:(\S+)(?: \[(\S+)\])?", str(item["value"])))]
-        if arxiv:
-            fields += [("eprint", arxiv[0][1]), ("archivePrefix", "arXiv")]
-            fields += [("primaryClass", arxiv[0][2])] if arxiv[0][2] else []
-        if "url" in paper:
-            fields.append(("url", paper["url"]))
-    return f"@{kind}{{{key},\n" + ",\n".join(f"  {name} = {{{value}}}" for name, value in fields) + "\n}"
 
 
 def banner_text(config):

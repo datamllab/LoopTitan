@@ -1,9 +1,12 @@
 """The README stays true for this tree: links, named paths, the Phase 1 chain table, no CJK text."""
 import json
 import re
+import sys
 from pathlib import Path
 
 import hf_release
+import pytest
+import readme_figures
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,7 +79,7 @@ def test_no_cjk_characters():
 
 
 def test_bibtex_entry_equals_the_model_card_entry():
-    """README, model cards and CITATION.cff give one citation, rendered from the cff by hf_release.bibtex."""
+    """README, model cards and CITATION.cff give one citation, rendered from the cff by readme_figures.bibtex."""
     block = re.compile(r"^```bibtex\n(.*?)^```", re.M | re.S)
     plan = json.loads((ROOT / "docs" / "release" / "phase1-models.example.json").read_text())
     plan["results"] = str(ROOT / "docs" / "results" / "phase1.json")
@@ -87,7 +90,30 @@ def test_bibtex_entry_equals_the_model_card_entry():
     assert len(entry) == 1
     assert entry == block.findall(card)
     cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
-    assert entry[0] == hf_release.bibtex(cff) + "\n"  # one function renders both
-    assert f"@software{{{cff['title'].lower()}," in entry[0] and f"title = {{{{{cff['title']}}}}}," in entry[0]  # double braces keep the capitals
-    assert f"author = {{{{{cff['authors'][0]['name']}}}}}" in entry[0]
-    assert f"version = {{{cff['version']}}}" in entry[0] and f"url = {{{cff['url']}}}" in entry[0]
+    assert entry[0] == readme_figures.bibtex(cff) + "\n"  # one function renders both
+
+
+def test_bibtex_renders_the_software_entry_without_a_preferred_citation():
+    cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
+    cff.pop("preferred-citation", None)
+    entry = readme_figures.bibtex(cff)
+    assert entry.startswith(f"@software{{{cff['title'].lower()},\n")
+    assert f"title = {{{{{cff['title']}}}}}," in entry  # double braces keep the capitals
+    assert f"author = {{{{{cff['authors'][0]['name']}}}}}" in entry
+    assert f"version = {{{cff['version']}}}" in entry and f"url = {{{cff['url']}}}" in entry
+
+
+def test_readme_citation_follows_a_preferred_citation_after_regeneration(monkeypatch, capsys):
+    """One edit of CITATION.cff: --check flags the README, regeneration writes the paper entry and only that."""
+    fixture = ROOT / "tests" / "delivery" / "fixtures" / "citation-paper.cff"
+    paper = yaml.safe_load(fixture.read_text())
+    monkeypatch.setattr(readme_figures, "CITATION", fixture)
+    monkeypatch.setattr(readme_figures, "figures", lambda: {})
+    monkeypatch.setattr(sys, "argv", ["readme_figures.py", "--check"])
+    with pytest.raises(SystemExit, match=r"README\.md \(citation\)"):
+        readme_figures.main()
+    regenerated = readme_figures.cited(README.read_text(), paper)
+    entry = re.findall(r"^```bibtex\n(.*?)^```", regenerated, re.M | re.S)
+    assert entry == [readme_figures.bibtex(paper) + "\n"] and "@software" not in regenerated
+    assert regenerated.replace(entry[0], "") == README.read_text().replace(re.findall(
+        r"^```bibtex\n(.*?)^```", README.read_text(), re.M | re.S)[0], "")  # nothing else changes
