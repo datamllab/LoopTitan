@@ -23,11 +23,11 @@ Anyone can enter a result in the Looped MoE Bench, by hand or through an agent, 
 
 The `bench` workflow runs `scripts/bench.py validate --dir` on each folder the pull request adds or changes, with the validator and the tracks of the base branch, and writes the report to the job summary. It recomputes the sha256 of every file and compares the captured configurations and evaluation outputs with the declaration and the frozen track. It does not rerun training or evaluation, so it cannot show that the run produced these files. [Benchmark submission folder](../docs/comparison.md#benchmark-submission-folder) lists what it binds and what it leaves unchecked.
 
-The check fails only when the record is incomplete: a `missing-evidence` reason, a folder the validator cannot read, or a symbolic link. A `budget-mismatch` or `protocol-mismatch` verdict passes the check: the record is complete, and the leaderboard ranks `eligible` entries only.
+The check fails only when the record is incomplete: a `missing-evidence` reason, a folder the validator cannot read, a symbolic link, a file added directly in `eval/bench/submissions/` instead of a folder, or a folder name that is not lowercase letters, digits and hyphens. A `budget-mismatch` or `protocol-mismatch` verdict passes the check: the record is complete, and the leaderboard ranks `eligible` entries only.
 
 ## Merge rule
 
-A maintainer merges every complete record, whatever its result. A pull request that also changes anything else, a merged entry included, needs an issue first, as [AGENTS.md](../AGENTS.md) requires.
+A maintainer merges every complete record whose pull request names the person who answers for it, whatever its result. A pull request that also changes anything else, a merged entry included, needs an issue first, as [AGENTS.md](../AGENTS.md) requires.
 
 ## Who is accountable
 
