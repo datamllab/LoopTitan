@@ -54,7 +54,7 @@ const files = new Set(
 const dirs = new Set();
 for (const f of files) for (let d = path.posix.dirname(f); d !== '.'; d = path.posix.dirname(d)) dirs.add(d);
 const bySource = new Map(PAGES.map((p) => [p.source, p]));
-const sha = REF ? git('rev-parse', '--short', REF).trim() : 'working tree';
+const sha = git('rev-parse', '--short', REF || 'HEAD').trim();
 
 const problems = [];
 
