@@ -144,7 +144,7 @@ print(report.verdict, report.reasons)
 print(leaderboard([report])["rows"])
 ```
 
-The validator checks only what the submission declares and whether its evidence hashes are complete. It does not re-run training or evaluation, it does not open the hashed files and it does not judge quality. The entry point is the Python API of `moeloop.bench`. `scripts/bench.py` gives the command line (run, sweep, validate, leaderboard).
+The snippet checks the declaration alone, so its verdict is never `eligible`. A submission is judged as a folder: `validate(submission, track, folder)`, or `scripts/bench.py validate --dir`, hashes the files the submission declares and compares their content with the declaration and the track, as [Benchmark submission folder](#benchmark-submission-folder) describes. It does not re-run training or evaluation and it does not judge quality; `scripts/bench.py` gives the command line (run, sweep, validate, leaderboard).
 
 ## Cost boundaries of state updates and multi-visit objectives
 
@@ -153,3 +153,21 @@ Fixed expected CE uses `fixed_expected_matrix_v1` (the matching document version
 For random depth and tail gradients, the training work is the expectation under `sampled_depth_matrix_v1` above. The costs of one step at p50 and p95 are listed separately. The nominal fixed-depth example is only one forward. It is not the actual work. Training progress records the actual r and min(k,r) of each microbatch and the real token counts separately. Parameter owners, the fixed inference KV cache and cache eligibility are reported independently. An uncached budget does not mean that a cache is implemented. Losses of different training objectives are not ranked directly. Use a common terminal LM held-out set with an explicit inference policy.
 
 The [evidence for the new methods](evidence/recipes-v2.json) records the theoretical cost with the default dense-S² matrix definition of the frozen estimator, separate from the actual native GPU hours. The budget of #6, with its specific document statistics, keeps its original identity. This evidence is older than the sampled-depth cost model. In it, the `training_per_token` of Huginn is still `None` (the nominal record of `fixed_terminal_matrix_v1`). Evidence records are not rewritten. A new estimate now gives the expected values above.
+
+## Benchmark submission folder
+
+A Bench entry is a folder, and `python scripts/bench.py validate --dir FOLDER` judges the folder rather than a JSON file alone. `scripts/bench.py run` and `sweep` write it to `DIR/submission`:
+
+| File | Content |
+|---|---|
+| `submission.json` | the entry: recipe, identities, per-seed and per-LR-trial values, `files` (the sha256 of every other file, by path), and for each seed and trial its `run` folder (`.` for the top) |
+| `config.json` | the run's captured configuration: the spec as launched, launch topology, data manifest fingerprint, source commit and whether a tracked file differed from it, the training process's runtime, trainer package versions |
+| `metrics.json` | completed updates, validation and test BPB, LR, GPU hours |
+| `eval-validation.json`, `eval-test.json` | the evaluation output of each split, as written by `moeloop.evaluate` |
+| `train.log` | the log of the last training launch |
+
+The selected run (seed 42) sits at the top; on a track with an LR grid every other trial has the same files in `lr-<LR>/`. Checkpoints stay outside the folder: a seed names its checkpoint by `checkpoint_sha256`, the sha256 of the DCP `.metadata` file (tensor layout, not weights), and an optional `checkpoint_url`.
+
+The check binds the declaration to these files. It recomputes the sha256 of every file and compares it with `files`: a declared file that is absent, a file that does not match its hash, or a file with no declared hash is `missing-evidence`. For each seed and trial it then compares the captured `config.json` with the declared recipe (seed, LR, schedule and number of updates, global batch, model, optimizer) and with the frozen track (launch topology against the global batch, data manifest, the pinned versions of the `train` extra of `pyproject.toml`: torch as recorded by the bench process and by the training process (a captured configuration without the training process's record is `missing-evidence`), TorchTitan as recorded by the bench process only; the declared source commit with no tracked file changed when the trial was launched, untracked files such as prepared data not counting), and the evaluation outputs and `metrics.json` with the declared final update and BPB, the recipe's inference depth, and the track's tokenizer and evaluation identity; any disagreement is `protocol-mismatch`. A submission is `eligible` only when every declared hash has its file, every file matches, and every captured configuration agrees.
+
+The report lists under `checked` what was compared and under `unchecked` what it does not compare: that training this configuration produced these outputs, which weights the evaluation outputs scored (they carry no model identity), that the source commit exists (the check uses no network), the recorded source file hashes against the files of that commit (`source.dirty` is the state of the tracked files at launch), the content of `train.log` beyond its hash and runtime fields other than package versions, the TorchTitan version inside the training process, the declared `gpu_hours` total against the `gpu_hours` in each run's `metrics.json`, the declared `core` (bound to no file), the test evaluation output of an LR trial other than the selected one (checked by hash only), the data behind the manifest fingerprint, and each checkpoint, named by hash and URL. The pins are read from the checkout that runs the check, so changing the `train` extra changes what every stored entry is judged against. Anyone who edits a file and its declared hash together produces a consistent folder; the folder makes a claim inspectable and comparable, and only a rerun reproduces it.

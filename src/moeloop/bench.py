@@ -3,17 +3,26 @@
 Budgets come from ``moeloop.comparison``, so this module needs the model extra
 (CPU PyTorch is enough).
 
-A verdict covers only what a submission declares: the three analytical budgets,
-data/tokenizer/evaluation identities, schedule completion and LR selection, and
-the presence of evidence hashes. It never re-runs training or evaluation, never
-opens the hashed files, and never judges quality.
+A submission is a folder: ``submission.json`` declares the entry and the sha256
+of every other file in the folder; each seed and LR trial names its run folder
+inside it, which holds the run's captured ``config.json``, ``metrics.json``, one
+``eval-<split>.json`` per split it reports, and ``train.log``. A verdict covers the
+declaration (the three analytical budgets, data/tokenizer/evaluation identities,
+schedule completion and LR selection) and its binding to those files: every hash
+is recomputed, and each captured configuration and evaluation output is compared
+with the declared recipe, values and the frozen track. It never re-runs training
+or evaluation, never uses the network, and never judges quality; the report lists
+what it checked and what it cannot check without a rerun.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+import posixpath
 import re
+import tomllib
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -24,6 +33,7 @@ from .recipe_spec import RecipeSpec
 
 
 TRACKS_PATH = Path(__file__).resolve().parents[2] / "eval" / "bench" / "tracks.json"
+PYPROJECT_PATH = TRACKS_PATH.parents[2] / "pyproject.toml"
 VERDICTS = ("eligible", "budget-mismatch", "protocol-mismatch", "missing-evidence")
 _SHA1, _SHA256 = re.compile(r"[0-9a-f]{40}"), re.compile(r"[0-9a-f]{64}")
 # Schedule keys that moeloop.recipes.trainer_config passes to the LR scheduler.
@@ -32,6 +42,17 @@ _IDENTITY_KEYS = {"tokenizer": ("id", "revision", "vocab_size", "tokenizer_json_
                   "evaluation": ("metric", "complete_split", "seq_len", "selection_split",
                                  "selection_label_tokens", "ranking_split", "ranking_label_tokens",
                                  "byte_table_sha256")}
+NO_FOLDER = "no submission folder: declared hashes are not bound to files"
+UNCHECKED = ("that training this configuration produced the log, metrics and evaluation outputs (needs rerunning training)",
+             "which weights the evaluation outputs scored: they carry no model identity (needs the checkpoint and a re-evaluation)",
+             "that source_commit exists (no network access here)",
+             "the recorded source file hashes (source.files) against the files of the declared commit",
+             "source.dirty is the state of the tracked files at launch, not a comparison of the code that ran with the commit",
+             "the content of train.log (only its sha256 is compared) and runtime fields other than package versions",
+             "the TorchTitan version as the training process saw it: it is recorded by the bench process only",
+             "the declared gpu_hours total against the gpu_hours in each run's metrics.json, and core (bound to no file)",
+             "for LR trials other than the selected one, eval-test.json (checked by hash only)",
+             "the prepared data behind the manifest fingerprint (needs the data)")
 
 
 @dataclass(frozen=True)
@@ -95,15 +116,27 @@ def load_tracks(path: str | Path = TRACKS_PATH) -> dict[str, Track]:
     return {name: Track.from_dict(track) for name, track in payload["tracks"].items()}
 
 
+def trainer_pins(path: str | Path = PYPROJECT_PATH) -> dict[str, str]:
+    """The exact pins (``name==version``) of the ``train`` extra in pyproject.toml."""
+    extra = tomllib.loads(Path(path).read_text(encoding="utf-8"))["project"]["optional-dependencies"]["train"]
+    return dict(requirement.split("==") for requirement in extra)
+
+
+def sha256(path: str | Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
 @dataclass(frozen=True)
 class Submission:
-    """One result JSON. Absent fields stay None and become missing-evidence.
+    """One ``submission.json``. Absent fields stay None and become missing-evidence.
 
     ``recipe`` is the RecipeSpec dict shared by every seed (its ``run.seed`` is
-    not read); ``config`` is the resolved launch config, kept as evidence.
-    ``seeds`` entries carry seed, final_update, validation_bpb, test_bpb,
-    log_sha256 and checkpoint_sha256; ``lr_trials`` entries carry lr, seed,
-    final_update, validation_bpb and log_sha256. Validation BPB selects the
+    not read); ``files`` maps each other file of the folder (a POSIX path
+    relative to it) to its sha256. ``seeds`` entries carry seed, final_update,
+    validation_bpb, test_bpb, log_sha256, checkpoint_sha256, optionally
+    checkpoint_url, and run: the folder (relative, ``.`` for the top) holding
+    that run's evidence. ``lr_trials`` entries carry lr, seed, final_update,
+    validation_bpb, log_sha256 and run. Validation BPB selects the
     LR; test BPB is reported and ranked. ``gpu_hours`` is reported, never an
     eligibility condition, and so is ``core``: the mean over seeds of the
     ``core`` value from ``moeloop.core.evaluate_core``.
@@ -112,7 +145,7 @@ class Submission:
     name: str
     track: str
     recipe: dict[str, Any] | None = None
-    config: dict[str, Any] | None = None
+    files: dict[str, str] | None = None
     source_commit: str | None = None
     manifest_fingerprint: str | None = None
     tokenizer: dict[str, Any] | None = None
@@ -121,7 +154,7 @@ class Submission:
     lr_trials: tuple[dict[str, Any], ...] = ()
     gpu_hours: float | None = None
     core: float | None = None
-    schema_version: int = 1
+    schema_version: int = 2
 
     @classmethod
     def from_dict(cls, values: Mapping[str, Any]) -> Submission:
@@ -131,7 +164,7 @@ class Submission:
         absent = [name for name in ("name", "track") if name not in values]
         if absent:
             raise ValueError(f"submission fields are required: {absent}")
-        if values.get("schema_version", 1) != 1:
+        if values.get("schema_version", 2) != 2:
             raise ValueError("unsupported submission schema version")
         value = dict(values)
         for name in ("seeds", "lr_trials"):
@@ -148,7 +181,7 @@ class Submission:
 
 @dataclass(frozen=True)
 class Report:
-    """A verdict with every reason found; ``seed_test_bpb`` feeds the leaderboard."""
+    """A verdict with every reason found, what was checked and what was not; ``seed_test_bpb`` feeds the leaderboard."""
 
     submission: str
     track: str
@@ -160,6 +193,8 @@ class Report:
     expert_group_size: int | None = None
     gpu_hours: float | None = None
     core: float | None = None
+    checked: tuple[str, ...] = ()
+    unchecked: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.verdict not in VERDICTS:
@@ -170,7 +205,8 @@ class Report:
                 "reasons": {key: list(value) for key, value in self.reasons.items()},
                 "budgets": self.budgets, "seed_test_bpb": {str(k): v for k, v in self.seed_test_bpb.items()},
                 "expert_lr_multiplier": self.expert_lr_multiplier, "expert_group_size": self.expert_group_size,
-                "gpu_hours": self.gpu_hours, "core": self.core}
+                "gpu_hours": self.gpu_hours, "core": self.core,
+                "checked": list(self.checked), "unchecked": list(self.unchecked)}
 
 
 def _number(value: Any) -> bool:
@@ -286,11 +322,126 @@ def _optimizer_settings(track: Track, optimizer: Mapping[str, Any], protocol: li
             protocol.append(f"recipe must state optimizer.{key}")
 
 
-def validate(submission: Submission, track: Track) -> Report:
-    """Check one submission against one track and collect every reason.
+def _differences(declared: Any, captured: Any, path: str = "") -> list[tuple[str, Any, Any]]:
+    """Every leaf path where two JSON values differ, with both values."""
+    if isinstance(declared, Mapping) and isinstance(captured, Mapping):
+        return [difference for key in sorted(declared.keys() | captured.keys())
+                for difference in _differences(declared.get(key), captured.get(key), f"{path}.{key}" if path else key)]
+    return [] if declared == captured else [(path, declared, captured)]
 
-    The verdict is the most definite failure: protocol-mismatch, then
-    budget-mismatch, then missing-evidence; eligible only when no reason exists.
+
+def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[str, ...], files: Mapping[str, Any],
+                  log_sha256: str, submission: Submission, track: Track, protocol: list[str], missing: list[str]) -> None:
+    """Compare one run's captured config, metrics and evaluation outputs with its declaration and the track."""
+    config, metrics = files["config.json"], files["metrics.json"]
+    if not isinstance(config, Mapping) or not isinstance(metrics, Mapping):
+        protocol.append(f"{label}: config.json and metrics.json must be JSON objects")
+        return
+    recipe = submission.recipe if isinstance(submission.recipe, Mapping) else {}
+    expected = {key: recipe.get(key) for key in ("name", "model", "training", "optimizer", "inference", "run")}
+    expected["run"] = dict(expected["run"] or {}) | {"seed": entry.get("seed")}
+    expected["optimizer"] = dict(expected["optimizer"] or {}) | {"base_lr": lr}
+    if expected["optimizer"].get("name") == "Muon":  # As recipe_experiments.load_spec sets a trial LR.
+        expected["optimizer"]["muon"] = dict(expected["optimizer"].get("muon") or {}) | {"lr": lr}
+    for path, declared, captured in _differences(expected, {key: config.get(key) for key in expected}):
+        protocol.append(f"{label}: config.json {path} is {captured!r}, the declared recipe has {declared!r}")
+    launch, source, trainer, runtime = (config.get(key) or {} for key in ("launch", "source", "trainer", "runtime"))
+    try:
+        positions = (launch["world_size"] * launch["local_batch_size"] * launch["gradient_accumulation_steps"]
+                     * track.seq_len)
+    except (KeyError, TypeError):
+        positions = None
+    required = {"config.json launch global batch positions": (positions, track.global_batch_positions),
+                "config.json launch.manifest_fingerprint": (launch.get("manifest_fingerprint"),
+                                                            track.data["manifest_fingerprint"]),
+                "config.json source.commit": (source.get("commit"), submission.source_commit),
+                "config.json source.dirty (tracked files)": (source.get("dirty"), False),
+                "metrics.json completed_updates": (metrics.get("completed_updates"), entry.get("final_update")),
+                "train.log sha256": (log_sha256, entry.get("log_sha256"))}
+    if "torch" not in runtime:  # The training process always records its torch version.
+        missing.append(f"{label}: config.json runtime.torch is missing")
+    for name, pin in trainer_pins().items():  # The training process's own runtime record too, where it has the package.
+        required[f"config.json trainer.{name}"] = (str(trainer.get(name)).split("+")[0], pin)
+        if name in runtime:
+            required[f"config.json runtime.{name}"] = (str(runtime[name]).split("+")[0], pin)
+    depth = (recipe.get("inference") or {}).get("num_visits", (recipe.get("model") or {}).get("num_visits"))
+    labels = {"validation": "selection_label_tokens", "test": "ranking_label_tokens"}
+    for split in splits:
+        output, name = files[f"eval-{split}.json"], f"eval-{split}.json"
+        if not isinstance(output, Mapping):
+            protocol.append(f"{label}: {name} must be a JSON object")
+            continue
+        tokenizer = output.get("tokenizer") or {}
+        required |= {f"{name} split": (output.get("split"), split),
+                     f"{name} seq_len": (output.get("seq_len"), track.evaluation["seq_len"]),
+                     f"{name} num_visits": (output.get("num_visits"), depth),
+                     f"{name} complete_split": (output.get("complete_split"), track.evaluation["complete_split"]),
+                     f"{name} valid_tokens": (output.get("valid_tokens"), track.evaluation[labels[split]]),
+                     f"{name} byte_table_sha256": (output.get("byte_table_sha256"), track.evaluation["byte_table_sha256"]),
+                     f"{name} manifest_fingerprint": (output.get("manifest_fingerprint"), track.data["manifest_fingerprint"]),
+                     f"{name} bpb": (output.get("bpb"), entry.get(f"{split}_bpb")),
+                     f"metrics.json {split}_bpb": (metrics.get(f"{split}_bpb"), entry.get(f"{split}_bpb"))}
+        required |= {f"{name} tokenizer.{key}": (tokenizer.get(key), track.tokenizer[key])
+                     for key in ("id", "revision", "vocab_size")}
+    for key, (captured, expected_value) in required.items():
+        if captured != expected_value:
+            protocol.append(f"{label}: {key} is {captured!r}, expected {expected_value!r}")
+
+
+def _bind(submission: Submission, track: Track, folder: Path, protocol: list[str], missing: list[str],
+          checked: list[str]) -> None:
+    """Hash every file of the folder and check each run's evidence."""
+    declared = submission.files if isinstance(submission.files, Mapping) else {}
+    present = {path.relative_to(folder).as_posix(): path for path in sorted(folder.rglob("*")) if path.is_file()}
+    present.pop("submission.json", None)
+    bound = {}
+    for name in sorted(declared.keys() | present.keys()):
+        if name not in present:
+            missing.append(f"{name}: declared sha256 has no file in the folder")
+        elif name not in declared:
+            missing.append(f"{name}: file has no declared sha256")
+        elif sha256(present[name]) != declared[name]:
+            missing.append(f"{name}: file does not match its declared sha256")
+        else:
+            bound[name] = declared[name]
+    checked.append(f"sha256 of the {len(present)} files in the folder against the {len(declared)} declared")
+    recipe = submission.recipe if isinstance(submission.recipe, Mapping) else {}
+    recipe_lr = (recipe.get("optimizer") or {}).get("base_lr")
+    runs = [(f"seed {entry.get('seed')!r}", entry, recipe_lr, ("validation", "test")) for entry in submission.seeds]
+    runs += [(f"LR trial {entry.get('lr')!r}", entry, entry.get("lr"), ("validation",)) for entry in submission.lr_trials]
+    for label, entry, lr, splits in runs:
+        run = entry.get("run")
+        if not isinstance(run, str):
+            missing.append(f"{label}: run folder is not declared")
+            continue
+        names = ["config.json", "metrics.json", *(f"eval-{split}.json" for split in splits), "train.log"]
+        paths = {name: posixpath.normpath(posixpath.join(run, name)) for name in names}
+        absent = [path for path in paths.values() if path not in bound]
+        if absent:
+            missing.append(f"{label}: run evidence {absent} is not a file matching its declared sha256")
+            continue
+        try:
+            files = {name: json.loads(present[path].read_text(encoding="utf-8"))
+                     for name, path in paths.items() if name.endswith(".json")}
+        except ValueError as error:
+            protocol.append(f"{label}: run evidence is not valid JSON: {error}")
+            continue
+        _run_evidence(label, entry, lr, splits, files, bound[paths["train.log"]], submission, track, protocol,
+                      missing)
+        checked.append(f"{label}: config.json in {run!r} against the declared recipe (seed, LR, schedule, updates, "
+                       "global batch, model, optimizer) and the track (launch topology, data manifest, trainer and runtime "
+                       "package pins, source commit with no tracked change); metrics.json, " + ", ".join(f"eval-{split}.json" for split in splits)
+                       + " and train.log sha256 against the declared values, inference depth and the track's "
+                       "tokenizer and evaluation identity")
+
+
+def validate(submission: Submission, track: Track, folder: str | Path | None = None) -> Report:
+    """Check one submission and the files of its folder against one track and collect every reason.
+
+    Without ``folder`` no declared hash is bound to a file, so the verdict is at
+    best missing-evidence. The verdict is the most definite failure:
+    protocol-mismatch, then budget-mismatch, then missing-evidence; eligible
+    only when no reason exists.
     """
     protocol: list[str] = []
     missing: list[str] = []
@@ -300,8 +451,6 @@ def validate(submission: Submission, track: Track) -> Report:
         protocol.append(f"submitted for track {submission.track!r}, checked against {track.name!r}")
 
     # Evidence and identities.
-    if not submission.config:
-        missing.append("resolved config is missing")
     if not isinstance(submission.source_commit, str) or not _SHA1.fullmatch(submission.source_commit):
         missing.append("source_commit must be a 40-hex git commit")
     if submission.manifest_fingerprint is None:
@@ -370,12 +519,23 @@ def validate(submission: Submission, track: Track) -> Report:
     elif track.required_seed not in seed_bpb:
         protocol.append(f"seed {track.required_seed} is required")
 
+    # Evidence bound to files.
+    checked, unchecked = [], list(UNCHECKED)
+    if folder is None:
+        missing.append(NO_FOLDER)
+    else:
+        _bind(submission, track, Path(folder), protocol, missing, checked)
+    unchecked += [f"seed {entry.get('seed')!r}: checkpoint_sha256 {entry.get('checkpoint_sha256')} (of the DCP .metadata "
+                  f"file only: tensor layout, not weights) at {entry.get('checkpoint_url') or 'no URL declared'}: "
+                  "not checked here" for entry in submission.seeds]
+
     reasons = {name: tuple(values) for name, values in
                (("protocol-mismatch", protocol), ("budget-mismatch", budget), ("missing-evidence", missing)) if values}
     verdict = next(iter(reasons), "eligible")
     return Report(submission=submission.name, track=track.name, verdict=verdict, reasons=reasons,
                   budgets=budgets, seed_test_bpb=seed_bpb if verdict == "eligible" else {},
-                  gpu_hours=submission.gpu_hours, core=submission.core, **method)
+                  gpu_hours=submission.gpu_hours, core=submission.core, checked=tuple(checked),
+                  unchecked=tuple(unchecked), **method)
 
 
 def leaderboard(reports: Sequence[Report]) -> dict[str, Any]:
