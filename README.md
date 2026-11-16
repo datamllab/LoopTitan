@@ -21,15 +21,6 @@
 </p>
 
 <p align="center">
-  Author&nbsp;Name<sup>1</sup> &emsp; Author&nbsp;Name<sup>1</sup> &emsp; Author&nbsp;Name<sup>2</sup> &emsp; Author&nbsp;Name<sup>1,2</sup>
-</p>
-
-<p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/institution-1-dark.svg"><img src="docs/assets/institution-1-light.svg" alt="Institution 1" height="52"></picture> &emsp;
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/institution-2-dark.svg"><img src="docs/assets/institution-2-light.svg" alt="Institution 2" height="52"></picture>
-</p>
-
-<p align="center">
   <picture>
     <source media="(max-width: 640px)" srcset="docs/assets/hero-narrow.svg">
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
@@ -325,6 +316,15 @@ LoopTitan builds on the work of many people. We thank them.
 ## Citation
 
 Cite the repository and the exact source commit: [CITATION.cff](CITATION.cff). Cite the papers of the designs you use separately; the [method map](docs/method-map.md) lists them.
+
+```bibtex
+@software{looptitan,
+  title = {LoopTitan},
+  author = {{The LoopTitan authors}},
+  version = {1.0.0rc1},
+  url = {https://github.com/datamllab/LoopTitan}
+}
+```
 
 ## Licence
 
