@@ -70,12 +70,13 @@ def launched(monkeypatch, tmp_path, track):
     edits, so its tracked-file status is reported clean.
     """
     pytest.importorskip("torchtitan")
-    monkeypatch.setattr(bench_cli, "tracked_changes", lambda: False)
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"tokenizer": {"files": {
         "tokenizer/tokenizer.json": track.tokenizer["tokenizer_json_sha256"]}}}))
     lrs = []
-    state = {"manifest": manifest, "lrs": lrs, "bpb": bpb, "track": track}
+    # "tracked" is the checkout's tracked-file status; a launch sets it to "during" when that is not None.
+    state = {"manifest": manifest, "lrs": lrs, "bpb": bpb, "track": track, "tracked": False, "during": None}
+    monkeypatch.setattr(bench_cli, "tracked_changes", lambda: state["tracked"])
 
     def launch(command):
         assert command[2:4] == ["run", "--spec"] and command[-1] == "--evaluate"
@@ -83,6 +84,8 @@ def launched(monkeypatch, tmp_path, track):
         lr, output = float(values["--lr"]), Path(values["--output"])
         assert (values["--gpus"], values["--manifest"]) == ("8", str(manifest))
         lrs.append(lr)
+        if state["during"] is not None:
+            state["tracked"] = state["during"]
         spec = recipe_experiments.load_spec(values["--spec"], lr)
         steps = spec.run["successful_updates"]
         (output / f"checkpoint/step-{steps}").mkdir(parents=True)
@@ -362,26 +365,18 @@ TAMPERING = [  # One row per check: the edit, the verdict, the reason.
     (rehashed("metrics.json", "test_bpb", 0.9), "protocol-mismatch", A + "metrics.json test_bpb is 0.9, expected 1.005"),
     (lambda f: ((f / "train.log").write_text("step=1 CE=1.0\n"), rehash(f, "train.log")), "protocol-mismatch",
      A + "train.log sha256 is"),
-    # Each evaluation output against the declaration, the recipe's inference depth and the track.
-    (rehashed("eval-test.json", "bpb", 0.9), "protocol-mismatch", A + "eval-test.json bpb is 0.9, expected 1.005"),
+    # The declaration against its evaluation output; the bench process's torch version on its own.
     (lambda f: edit(f / "submission.json", lambda v: v | {"seeds": [v["seeds"][0] | {"test_bpb": 0.9}]}),
      "protocol-mismatch", A + "eval-test.json bpb is 1.005, expected 0.9"),
-    (rehashed("eval-test.json", "num_visits", 4), "protocol-mismatch", A + "eval-test.json num_visits is 4, expected 1"),
-    (rehashed("eval-test.json", "split", "validation"), "protocol-mismatch",
-     A + "eval-test.json split is 'validation', expected 'test'"),
-    (rehashed("eval-validation.json", "seq_len", 2048), "protocol-mismatch",
-     A + "eval-validation.json seq_len is 2048, expected 4096"),
-    (rehashed("eval-test.json", "complete_split", False), "protocol-mismatch",
-     A + "eval-test.json complete_split is False, expected True"),
-    (rehashed("eval-test.json", "valid_tokens", 1000), "protocol-mismatch",
-     A + "eval-test.json valid_tokens is 1000, expected 10009889"),
-    (rehashed("eval-test.json", "byte_table_sha256", "0" * 64), "protocol-mismatch",
-     A + "eval-test.json byte_table_sha256 is '" + "0" * 64),
-    (rehashed("eval-validation.json", "manifest_fingerprint", "0" * 64), "protocol-mismatch",
-     A + "eval-validation.json manifest_fingerprint is '" + "0" * 64),
-    (rehashed("eval-test.json", "tokenizer.revision", "main"), "protocol-mismatch",
-     A + "eval-test.json tokenizer.revision is 'main'"),
+    (rehashed("config.json", "trainer.torch", "2.9.0"), "protocol-mismatch",
+     A + "config.json trainer.torch is '2.9.0', expected '2.14.0'"),
 ]
+# Each evaluation output against the declaration, the recipe's inference depth and the track, in both splits.
+TAMPERING += [(rehashed(f"eval-{split}.json", key, value), "protocol-mismatch", A + f"eval-{split}.json {key} is {value!r}")
+              for split in ("validation", "test") for key, value in (
+                  ("bpb", 0.9), ("num_visits", 4), ("split", "train"), ("seq_len", 2048), ("complete_split", False),
+                  ("valid_tokens", 1000), ("byte_table_sha256", "0" * 64), ("manifest_fingerprint", "0" * 64),
+                  ("tokenizer.id", "gpt2"), ("tokenizer.revision", "main"), ("tokenizer.vocab_size", 50257))]
 
 
 @pytest.mark.parametrize("tamper, verdict, reason", TAMPERING)
@@ -414,3 +409,15 @@ def test_only_tracked_files_make_a_source_tree_dirty(tmp_path):
     assert bench_cli.tracked_changes(tmp_path) is False
     (tmp_path / "model.py").write_text("x = 2\n")
     assert bench_cli.tracked_changes(tmp_path) is True
+
+
+@pytest.mark.parametrize("before, during, verdict", [
+    (True, False, "protocol-mismatch"),  # Modified tracked code at launch, reverted before the run ended.
+    (False, True, "eligible"),  # Clean at launch, a tracked file edited while the run trained.
+])
+def test_the_tree_is_recorded_at_launch(launched, tmp_path, capsys, before, during, verdict):
+    launched["tracked"], launched["during"] = before, during
+    folder = run_p2(tmp_path, launched["manifest"], "m0-adamw", 1.2e-3)
+    assert json.loads((folder / "config.json").read_text())["source"]["dirty"] is before
+    report = validate_dir(folder, capsys)
+    assert report["verdict"] == verdict, report["reasons"]

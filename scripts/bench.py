@@ -21,7 +21,7 @@ one) and print its ``moeloop.bench.validate`` report. The folder holds the selec
 trial, which is the seed-42 run, at its top and every other LR trial in ``lr-<LR>/``; each
 run has its captured ``config.json`` (spec, launch topology, source and runtime from the
 trial's request, trainer package versions; ``source.dirty`` says whether a tracked file
-differed from the commit, untracked files do not count), ``metrics.json``, ``eval-validation.json``,
+differed from the commit when the trial was launched, untracked files do not count), ``metrics.json``, ``eval-validation.json``,
 ``eval-test.json`` and ``train.log`` (the last training launch's log), and
 ``submission.json`` declares the sha256 of every file. Under ``scripts/run.py`` they
 also write, at the end, ``$RUN_DIR/config.json`` (the selected run's) and
@@ -89,7 +89,7 @@ def trial(output: Path, manifest: Path, lr: float, gpus: int) -> dict:
     path, directory = output / f"lr-{lr}.json", output / f"lr-{lr}"
     if path.is_file():
         return json.loads(path.read_text())
-    started = time.monotonic()
+    started, changes = time.monotonic(), tracked_changes()  # The tree at launch, not when the run ends.
     launch([sys.executable, str(ROOT / "scripts" / "recipe_experiments.py"), "run", "--spec", str(output / "spec.json"),
             "--manifest", str(manifest), "--output", str(directory), "--gpus", str(gpus), "--lr", str(lr), "--evaluate"])
     outcome = json.loads((directory / "outcome.json").read_text())
@@ -101,7 +101,7 @@ def trial(output: Path, manifest: Path, lr: float, gpus: int) -> dict:
              "checkpoint_sha256": digest(directory / outcome["full_checkpoint"] / ".metadata"),
              "gpu_hours": (time.monotonic() - started) * gpus / 3600,
              "trainer": {name: importlib.metadata.version(name) for name in bench.trainer_pins()},
-             "tracked_changes": tracked_changes()}
+             "tracked_changes": changes}
     write_json(path, value)
     return value
 

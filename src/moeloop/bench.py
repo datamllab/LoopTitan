@@ -45,8 +45,12 @@ _IDENTITY_KEYS = {"tokenizer": ("id", "revision", "vocab_size", "tokenizer_json_
 NO_FOLDER = "no submission folder: declared hashes are not bound to files"
 UNCHECKED = ("that training this configuration produced the log, metrics and evaluation outputs (needs rerunning training)",
              "which weights the evaluation outputs scored: they carry no model identity (needs the checkpoint and a re-evaluation)",
-             "that source_commit exists and that source.files match it (no network access here)",
+             "that source_commit exists (no network access here)",
+             "the recorded source file hashes (source.files) against the files of the declared commit",
+             "source.dirty is the state of the tracked files at launch, not a comparison of the code that ran with the commit",
              "the content of train.log (only its sha256 is compared) and runtime fields other than package versions",
+             "the TorchTitan version as the training process saw it: it is recorded by the bench process only",
+             "the submission-level gpu_hours and core: declared values not bound to any file",
              "the prepared data behind the manifest fingerprint (needs the data)")
 
 
