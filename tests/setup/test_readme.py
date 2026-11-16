@@ -103,17 +103,23 @@ def test_bibtex_renders_the_software_entry_without_a_preferred_citation():
     assert f"version = {{{cff['version']}}}" in entry and f"url = {{{cff['url']}}}" in entry
 
 
-def test_readme_citation_follows_a_preferred_citation_after_regeneration(monkeypatch, capsys):
+def test_readme_citation_follows_a_preferred_citation_after_regeneration(tmp_path, monkeypatch):
     """One edit of CITATION.cff: --check flags the README, regeneration writes the paper entry and only that."""
     fixture = ROOT / "tests" / "delivery" / "fixtures" / "citation-paper.cff"
     paper = yaml.safe_load(fixture.read_text())
+    software = {key: value for key, value in paper.items() if key != "preferred-citation"}
+    before = readme_figures.cited(README.read_text(), software)  # the README while CITATION.cff names no paper
+    readme = tmp_path / "README.md"
+    readme.write_text(before)
+    monkeypatch.setattr(readme_figures, "README", readme)
     monkeypatch.setattr(readme_figures, "CITATION", fixture)
     monkeypatch.setattr(readme_figures, "figures", lambda: {})
     monkeypatch.setattr(sys, "argv", ["readme_figures.py", "--check"])
     with pytest.raises(SystemExit, match=r"README\.md \(citation\)"):
         readme_figures.main()
-    regenerated = readme_figures.cited(README.read_text(), paper)
-    entry = re.findall(r"^```bibtex\n(.*?)^```", regenerated, re.M | re.S)
-    assert entry == [readme_figures.bibtex(paper) + "\n"] and "@software" not in regenerated
-    assert regenerated.replace(entry[0], "") == README.read_text().replace(re.findall(
-        r"^```bibtex\n(.*?)^```", README.read_text(), re.M | re.S)[0], "")  # nothing else changes
+    monkeypatch.setattr(sys, "argv", ["readme_figures.py"])
+    readme_figures.main()
+    block = re.compile(r"^```bibtex\n(.*?)^```", re.M | re.S)
+    after = readme.read_text()
+    assert block.findall(after) == [readme_figures.bibtex(paper) + "\n"] and "@software" not in after
+    assert block.sub("", after) == block.sub("", before)  # nothing else changes

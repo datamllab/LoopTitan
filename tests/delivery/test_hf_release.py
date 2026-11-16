@@ -414,7 +414,7 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
                  "https://github.com/datamllab/LoopTitan/tree/main/docs", "https://github.com/datamllab/LoopTitan/issues/180",
                  "https://github.com/datamllab/LoopTitan/blob/main/LICENSE"):
         assert link in card
-    assert "@software{looptitan," in card and "author = {{The LoopTitan authors}}" in card
+    assert f"## Citation\n\n```bibtex\n{figures.bibtex(yaml.safe_load((ROOT / 'CITATION.cff').read_text()))}\n```\n" in card
     assert str(single_plan.parent) not in card and str(ROOT) not in card
 
 
