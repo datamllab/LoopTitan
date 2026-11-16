@@ -44,6 +44,9 @@ def main() -> None:
     if args.attention_pairs_per_sequence is not None and args.action == "diff":
         parser.error("--attention-pairs-per-sequence requires inspect or compare")
     expected = {"inspect": 1, "diff": 2, "compare": 2, "pair": 0}[args.action]
+    if args.action == "pair" and args.recipes:
+        parser.error("pair takes no recipe arguments: it reproduces the fixed SMELT budget screen (smelt_budget_pair); "
+                     "to budget-match two recipes use: compare REFERENCE CANDIDATE")
     if len(args.recipes) != expected:
         parser.error(f"{args.action} requires {expected} recipe argument(s)")
     specs = [_read(value) for value in args.recipes]

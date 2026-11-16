@@ -403,12 +403,17 @@ def meta_spec(*, core_layers: int = 2, passes: int = 4,
                               "Embedding and output head are independently owned in the common stack."))
 
 
-def foil_base_spec(*, num_experts: int = 4, core_layers: int = 4, passes: int = 1,
+def foil_base_spec(*, core_layers: int = 4, passes: int = 1,
                    prelude_layers: int = 1, coda_layers: int = 1, **geometry: Any) -> RecipeSpec:
-    """The flattening control uses independent attention at every core visit."""
+    """The flattening control uses independent attention at every core visit.
+
+    E is the geometry's ``num_experts``, 4 if it is omitted (other constructors: 8).
+    """
     if min(prelude_layers, coda_layers) < 1:
         raise ValueError("Foil requires independent prelude and coda")
-    model = _model(geometry | {"num_experts": num_experts}, num_cells=core_layers,
+    geometry = {"num_experts": 4} | geometry
+    num_experts = geometry["num_experts"]
+    model = _model(geometry, num_cells=core_layers,
                    num_visits=passes, prefix_cells=prelude_layers, suffix_cells=coda_layers,
                    attention_per_visit=True,
                    prefix=RegionConfig(num_experts=num_experts),
@@ -421,14 +426,19 @@ def foil_base_spec(*, num_experts: int = 4, core_layers: int = 4, passes: int = 
                             "Prelude/coda are independent external banks; Base-tied attention is a separate ablation."))
 
 
-def foil_spec(*, num_experts: int = 4, core_layers: int = 4, passes: int = 1,
+def foil_spec(*, core_layers: int = 4, passes: int = 1,
               prelude_layers: int = 1, coda_layers: int = 1, **geometry: Any) -> RecipeSpec:
-    """Foil (E,D,L)->(2E,D/2,2L); D counts physical core banks."""
+    """Foil (E,D,L)->(2E,D/2,2L); D counts physical core banks.
+
+    E is the geometry's ``num_experts``, 4 if it is omitted (other constructors: 8).
+    """
     if type(core_layers) is not int or core_layers < 2 or core_layers % 2:
         raise ValueError("Foil core_layers D must be positive and even")
     if min(prelude_layers, coda_layers) < 1:
         raise ValueError("Foil requires independent prelude and coda")
-    model = _model(geometry | {"num_experts": num_experts}, num_cells=core_layers // 2,
+    geometry = {"num_experts": 4} | geometry
+    num_experts = geometry["num_experts"]
+    model = _model(geometry, num_cells=core_layers // 2,
                    num_visits=2 * passes, prefix_cells=prelude_layers, suffix_cells=coda_layers,
                    attention_per_visit=True,
                    prefix=RegionConfig(num_experts=num_experts),
