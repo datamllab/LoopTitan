@@ -41,3 +41,22 @@ def test_the_check_reports_a_missing_configuration_and_a_wrong_budget():
     found = results_table.problems(data)
     assert any("none-adamw.json does not exist" in line for line in found)
     assert any(second["config"] in line and "budgets differ" in line for line in found)
+
+
+def test_every_rerun_is_a_note_under_its_optimizer():
+    table = results_table.TABLE.read_text()
+    sections = {name: table.split(f"## {name}\n")[1].split("\n## ")[0] for name in results_table.OPTIMIZERS.values()}
+    reruns = [(optimizer, run["rerun_at_other_lr"]) for optimizer, run in RUNS if "rerun_at_other_lr" in run]
+    assert reruns
+    for optimizer, rerun in reruns:
+        assert rerun["lr"] != next(run["lr"] for o, run in RUNS if o == optimizer)
+        section = sections[results_table.OPTIMIZERS[optimizer]]
+        assert f"a rerun at learning rate {results_table.lr(rerun['lr'])} gave test BPB {rerun['test_bpb']:.6f}" in section
+        assert f"issues/{rerun['issue']})" in section
+
+
+def test_the_check_reports_a_rerun_at_the_protocol_learning_rate():
+    data = json.loads(json.dumps(DATA))
+    run = data["groups"][1]["rows"][0]["runs"]["adamw"]
+    run["rerun_at_other_lr"] = {"lr": run["lr"], "test_bpb": 1.0, "validation_bpb": 1.0, "issue": 1}
+    assert any("rerun uses the protocol learning rate" in line for line in results_table.problems(data))

@@ -5,10 +5,12 @@ docs/results/phase1.json holds, for every design and optimizer, the frozen confi
 learning rate, the test and validation bits per byte copied from the results comment of the run
 issue it names, and the three budgets relative to recipes/phase1/m0-<optimizer>.json: the
 relative differences moeloop.comparison.compare_recipes reports with the P2 track's seq_len and
-accounting (eval/bench/tracks.json), rounded to 6 decimals. This writes docs/results/phase1.md
-from the data. --check writes nothing and exits 1 if a configuration does not exist, a stored
-budget differs from the cost tool's, a group's budgets disagree with its matched flag, or
-phase1.md is not what this writes.
+accounting (eval/bench/tracks.json), rounded to 6 decimals. An entry whose configuration did not
+train at the protocol learning rate keeps that value and adds rerun_at_other_lr (learning rate,
+test and validation BPB, issue), which becomes a numbered note under its optimizer's tables. This
+writes docs/results/phase1.md from the data. --check writes nothing and exits 1 if a configuration
+does not exist, a stored budget differs from the cost tool's, a group's budgets disagree with its
+matched flag, a rerun uses the protocol learning rate, or phase1.md is not what this writes.
 """
 import argparse
 import json
@@ -52,6 +54,15 @@ def budgets(config: str, optimizer: str) -> dict[str, float]:
     return {metric: round(entries[metric]["relative_difference"], 6) for metric in METRICS}
 
 
+def link(issue: int) -> str:
+    return f"[#{issue}]({ISSUES}{issue})"
+
+
+def lr(value: float) -> str:
+    mantissa, exponent = f"{value:.1e}".split("e")
+    return f"{mantissa.removesuffix('.0')}e{int(exponent)}"  # 1.2e-3, 3e-4
+
+
 def signed(value: float, digits: int) -> str:
     return f"{round(value, digits) + 0:+.{digits}f}"  # + 0 turns -0.0 into 0.0
 
@@ -66,18 +77,25 @@ def render(data: dict) -> str:
         reference = next(row["runs"][optimizer]["test_bpb"] for row in rows
                          if row["runs"][optimizer]["config"] == REFERENCE.format(optimizer))
         lines += ["", f"## {name}"]
+        notes = []
         for group in data["groups"]:
             lines += ["", f"### {group['title']}", "", *HEADER]
             for row in group["rows"]:
                 run = row["runs"][optimizer]
+                rerun = run.get("rerun_at_other_lr")
+                if rerun:
+                    notes.append(f"At the protocol learning rate this configuration did not train under {name}; "
+                                 f"a rerun at learning rate {lr(rerun['lr'])} gave test BPB {rerun['test_bpb']:.6f} "
+                                 f"and validation BPB {rerun['validation_bpb']:.6f} ({link(rerun['issue'])}).")
                 cells = [f"[{row['design']}](../../{run['config']})",
                          f"[{sources.index(row['source']) + 1}](#sources)" if row["source"] else "",
-                         f"{run['test_bpb']:.6f}", signed(1000 * (run["test_bpb"] - reference), 2),
+                         f"{run['test_bpb']:.6f}" + (f" (note {len(notes)})" if rerun else ""), signed(1000 * (run["test_bpb"] - reference), 2),
                          f"{run['validation_bpb']:.6f}",
                          *(signed(100 * run["budgets"][metric], 1) + "%" for metric in METRICS),
-                         f"{run['lr']:.1e}".replace("e-0", "e-"),
-                         f"[#{run['issue']}]({ISSUES}{run['issue']})"]
+                         lr(run["lr"]), link(run["issue"])]
                 lines.append("| " + " | ".join(cells) + " |")
+        if notes:
+            lines += ["", f"Notes ({name}):", "", *(f"{i}. {note}" for i, note in enumerate(notes, 1))]
     lines += ["", "## Sources", "", *(f"{i}. [{source}](../method-map.md)" for i, source in enumerate(sources, 1))]
     return "\n".join(lines) + "\n"
 
@@ -93,6 +111,8 @@ def problems(data: dict) -> list[str]:
                     continue
                 if run["budgets"] != budgets(run["config"], optimizer):
                     found.append(f"{run['config']}: stored budgets differ from the cost tool's")
+                if run.get("rerun_at_other_lr", {}).get("lr") == run["lr"]:
+                    found.append(f"{run['config']}: the rerun uses the protocol learning rate")
                 if group["matched"] != all(abs(value) <= tolerance for value in run["budgets"].values()):
                     found.append(f"{run['config']}: budgets disagree with matched={group['matched']}")
     if not TABLE.is_file() or TABLE.read_text() != render(data):

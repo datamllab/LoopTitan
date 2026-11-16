@@ -35,7 +35,7 @@ Protocol: every row is trained on the same data (5.0B tokens of the P2 track's D
 | [loop the middle 2 of 6 layers 4 times](../../recipes/methods/meta-adamw.json) | [3](#sources) | 1.002254 | +2.72 | 1.003940 | -0.1% | +0.2% | +0.0% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
 | [loop the middle 4 of 8 layers twice, attention per visit](../../recipes/methods/foil-adamw.json) | [4](#sources) | 0.997246 | -2.29 | 0.999034 | +0.0% | +0.1% | +0.0% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
 | [12 layers, every 4 consecutive layers share one expert bank](../../recipes/methods/expert-tying-adamw.json) | [5](#sources) | 1.003949 | +4.42 | 1.005800 | +0.2% | +0.6% | +0.0% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
-| [loop the middle 2 of 4 layers a random number of times (mean 4), input re-injected](../../recipes/methods/huginn-adamw.json) | [6](#sources) | 1.435139 | +435.61 | 1.438455 | +0.0% | -0.1% | +4.2% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
+| [loop the middle 2 of 4 layers a random number of times (mean 4), input re-injected](../../recipes/methods/huginn-adamw.json) | [6](#sources) | 1.435139 (note 1) | +435.61 | 1.438455 | +0.0% | -0.1% | +4.2% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
 | [loop the middle 1 of 5 layers 8 times, decaying input injection, top-2](../../recipes/methods/sandwich-adamw.json) | [7](#sources) | 1.015433 | +15.90 | 1.017309 | -0.3% | +2.4% | +0.0% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
 | [loop all 4 layers 3 times, router per visit, EMA memories](../../recipes/methods/loom-adamw.json) | [8](#sources) | 1.007497 | +7.96 | 1.009361 | +0.0% | +0.4% | +0.0% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
 | [loop all 4 layers 3 times at width 640, learned exit](../../recipes/methods/ouro-adamw.json) | [9](#sources) | 1.033283 | +33.75 | 1.035037 | -0.1% | +0.0% | +0.0% | 1.2e-3 | [#232](https://github.com/datamllab/LoopTitan/issues/232) |
@@ -47,6 +47,10 @@ Protocol: every row is trained on the same data (5.0B tokens of the P2 track's D
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
 | [ordinary MoE, middle 6 of 12 layers looped twice, residual ×0.5](../../recipes/methods/m0-loop-adamw.json) | [1](#sources) | 0.984730 | -14.80 | 0.986424 | +0.0% | +31.5% | +50.0% | 1.2e-3 | [#247](https://github.com/datamllab/LoopTitan/issues/247) |
 | [ordinary MoE with twice the experts: 128 per layer](../../recipes/phase1/m0-2e-adamw.json) |  | 0.985241 | -14.29 | 0.986998 | +96.7% | +0.2% | +0.0% | 1.2e-3 | [#200](https://github.com/datamllab/LoopTitan/issues/200) |
+
+Notes (AdamW):
+
+1. At the protocol learning rate this configuration did not train under AdamW; a rerun at learning rate 3e-4 gave test BPB 1.049098 and validation BPB 1.051026 ([#243](https://github.com/datamllab/LoopTitan/issues/243)).
 
 ## Muon
 

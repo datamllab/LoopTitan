@@ -127,7 +127,7 @@
           "design": "loop the middle 2 of 4 layers a random number of times (mean 4), input re-injected",
           "source": "Huginn v2",
           "runs": {
-            "adamw": {"config": "recipes/methods/huginn-adamw.json", "lr": 1.2e-3, "test_bpb": 1.435139237564, "validation_bpb": 1.438454788998, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}},
+            "adamw": {"config": "recipes/methods/huginn-adamw.json", "lr": 1.2e-3, "test_bpb": 1.435139237564, "validation_bpb": 1.438454788998, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}, "rerun_at_other_lr": {"lr": 3e-4, "test_bpb": 1.049098117310, "validation_bpb": 1.051026447487, "issue": 243}},
             "muon": {"config": "recipes/methods/huginn-muon.json", "lr": 1.7e-3, "test_bpb": 0.985059801320, "validation_bpb": 0.986724804487, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}}
           }
         },
