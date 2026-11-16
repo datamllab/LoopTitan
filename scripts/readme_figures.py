@@ -6,8 +6,9 @@ Writes SVG files to docs/assets/: each figure in a light and a dark variant (REA
 follows the reader's colour scheme by itself. Every value drawn comes from the repository: the frozen
 recipes (recipes/), the lineage of scripts/lineage.py, the cost model (moeloop.comparison), the CPU
 record docs/evidence/qwen3-cpu.json, the Phase 1 results docs/results/phase1.json, pyproject.toml and
-eval/bench/tracks.json. --check writes nothing and exits 1 if a file differs from what the data gives;
-tests/setup/test_readme_figures.py runs it. Text uses system fonts, because GitHub shows these files
+eval/bench/tracks.json; the layout (positions, sizes, axis ranges) is chosen in this script. --check
+writes nothing and exits 1 if a file differs from what the data gives; tests/setup/test_readme_figures.py
+runs it. Text uses system fonts, because GitHub shows these files
 as images, which cannot load web fonts.
 """
 import argparse
@@ -208,6 +209,16 @@ def chain_deltas():
         bpb = [rows[f"recipes/{node}-adamw.json"]["runs"][opt]["test_bpb"] for _, _, node in CHAIN]
         out[opt] = [1000 * (b - bpb[0]) for b in bpb]
     return out
+
+
+def pct(fraction):
+    return f"{100 * fraction:g}%"
+
+
+def within(matched):
+    """(budgets inside their tolerance, budgets, the tolerance) of one compare result."""
+    inside = sum(abs(v["relative_difference"]) <= v["relative_tolerance"] for v in matched.values())
+    return inside, len(matched), next(iter(matched.values()))["relative_tolerance"]
 
 
 def p0():
@@ -444,7 +455,8 @@ def pillar_budgets(t, matched):
         out.append(line(mid, y - 7, mid, y + 7, t["soft"], 1))
         out.append(circle(mid + rel / tol * (x1 - x0) / 2, y, 4.6, t["acc"], t["panel"], 2))
         out.append(text(244, y + 4.2, f"{100 * rel:+.2f}%".replace("-", "−"), 12, t["ink"], 500, "end", mono=True))
-    for x, s in [(100, "−5%"), (143, "0"), (186, "+5%")]:
+    tol = within(matched)[2]
+    for x, s in [(100, f"−{pct(tol)}"), (143, "0"), (186, f"+{pct(tol)}")]:
         out.append(text(x, 126, s, 12, t["mid"], 400, "middle", mono=True))
     return "".join(out)
 
@@ -472,7 +484,8 @@ def pillars(t):
     n = sum(len(cells) for _, cells in rows)
     tiles = [(pillar_designs(t), f"{len(lineage.lineage())} configurations, one model",
               f"{len(MECHANISMS)} mechanisms, each a field"),
-             (pillar_budgets(t, matched), f"{len(BUDGETS)} budgets within ±5%", "The loop against the ordinary MoE"),
+             (pillar_budgets(t, matched), "{} of {} budgets within ±{}".format(*within(matched)[:2], pct(within(matched)[2])),
+              "The loop against the ordinary MoE"),
              (pillar_checks(t, rows), f"{inside} of {n} within tolerance", "Against Transformers Qwen3-MoE")]
     cw, ch, gap = (360, 222, 14) if narrow else (280, 224, 20)
     w = cw if narrow else 3 * cw + 2 * gap
@@ -617,7 +630,6 @@ def mech_depth(t):
 
 
 def mech_lora(t):
-    rank = recipe("methods/relaxed")["model"]["lora_attention_rank"]
     out = [rect(38, 22, 24, 58, 5, t["acc"]), text(50, 104, "shared", 12, t["mid"], 400, "middle", mono=True),
            text(88, 56, "+", 14, t["mid"], 400, "middle")]
     for i, x in enumerate([116, 184]):
@@ -625,7 +637,7 @@ def mech_lora(t):
         out.append(rect(x + 30, 22, 6, 58, 3, t["acc"]))
         out.append(text(x + 33, 14, "Δ", 12, t["acc"], 600, "middle"))
         out.append(text(x + 18, 104, f"visit {i + 1}", 12, t["mid"], 400, "middle", mono=True))
-    return "".join(out) + f"<!-- rank {rank} -->"
+    return "".join(out)
 
 
 def mech_tying(t):
@@ -798,7 +810,7 @@ def compare_fig(t):
     narrow = t is AUTO
     ref, cand = "phase1/m3", "phase1/m4"
     matched = budgets(ref, cand)
-    within = sum(abs(v["relative_difference"]) <= v["relative_tolerance"] for v in matched.values())
+    inside, n, tol = within(matched)
     out = []
     models = []
     for node, name in [(ref, "The loop"), (cand, "Its untied twin")]:
@@ -817,7 +829,7 @@ def compare_fig(t):
             y += 104
         out.append(card(0, y, w, 244, t))
         out.append(text(18, y + 32, "Budgets", 14, t["ink"], 600))
-        p, _ = pill(w - 16, y + 27, f"{within} of {len(matched)} within ±5%", t, anchor="end")
+        p, _ = pill(w - 16, y + 27, f"{inside} of {n} within ±{pct(tol)}", t, anchor="end")
         out.append(p)
         y += 64
         for key, label in BUDGETS:
@@ -836,7 +848,7 @@ def compare_fig(t):
             g, _ = glyph(node, 384 - gw, y + 68, t, .86)
             out.append(g)
         out.append(text(436, 50, "Budgets of the twin against the loop", 14, t["ink"], 600))
-        p, _ = pill(w - 24, 45, f"{within} of {len(matched)} within ±5%", t, anchor="end")
+        p, _ = pill(w - 24, 45, f"{inside} of {n} within ±{pct(tol)}", t, anchor="end")
         out.append(p)
         for i, (key, label) in enumerate(BUDGETS):
             out += budget_row(t, matched[key], key, label, 436, 96 + i * 54, w - 24 - 436)
@@ -844,7 +856,7 @@ def compare_fig(t):
             f"{models[1][3]} run). " + "; ".join(f"{label}: {fmt_budget(k, matched[k]['reference'])} against "
                                               f"{fmt_budget(k, matched[k]['candidate'])}, "
                                               f"{100 * matched[k]['relative_difference']:+.2f}%" for k, label in BUDGETS) +
-            f". {within} of {len(matched)} within ±5%.")
+            f". {inside} of {n} within ±{pct(tol)}.")
     return svg(w, int(h), "The loop and its untied twin", desc, t, "".join(out))
 
 
@@ -879,6 +891,9 @@ def check_fig(t):
     record, rows = checks()
     inside = sum(v <= tol for _, cells in rows for v, tol in cells)
     n = sum(len(cells) for _, cells in rows)
+    updates = {case["updates"] for case in record["cases"].values()}
+    setup = (f"{'/'.join(map(str, sorted(updates)))} {record['optimizer']['name']} updates",
+             f"{record['dtype']} on {record['device'].upper()}")
     out = []
     if narrow:
         w = 360
@@ -899,8 +914,8 @@ def check_fig(t):
                 out.append(rect(x, y - 2.5, 38, 5, 2.5, t["faint"]))
                 if v > 0:
                     out.append(rect(x, y - 2.5, max(3, 38 * v / tol), 5, 2.5, t["acc"]))
-        out.append(text(16, h - 42, "A bar fills to its tolerance. Four AdamW updates,", 12, t["mid"]))
-        out.append(text(16, h - 24, f"float32, CPU, Transformers {record['transformers_version']}.", 12, t["mid"]))
+        out.append(text(16, h - 42, f"A bar fills to its tolerance. {setup[0]},", 12, t["mid"]))
+        out.append(text(16, h - 24, f"{setup[1]}, Transformers {record['transformers_version']}.", 12, t["mid"]))
     else:
         w = 880
         h = 140 + (len(rows) - 1) * 50 + 94
@@ -924,7 +939,7 @@ def check_fig(t):
                 if v > 0:
                     out.append(rect(x, y + 12, max(3, 104 * v / tol), 4, 2, t["acc"]))
         out.append(line(28, h - 46.5, w - 28, h - 46.5, t["line"], 1))
-        out.append(text(28, h - 20, f"Largest absolute difference after four AdamW updates, float32 on a CPU, Transformers "
+        out.append(text(28, h - 20, f"Largest absolute difference after {setup[0]}, {setup[1]}, Transformers "
                                     f"{record['transformers_version']}. A bar fills to its tolerance.", 12, t["mid"]))
     desc = f"{inside} of {n} values within tolerance: " + "; ".join(
         f"{label}: " + ", ".join(f"{q} {fmt_err(v)}" for (_, q, _), (v, _) in zip(QUANTITIES, cells)) for label, cells in rows) + "."
@@ -964,6 +979,8 @@ def waterfall(t, deltas, x0, x1, top, pitch, lo=-10, hi=2):
 def results_fig(t):
     narrow = t is AUTO
     deltas = chain_deltas()
+    run = recipe(CHAIN[0][2])["run"]
+    tokens = f"{run['successful_updates'] * run['global_batch_positions'] / 1e9:.1f}B"
     labels = ["Ordinary MoE"] + [f"+ {name}" for name, _, _ in CHAIN[1:]] + ["All five steps"]
     n = len(labels)
     loop_row = len(CHAIN) - 1
@@ -991,7 +1008,7 @@ def results_fig(t):
             out += row_labels(18, top, pitch, 12)
             out += waterfall(t, deltas[opt], 176, 340, top, pitch)
             y = top + (n - 1) * pitch + 50
-        out.append(text(16, y + 6, "← lower is better. 5.0B tokens, equal budgets.", 12, t["mid"]))
+        out.append(text(16, y + 6, f"← lower is better. {tokens} tokens, equal budgets.", 12, t["mid"]))
         h = y + 26
     else:
         w, pitch, top = 880, 38, 112
@@ -1003,7 +1020,7 @@ def results_fig(t):
         for (opt, name), (x0, x1) in zip([("adamw", "AdamW"), ("muon", "Muon")], [(250, 518), (586, 852)]):
             out.append(text(x0, 80, name, 13, t["mid"], 600))
             out += waterfall(t, deltas[opt], x0, x1, top, pitch)
-        out.append(text(28, h - 18, "Test bits per byte after 5.0B tokens; every step at equal parameters, FLOPs "
+        out.append(text(28, h - 18, f"Test bits per byte after {tokens} tokens; every step at equal parameters, FLOPs "
                                     "and KV cache.", 12, t["mid"]))
     out[0] = card(0, 0, w, h, t)
     desc = ("A waterfall of the one-change chain under AdamW and Muon, test mBPB against the ordinary MoE: " +

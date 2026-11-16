@@ -17,3 +17,16 @@ def test_readme_uses_every_figure():
     import readme_figures
     for name in readme_figures.figures():
         assert f"docs/assets/{name}" in readme, name
+
+
+def test_budget_counts_follow_the_compare_result(monkeypatch):
+    import readme_figures
+    real = readme_figures.budgets
+
+    def one_outside(reference, candidate):
+        matched = real(reference, candidate)
+        matched["logical_kv_bytes"] = matched["logical_kv_bytes"] | {"relative_difference": 0.2}
+        return matched
+    monkeypatch.setattr(readme_figures, "budgets", one_outside)
+    assert "2 of 3 budgets within ±5%" in readme_figures.pillars(readme_figures.LIGHT)
+    assert "2 of 3 within ±5%" in readme_figures.compare_fig(readme_figures.LIGHT)
