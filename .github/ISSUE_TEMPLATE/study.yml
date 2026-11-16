@@ -13,14 +13,14 @@ body:
     id: arms
     attributes:
       label: Arms
-      description: 'One arm per line: `<arm>: <key>=<value> [<key>=<value> ...]`. Write only the settings in which the arms differ, for example `lora: model.adapter=lora model.lora.rank=8`. A key is a dotted key of the run config (config.json). A key can be in only one of Arms, Controlled and Adaptable. A value that parses as JSON (a number, true/false/null, a list) compares as JSON; other values compare as strings. A line can end with `  # <comment>`.'
+      description: 'One arm per line: `<arm>: <key>=<value> [<key>=<value> ...]`. Write only the settings in which the arms differ, for example `lora: model.adapter=lora model.lora.rank=8`. A key is a dotted key of the run config (config.json). A key must not be in more than one of Arms, Controlled and Adaptable. A value that parses as JSON (a number, true/false/null, a list) compares as JSON; other values compare as strings. A line can end with `  # <comment>`.'
     validations:
       required: true
   - type: textarea
     id: controlled
     attributes:
       label: Controlled
-      description: 'One setting per line that all runs must meet, with a reason (a paper, a record or an earlier result). `<key>=<value>  # <reason>` means that every run uses this value. `<key> in <v1>,<v2>,...  # <reason>` means that every arm runs all these values, for example seeds and tuning grids. Write each usual confounder that applies: data and split, preprocessing and augmentation, model and initialization, optimizer and schedule, effective batch and training length, precision, tuning budget, evaluation protocol and checkpoint selection, seed. For example `train.effective_batch=256  # paper X, table 2` and `seed in 1,2,3  # paper X uses 3 seeds`.'
+      description: 'One setting per line that all runs must meet. A reason is required (a paper, a record or an earlier result). `<key>=<value>  # <reason>` means that every run must use this value. `<key> in <v1>,<v2>,...  # <reason>` means that every arm must run all these values, for example seeds and tuning grids. Write each usual confounder that applies: data and split, preprocessing and augmentation, model and initialization, optimizer and schedule, effective batch and training length, precision, tuning budget, evaluation protocol and checkpoint selection, seed. For example `train.effective_batch=256  # paper X, table 2` and `seed in 1,2,3  # paper X uses 3 seeds`.'
     validations:
       required: true
   - type: textarea

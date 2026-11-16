@@ -13,7 +13,7 @@ Provenance differences (commit, env lock, data manifest), dirty trees, successfu
 metrics, incomplete runs (still RUNNING) and deleted runs are flagged; whether runs are
 comparable is for the reader to decide.
 
-The section Spec check checks every selected run, running ones included, against the study spec
+The Spec check section checks every selected run, running ones included, against the study spec
 in FILE (a study issue's body; - reads stdin), using the cfg.* params run.py logs from
 config.json. It reads the lines of ### Arms (`<arm>: <key>=<value> ...`), ### Controlled
 (`<key>=<value>  # <reason>` or `<key> in <v1>,<v2>,...  # <reason>`) and ### Adaptable
@@ -241,8 +241,8 @@ def main():
         files = sorted({f for r in missing for f in r["env_lock_missing"].split(",")})
         flags.append(f"- {count(len(missing))} with missing env lock files: {', '.join(files)}")
     if dirty := [r for r in runs if r.get("dirty") == "true"]:
-        flags.append(f"- {count(len(dirty))} with a dirty worktree (see the artifacts diff.patch and untracked.txt):"
-                     f" {ids(dirty)}")
+        flags.append(f"- {count(len(dirty))} with a dirty working tree"
+                     f" (see the artifacts diff.patch and untracked.txt): {ids(dirty)}")
     if nometrics := [r for r in runs if r["ok"] and not r["metrics"]]:
         flags.append(f"- {count(len(nometrics))} with exit code 0 and no metrics: {ids(nometrics)}")
     if incomplete := [r for r in runs if r["status"] == "RUNNING"]:

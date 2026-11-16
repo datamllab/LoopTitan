@@ -58,7 +58,7 @@ Before a resume, record the parent attempt, the checkpoint identity, the origina
 
 ## Terms in earlier threads
 
-Most issues, pull requests and comments before plan #274 are in Chinese. The keywords and headings that the tools parse (`### Goal`, `### Arms`, `## Changes`, `Closes #N`, `Verdict:`, `Decision:`, `Blocked:`) were English then and did not change. The table maps the other earlier terms to the English ones that the tools and skills use now.
+Most issues, pull requests and comments before plan #274 are in Chinese. The keywords and headings that the tools parse (`### Goal`, `### Arms`, `## Changes`, `Closes #N`, `Verdict:`, `Decision:`, `Blocked:`) were English then and did not change. The table maps the other earlier terms to the English ones that the tools and skills use now. In results comments, `、` separated items that are now separated by `, `.
 
 | Earlier Chinese | English |
 | --- | --- |
@@ -67,16 +67,19 @@ Most issues, pull requests and comments before plan #274 are in Chinese. The key
 | 命令 / 失败数 / 均值 / 标准差 / 环境锁 / 数据 / 无 | command / n_failed / mean / std / env lock / data manifest / none |
 | 标注 | Flags |
 | commit 不同 / 环境不同 / 数据不同 | Commit differs / Env lock differs / Data manifest differs |
-| 缺环境锁文件 / 工作区不干净 / 成功退出但没有指标 | with missing env lock files / with a dirty worktree / with exit code 0 and no metrics |
-| 未完成（还在跑或已被杀）/ 已在 MLflow 中删除，但仍计入上表 | not finished (still running or killed) / deleted in MLflow but still counted in the table |
+| n 个 run 缺环境锁文件 / 的工作区不干净（见产物 diff.patch 和 untracked.txt） / 成功退出但没有指标 | n runs with missing env lock files / with a dirty working tree (see the artifacts diff.patch and untracked.txt) / with exit code 0 and no metrics |
+| n 个 run 未完成（还在跑或已被杀）/ 已在 MLflow 中删除，但仍计入上表 | n runs not finished (still running or killed) / deleted in MLflow but still counted in the table |
 | 规格核对 | Spec check |
-| 没有偏差 / 没有给出规格 | No deviations / No spec given |
-| 不成立 / 未记录 | does not hold / not recorded |
-| 不属于任何 arm / 属于多个 arm / 没有 run 的 arm | with no matching arm / in more than one arm / Arms with no run |
-| arm X 缺 … 的取值 | Arm X is missing values of … |
-| 未声明的差异 | Undeclared difference |
-| 读不懂的规格行 / Controlled 行没有写理由 / 规格里没有 … 一节 / 出现在多节 | Unreadable spec line / Controlled line without a reason / No … section in the spec / is in more than one section |
+| 没有偏差 / 没有给出规格（--spec） | No deviations / No spec given (--spec) |
+| `` `<item>` 不成立：n 个 run，<id>（<v>） `` | `` `<item>` does not hold for n runs: <id> (<v>) `` |
+| `` `<item>`：n 个 run 未记录 `<key>` `` / 未记录 | `` `<item>`: n runs with no recorded `<key>` `` / not recorded |
+| n 个 run 不属于任何 arm / 属于多个 arm / 没有 run 的 arm | n runs with no matching arm / in more than one arm / Arms with no run |
+| `` arm <arm> 缺 `<item>` 的取值 `` | `` Arm <arm> is missing values of `<item>` `` |
+| `` 未声明的差异 `<key>`：<v>（n 个 run） `` | `` Undeclared difference `<key>`: <v> (n runs) `` |
+| `` Adaptable `<key>`：<arm> 取 <v>（n 个 run）；… `` / 没有属于 arm 的 run | `` Adaptable `<key>`: <arm>: <v> (n runs); … `` / no run in an arm |
+| 读不懂的规格行 / Controlled 行没有写理由 / 规格里没有 <s> 一节 / 出现在多节 | Unreadable spec line / Controlled line without a reason / No <s> section in the spec / is in more than one section |
 | 等人合并 / 不合并 / 已合并 / 已按人的指示合并 | waiting for a human to merge / not merged / merged / merged on the human's instruction |
+| merge.py refusals: 改了受保护路径 / PR 上没有审查结论 / 最新的审查结论不是当前 head 的 pass / 的 Merge 不是 agent | changes the protected path / no review verdict on the PR / the newest verdict is not a pass for the current head / the Merge field … is not agent |
 | `Decision: 发布 …` / `Decision: 合并 PR …` | `Decision: publish …` / `Decision: merge PR …` |
 | `Blocked: 这个对比按规格做不了，因为 <X>` | `Blocked: this comparison cannot be done as specified, because <X>` |
 | 剩余的 minor 意见与处理建议；建议：开新 issue / 并进 #M / 不处理；理由 | Remaining minor findings and proposals; proposal: new issue / add to #M / no action; reason |

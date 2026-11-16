@@ -117,4 +117,4 @@ the checklist above and posts nothing. Give a fresh subagent, or
 if P is a study, its spec (`gh issue view P`), with the checklist in
 `.agents/skills/review/SKILL.md`. Report blocking and minor findings here; post nothing to GitHub."
 
-A reviewer reports the comment link and the verdict to the session that asked.
+A reviewer reports the comment link and the verdict, in the human's language, to the session that asked.

@@ -7,22 +7,22 @@ from moeloop_lab.protocol import build_record, write_metrics, write_record
 
 
 SPEC = """### Question
-CPU 工程 fixture 的记录与规格核对接口是否接通？不是模型效果比较。
+Are the record and Spec check interfaces of the CPU engineering fixture connected? This is not a comparison of model quality.
 ### Arms
 once: native.model_spec.model.loop_repeat=1
 twice: native.model_spec.model.loop_repeat=2
 ### Controlled
-record_kind=engineering-fixture  # 明确区分工程检查与训练证据
-native.debug.seed in 1,2  # 每组都覆盖相同 fixture seed
-derived.global_batch_size=8  # 固定 fixture 的有效 batch
-derived.target_input_tokens=64  # 固定 fixture 的输入位置预算
+record_kind=engineering-fixture  # keeps engineering checks apart from training evidence
+native.debug.seed in 1,2  # every arm covers the same fixture seeds
+derived.global_batch_size=8  # fixed effective batch of the fixture
+derived.target_input_tokens=64  # fixed input-position budget of the fixture
 ### Adaptable
 ### Criteria
-所有 fixture 退出成功、cfg.* 与 artifact 读回一致，规格核对无偏差。
+All fixtures exit successfully, cfg.* and the artifacts read back the same, and the Spec check shows no deviations.
 ### Budget
-仅 CPU 工程 fixture；不使用 GPU。
+CPU engineering fixture only; no GPU.
 ### Context
-scripts/smoke.py；本规格仅供工程验收，不是已批准的研究 study。
+scripts/smoke.py. This spec is for engineering acceptance only. It is not an approved study.
 """
 
 

@@ -253,7 +253,7 @@ def test_dirty_runs_are_flagged(repo):
     (repo.root / "scratch.py").write_text("1\n")
     repo.run()
     out = repo.results()
-    assert f"- 1 run with a dirty worktree (see the artifacts diff.patch and untracked.txt): {repo.only_run().info.run_id}" in out
+    assert f"- 1 run with a dirty working tree (see the artifacts diff.patch and untracked.txt): {repo.only_run().info.run_id}" in out
 
 
 def test_bad_metrics_file_is_flagged_not_fatal(repo):
