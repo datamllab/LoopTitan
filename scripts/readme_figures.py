@@ -39,11 +39,11 @@ MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mo
 LIGHT = dict(ink="#16181D", mid="#5B616E", softt="#737985", soft="#9AA0AB", hair="#D5D8DE", line="#E3E5E9",
              faint="#ECEEF1", band="#EEF0F3", card="#FFFFFF", panel="#FFFFFF", acc="#3346D3", acc2="#7C89E4",
              acc3="#AAB3F0", tint="#F2F4FD", tint2="#E6E9FB", bar="#16181D", grey="#9AA0AB", on_acc="#FFFFFF",
-             glow="#3346D3", spark="#FFFFFF", lit="#AAB3F0")
+             spark="#FFFFFF", lit="#7C89E4", inkhi="#1F2757")
 DARK = dict(ink="#E7EBF1", mid="#9BA3AF", softt="#848B97", soft="#5E6672", hair="#363D48", line="#272D36",
             faint="#1B2028", band="#1B2028", card="#0D1117", panel="#0D1117", acc="#7486F2", acc2="#5866C9",
             acc3="#3B458B", tint="#151A2E", tint2="#1D2442", bar="#DCE0E7", grey="#6B7280", on_acc="#0D1117",
-            glow="#8E9CF7", spark="#FFFFFF", lit="#B9C2FB")
+            spark="#FFFFFF", lit="#B9C2FB", inkhi="#BBC3EA")
 AUTO = {key: f"var(--{key})" for key in LIGHT}  # the narrow variant: colours chosen inside the file
 
 # The one-change chain of Phase 1, in README order: (step name, detail from the model fields, recipe node)
@@ -376,51 +376,60 @@ def hero(t):
     c = 46 if narrow else 72
     ax1, ax2 = last + bw / 2, first + bw / 2
     arc = f"M{num(ax1)} {num(a0)}C{num(ax1)} {num(a0 - c)} {num(ax2)} {num(a0 - c)} {num(ax2)} {num(a0)}"
-    # timing: the light moves at one speed on the shaft and takes a fixed time on the arc
-    T, fade, t_arc = 10.0, .35, 1.5
-    d1, d2 = loop_r - xs, xe - loop_l
-    v = (d1 + d2) / 6.2
-    t1 = d1 / v
-    t2 = t1 + t_arc
-    t3 = t2 + d2 / v
-
-    def pct(s):
-        return f"{100 * s / T:.2f}%"
-    dot = [(0, xs, 0), (fade, xs + v * fade, 1), (t1 - .05, loop_r - v * .05, 1), (t1 + .2, loop_r + v * .2, 0),
-           (t2 - .25, loop_l - v * .25, 0), (t2, loop_l, 1), (t3 - .3, xe - v * .3, 1), (t3, xe, 0), (T, xe, 0)]
-    css = ["@keyframes dot{" + "".join(f"{pct(s)}{{transform:translate({num(px)}px,0);opacity:{o}}}" for s, px, o in dot) + "}",
-           f".dot{{animation:dot {num(T)}s linear infinite}}",
-           f"@keyframes arc{{0%,{pct(t1 - .1)}{{stroke-dashoffset:16;opacity:0}}{pct(t1)}{{stroke-dashoffset:16;opacity:1}}"
-           f"{pct(t2)}{{stroke-dashoffset:-100;opacity:1}}{pct(t2 + .1)},100%{{stroke-dashoffset:-100;opacity:0}}}}",
-           f".comet{{opacity:0;stroke-dasharray:16 200;animation:arc {num(T)}s linear infinite}}",
-           "@media (prefers-reduced-motion: reduce){.dot,.comet,.lit{animation:none!important}}"]
+    # the light: the token's path through the layers, timed as the homepage's pulse. One quick hop per layer
+    # with the motion easing, the way back along the arc, out, then a rest; each layer flashes as it is reached.
+    T, hop, back, edge, start, fade = 4.0, .075, .54, .12, .3, .06
+    route = f"M{num(xs)} {num(cy)}H{num(ax1)}V{num(a0)}C{num(ax1)} {num(a0 - c)} {num(ax2)} {num(a0 - c)} {num(ax2)} {num(a0)}V{num(cy)}H{num(xe)}"
+    ctrl = [(ax1, a0), (ax1, a0 - c), (ax2, a0 - c), (ax2, a0)]
+    pts = [tuple((1 - u) ** 3 * p[0] + 3 * (1 - u) ** 2 * u * p[1] + 3 * (1 - u) * u ** 2 * p[2] + u ** 3 * p[3]
+                 for p in zip(*ctrl)) for u in (i / 400 for i in range(401))]
+    second = ax1 - xs + 2 * (cy - a0) + sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))  # where the second visit starts
+    length = second + xe - ax2
+    seq = list(range(pre)) + list(range(pre, pre + core)) * visits + list(range(pre + core, pre + core + suf))
+    keys = [(0, 0, None), (start, 0, None)]  # (time, distance along the route, easing of the move that ends here)
+    hits = {}
+    for j, i in enumerate(seq):
+        centre = bars[i][0] + bw / 2
+        again = j >= pre + core  # past the first visit: measured from where the way back lands
+        d = (second + centre - ax2) if again else (centre - xs)
+        move = edge if j == 0 else back if i < seq[j - 1] else hop * (i - seq[j - 1])
+        keys.append((keys[-1][0] + move, d, None if j == 0 else ".65 0 .35 1"))
+        hits.setdefault(i, []).append(keys[-1][0])
+    keys.append((keys[-1][0] + edge, length, None))
+    end = keys[-1][0]
+    keys.append((T, length, None))
+    times = ";".join(f"{k / T:.4f}" for k, _, _ in keys)
+    splines = ";".join(e or "0 0 1 1" for _, _, e in keys[1:])
+    timing = f'dur="{num(T)}s" repeatCount="indefinite" keyTimes="{times}" calcMode="spline" keySplines="{splines}"'
+    tail = (14 if narrow else 22) / length * 1000
+    css = ["@media (prefers-reduced-motion: reduce){.mo{display:none}}"]
     out = ['<defs><radialGradient id="glow" cx="50%" cy="50%" r="50%">'
            f'<stop offset="0" style="stop-color:{t["acc"]};stop-opacity:.10"/>'
-           f'<stop offset="1" style="stop-color:{t["acc"]};stop-opacity:0"/></radialGradient>'
-           '<radialGradient id="light" cx="50%" cy="50%" r="50%">'
-           f'<stop offset="0" style="stop-color:{t["glow"]};stop-opacity:.5"/>'
-           f'<stop offset=".45" style="stop-color:{t["glow"]};stop-opacity:.14"/>'
-           f'<stop offset="1" style="stop-color:{t["glow"]};stop-opacity:0"/></radialGradient></defs>']
+           f'<stop offset="1" style="stop-color:{t["acc"]};stop-opacity:0"/></radialGradient></defs>']
     out.append(f'<ellipse cx="{num((loop_l + loop_r) / 2)}" cy="{num(cy)}" rx="{num((loop_r - loop_l) * .72)}" '
                f'ry="{num(bh * .9)}" fill="url(#glow)"/>')
     out.append(line(xs, cy, xe, cy, t["hair"], 1))
     for i, (bx, loop) in enumerate(bars):
         out.append(rect(bx, top, bw, bh, r, t["acc"] if loop else t["bar"]))
-        passes = [(bx + bw / 2 - xs) / v] if bx < loop_r else []
-        if bx > loop_l:
-            passes.append(t2 + (bx + bw / 2 - loop_l) / v)
-        frames = ["0%{opacity:0}"] + [f"{pct(max(p - .3, .01))}{{opacity:0}}{pct(p)}{{opacity:1}}{pct(p + .7)}{{opacity:0}}"
-                                      for p in passes] + ["100%{opacity:0}"]
-        css.append(f"@keyframes b{i}{{{''.join(frames)}}}.b{i}{{animation:b{i} {num(T)}s linear infinite}}")
-        out.append(rect(bx, top, bw, bh, r, t["lit"] if loop else t["acc"], op=0, cls=f"lit b{i}"))
+        flash = [(0, 0)] + [(at + dt, v) for at in hits[i] for dt, v in [(-.01, 0), (0, 1), (.15, .49), (.3, .16), (.5, 0)]] + [(T, 0)]
+        out.append(f'<rect class="mo" x="{num(bx)}" y="{num(top)}" width="{bw}" height="{bh}" rx="{num(r)}" opacity="0" '
+                   f'style="fill:{t["lit"] if loop else t["inkhi"]}"><animate attributeName="opacity" dur="{num(T)}s" '
+                   f'repeatCount="indefinite" keyTimes="{";".join(f"{a / T:.4f}" for a, _ in flash)}" '
+                   f'values="{";".join(num(float(v)) for _, v in flash)}"/></rect>')
     out.append(path(arc, t["acc"], 1.6 if narrow else 2))
-    out.append(path(arc, t["glow"], 6 if narrow else 8, cls="comet", extra=' pathLength="100" stroke-opacity=".2"'))
-    out.append(path(arc, t["spark"], 1.1 if narrow else 1.4, cls="comet", extra=' pathLength="100"'))
     out.append(arrow_head(ax2, a0, 0, 1, t["acc"], 1.6 if narrow else 2, 5.5 if narrow else 7))
     apex = a0 - .75 * c
     out.append(text((ax1 + ax2) / 2, apex - (9 if narrow else 12), f"×{visits}", 18 if narrow else 22, t["acc"], 600, "middle"))
-    out.append(f'<g class="dot" style="opacity:0"><circle cx="0" cy="{num(cy)}" r="{15 if narrow else 22}" fill="url(#light)"/>'
-               + circle(0, cy, 3.5 if narrow else 5, t["spark"], t["glow"], 1.5 if narrow else 2) + "</g>")
+    show = [(0, 0), (start, 0), (start + fade, 1), (end - fade, 1), (end, 0), (T, 0)]
+    out.append(f'<g class="mo" opacity="0"><animate attributeName="opacity" dur="{num(T)}s" repeatCount="indefinite" '
+               f'keyTimes="{";".join(f"{a / T:.4f}" for a, _ in show)}" values="{";".join(str(v) for _, v in show)}"/>'
+               f'<path d="{route}" pathLength="1000" style="fill:none;stroke:{t["lit"]};stroke-width:{3 if narrow else 4};'
+               f'stroke-linecap:round;stroke-dasharray:{num(tail)} 2000;stroke-opacity:.6">'
+               f'<animate attributeName="stroke-dashoffset" {timing} '
+               f'values="{";".join(num(tail - 1000 * d / length) for _, d, _ in keys)}"/></path>'
+               f'<g><animateMotion path="{route}" {timing} keyPoints="{";".join(f"{d / length:.4f}" for _, d, _ in keys)}"/>'
+               + circle(0, 0, 8 if narrow else 11, t["acc"], op=.18) + circle(0, 0, 3.2 if narrow else 4.5, t["spark"], t["acc"], 1.5 if narrow else 1.75)
+               + "</g></g>")
     # each group: a hairline span under it and its label
     yb = cy + bh / 2 + (14 if narrow else 20)
     starts = [bars[0][0], first, bars[pre + core][0]]
