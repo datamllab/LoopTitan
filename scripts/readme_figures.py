@@ -32,10 +32,10 @@ MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mo
 # The homepage palette; the dark one matches docs/assets/mark-dark.svg. Indigo marks the loop only.
 LIGHT = dict(ink="#16181D", mid="#5B616E", soft="#9AA0AB", hair="#D5D8DE", line="#E3E5E9", faint="#EEF0F3",
              card="#FAFBFC", panel="#FFFFFF", acc="#3346D3", acc2="#7C89E4", acc3="#AAB3F0", tint="#F2F4FD",
-             tint2="#E6E9FB", bar="#16181D", grey="#A9AFB9", on_acc="#FFFFFF", glow="#3346D3", spark="#FFFFFF")
+             tint2="#E6E9FB", bar="#16181D", grey="#A9AFB9", on_acc="#FFFFFF", glow="#3346D3", spark="#FFFFFF", lit="#AAB3F0")
 DARK = dict(ink="#E7EBF1", mid="#9BA3AF", soft="#5E6672", hair="#363D48", line="#272D36", faint="#1B2028",
             card="#11161D", panel="#0D1117", acc="#7486F2", acc2="#5866C9", acc3="#3B458B", tint="#151A2E",
-            tint2="#1D2442", bar="#DCE0E7", grey="#59606C", on_acc="#0D1117", glow="#8E9CF7", spark="#FFFFFF")
+            tint2="#1D2442", bar="#DCE0E7", grey="#59606C", on_acc="#0D1117", glow="#8E9CF7", spark="#FFFFFF", lit="#B9C2FB")
 AUTO = {key: f"var(--{key})" for key in LIGHT}  # the narrow variant: colours chosen inside the file
 
 # The one-change chain of Phase 1, in README order: (step name, detail from the model fields, recipe node)
@@ -326,7 +326,7 @@ def hero(t):
     m, cells = layers("phase1/m3")
     pre, core, suf, visits = m["prefix_cells"], m["num_cells"], m["suffix_cells"], m["num_visits"]
     if narrow:
-        w, h, bw, bh, gap, ggap, cy, r = 360, 252, 14, 72, 8, 18, 108, 5
+        w, h, bw, bh, gap, ggap, cy, r = 360, 238, 14, 72, 8, 18, 108, 5
     else:
         w, h, bw, bh, gap, ggap, cy, r = 880, 316, 30, 124, 18, 40, 166, 9
     groups = [pre, core, suf]
@@ -382,7 +382,7 @@ def hero(t):
         frames = ["0%{opacity:0}"] + [f"{pct(max(p - .3, .01))}{{opacity:0}}{pct(p)}{{opacity:1}}{pct(p + .7)}{{opacity:0}}"
                                       for p in passes] + ["100%{opacity:0}"]
         css.append(f"@keyframes b{i}{{{''.join(frames)}}}.b{i}{{animation:b{i} {num(T)}s linear infinite}}")
-        out.append(rect(bx, top, bw, bh, r, t["acc3"] if loop else t["acc"], op=0, cls=f"lit b{i}"))
+        out.append(rect(bx, top, bw, bh, r, t["lit"] if loop else t["acc"], op=0, cls=f"lit b{i}"))
     out.append(path(arc, t["acc"], 2.5 if not narrow else 2))
     out.append(path(arc, t["glow"], 9 if not narrow else 6, cls="comet", extra=' pathLength="100" stroke-opacity=".22"'))
     out.append(path(arc, t["spark"], 1.6 if not narrow else 1.2, cls="comet", extra=' pathLength="100"'))
