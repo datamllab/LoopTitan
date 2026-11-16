@@ -7,7 +7,7 @@ name = "moeloop-lab"
 version = "1.0.0rc1"
 description = "Readable recursive sparse models, TorchTitan training, and portable model delivery"
 readme = "README.md"
-license = "Apache-2.0"
+license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 keywords = ["mixture-of-experts", "looped-transformer", "recursive-depth", "torchtitan", "pytorch"]

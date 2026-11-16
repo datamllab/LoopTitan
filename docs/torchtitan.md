@@ -1,18 +1,18 @@
-# TorchTitan 实验记录接入（可选）
+# TorchTitan experiment record integration (optional)
 
-本文描述 `moeloop_lab.protocol` 的记录接口。公共 `moeloop` 模型与原生 Trainer 的使用方式见[训练与数据](training.md)，实际机器资格见[验证记录](validation.md)。
+This document describes the record interface of `moeloop_lab.protocol`. For the use of the public `moeloop` model with the native Trainer, see [Training and data](training.md). For the actual machine qualification, see the [validation record](validation.md).
 
-接口基于 [TorchTitan v0.3.0 Trainer 的固定源码](https://github.com/pytorch/torchtitan/blob/086bf6c166ec85c1298eb5596fa9bf95f6a2d840/torchtitan/trainer.py)，不是随 main 漂移。`Trainer.Config.to_dict()` 提供配置，`parallel_dims` 的 batch mesh 提供真正 data-parallel degree，`gradient_accumulation_steps` 提供 Trainer 已推导的累积次数。
+The interface is based on the [fixed source of the TorchTitan v0.3.0 Trainer](https://github.com/pytorch/torchtitan/blob/086bf6c166ec85c1298eb5596fa9bf95f6a2d840/torchtitan/trainer.py). It does not drift with main. `Trainer.Config.to_dict()` gives the configuration. The batch mesh of `parallel_dims` gives the real data-parallel degree. `gradient_accumulation_steps` gives the accumulation count that the Trainer derived.
 
-## 在训练入口插入记录
+## Insert the record into the training entry point
 
-在现有 GPU 环境单独以 editable 方式安装本库，不向训练环境安装控制侧的 MLflow 依赖。基础包只有标准库依赖；保留 Git checkout 和受保护的 `configs/upstream.json`。
+In the existing GPU environment, install this library separately in editable mode. Do not install the control-side MLflow dependency into the training environment. The base package has only standard-library dependencies. Keep the Git checkout and the protected `configs/upstream.json`.
 
 ```sh
 /training/env/bin/python -m pip install --no-deps -e /path/to/moeloop-lab
 ```
 
-模型入口负责构造原生 Trainer.Config、数据与模型本身。加入下面的调用，不复制 Trainer 或改变训练数学：
+The model entry point builds the native Trainer.Config, the data and the model itself. Add the calls below. Do not copy the Trainer or change the training mathematics:
 
 ```python
 from pathlib import Path
@@ -37,15 +37,15 @@ finally:
     trainer.close()
 ```
 
-在每个 rank 调用；仅全局 `RANK=0` 读取来源/manifest 和写文件。按原训练入口清理分布式进程组，用 torchrun 将任一 rank 的错误传播给其余 worker。适配器不增加 barrier，也不接管模型/进程生命周期；记录失败必须让入口非零退出。
+Call this on every rank. Only global `RANK=0` reads the sources and the manifest and writes files. Clean up the distributed process group as the original training entry point does. Use torchrun to propagate an error on any rank to the other workers. The adapter adds no barrier, and it does not take over the model or the process lifecycle. A record failure must make the entry point exit with a non-zero code.
 
-`native.step_counter` 只表示原生状态字段，不能认证已完成的优化步数：该版本在执行 train_step 前递增 step，捕获数据耗尽后会直接退出，因此最后一步未完成时计数仍可能等于目标。`FINISHED` 同样只表示命令退出 0。实际训练入口必须另行验证成功的优化步数、消费 token 和必要 checkpoint；本版配置适配器不提供这项完成认证。
+`native.step_counter` is only a native state field. It cannot certify the number of completed optimizer steps. This version increments the step before it runs train_step, and it exits directly when it catches data exhaustion. Thus the count can still equal the target when the last step did not complete. `FINISHED` likewise only means that the command exited with 0. The actual training entry point must separately verify the successful optimizer steps, the consumed tokens and the necessary checkpoints. The configuration adapter of this version does not give this completion certification.
 
-由 CVSM 从干净的 run worktree 包裹**一次完整 allocation 的主命令**。控制环境使用 `uv run --frozen python scripts/run.py --issue N -- <cmd>`；`<cmd>` 必须显式选择已有训练环境的 python/torchrun，不能误用不含 Torch 的控制环境。`RUN_DIR`、`MLFLOW_RUN_ID`、`MLFLOW_TRACKING_URI` 会传给子进程。
+CVSM wraps **the main command of one complete allocation** from a clean run worktree. The control environment uses `uv run --frozen python scripts/run.py --issue N -- <cmd>`. `<cmd>` must explicitly select the python or torchrun of the existing training environment. Do not use the control environment by mistake, because it has no Torch. `RUN_DIR`, `MLFLOW_RUN_ID` and `MLFLOW_TRACKING_URI` are passed to the child process.
 
-首版仅验证本地命令记录接口；不能在每个远程节点分别包一层 launcher 并把多个 run 当成同一 allocation。多节点数据分发、网络、scheduler、GPU 预算和恢复须另行接入。
+The first version verifies only the local command record interface. Do not wrap a launcher on each remote node separately and treat several runs as the same allocation. Multi-node data distribution, network, scheduler, GPU budget and resume need their own integration.
 
-## batch 与 token 口径
+## Batch and token definitions
 
 ```text
 effective batch = local_batch_size × batch_mesh_degree × gradient_accumulation_steps
@@ -53,17 +53,17 @@ input positions per step = effective batch × seq_len
 target input positions = input positions per step × original configured steps
 ```
 
-例如 world size 32、batch mesh 16、local batch 1、累积 8、seq_len 4096 时，每步为 524288 个输入位置，而非按 32 个数据副本计算。native `global_batch_size=-1` 的自动模式只能对应一个累积步。与实际累积不一致的声明会拒绝记录，避免貌似相同的 recipe 隐含不同 token 预算。
+For example, with world size 32, batch mesh 16, local batch 1, accumulation 8 and seq_len 4096, one step is 524288 input positions. It is not computed from 32 data replicas. The native automatic mode `global_batch_size=-1` can only correspond to one accumulation step. A declaration that does not match the actual accumulation is refused and not recorded. This prevents recipes that look the same from hiding different token budgets.
 
-这里计的是配置中的输入位置，不是非 padding token、独立样本数、唯一 token 或 FLOPs。物理参数、激活计算、吞吐和有效 loss token 需要各自的真实计量；不能从这些乘法推断。
+This counts the configured input positions. It does not count non-padding tokens, separate samples, unique tokens or FLOPs. Physical parameters, active compute, throughput and valid loss tokens each need their own real measurement. Do not infer them from these products.
 
-## MLflow 记录端
+## MLflow recorder
 
 ```sh
 export MLFLOW_TRACKING_URI=http://127.0.0.1:5000
 uv run --frozen python scripts/doctor.py
 ```
 
-doctor 只读取 `/health` 并通过官方 SDK 有界查询最多一个 experiment，不创建记录、不迁移数据库、不重启服务。认证按 MLflow 标准环境变量提供，凭证不进 URI 或 Git。两个 CVSM 命令使用相同显式 endpoint；项目默认配置拒绝静默创建本地 SQLite。
+doctor only reads `/health` and, through the official SDK, makes a bounded query of at most one experiment. It does not create records, migrate the database or restart the service. Authentication comes from the standard MLflow environment variables. Credentials do not go into the URI or Git. The two CVSM commands use the same explicit endpoint. The default project configuration refuses to create a local SQLite store silently.
 
-使用 `MLFLOW_EXPERIMENT_NAME` 为独立 study 指定稳定命名空间。远程 worker 不能直接使用控制机的 `127.0.0.1`；本版不改变服务器监听和认证，也不承诺远程可达。模型只写小型 JSON 产物时无需访问 MLflow，上传由保持运行的控制侧 launcher 完成。
+Use `MLFLOW_EXPERIMENT_NAME` to give each separate study a stable namespace. A remote worker cannot use the `127.0.0.1` of the control machine directly. This version does not change the listen address or the authentication of the server, and it does not promise remote reachability. When the model writes only small JSON artifacts, it does not need access to MLflow. The control-side launcher, which keeps running, does the upload.

@@ -368,6 +368,8 @@ TAMPERING = [  # One row per check: the edit, the verdict, the reason.
     # The declaration against its evaluation output; the bench process's torch version on its own.
     (lambda f: edit(f / "submission.json", lambda v: v | {"seeds": [v["seeds"][0] | {"test_bpb": 0.9}]}),
      "protocol-mismatch", A + "eval-test.json bpb is 1.005, expected 0.9"),
+    (lambda f: (edit(f / "config.json", lambda v: v | {"runtime": {k: x for k, x in v["runtime"].items() if k != "torch"}}),
+                rehash(f, "config.json")), "missing-evidence", A + "config.json runtime.torch is missing"),
     (rehashed("config.json", "trainer.torch", "2.9.0"), "protocol-mismatch",
      A + "config.json trainer.torch is '2.9.0', expected '2.14.0'"),
 ]

@@ -1,57 +1,57 @@
-# LoopTitan 实验协议
+# LoopTitan experiment protocol
 
-本文件描述可选的 `moeloop_lab.protocol` 与 CVSM 协作流程。独立使用只需普通 recipe JSON、prepared manifest 和输出目录，命令见[训练与数据](training.md#从-json-运行与恢复)，无需 GitHub 或 MLflow。当前项目协作采用敏捷方式，具体以 `AGENTS.md` 的 Project 和对应 issue 为准。
+This file describes the optional `moeloop_lab.protocol` and the CVSM collaboration flow. Standalone use needs only a plain recipe JSON, a prepared manifest and an output directory. It does not need GitHub or MLflow. For the commands, see the section on running and resuming from JSON in [Training and data](training.md). The project currently collaborates in an agile way. The Project section of `AGENTS.md` and the matching issue are the authority.
 
-模型由 TorchTitan 的原生 Trainer 执行；选择 CVSM 时，本库把运行实际使用的配置、身份和有限产物接到已有记录端，不另造训练循环、调度器或任务数据库。
+TorchTitan's native Trainer runs the model. When you select CVSM, this library connects the configuration, the identities and the finite artifacts that the run actually used to the existing recorder. It does not make its own training loop, scheduler or task database.
 
-## 状态与决定
+## State and decisions
 
-| 对象 | 唯一记录位置 | 完成条件 |
+| Object | Only record location | Completion condition |
 | --- | --- | --- |
-| 研究问题与比较规格 | GitHub `study`，字段为 Question / Arms / Controlled / Adaptable / Criteria / Budget / Context | 人明确接受结论后才关闭 |
-| 工程计划 | GitHub `plan` 和原生 sub-issues / dependencies | 子任务结束后等待分析或人决定 |
-| 代码变更 | `code` issue、独立 worktree、PR | guard/test 通过且当前 SHA 独立 review 通过，再按 Merge 字段合并 |
-| 一组实验 | `run` issue | 每条命令都有记录，贴出完整结果和规格核对后关闭 |
-| 一次尝试 | 使用 CVSM 时对应一个原生 MLflow run | 记录真实终态；失败、被停止和重试都保留 |
+| Research question and comparison spec | GitHub `study`, with the fields Question / Arms / Controlled / Adaptable / Criteria / Budget / Context | Closed only after a human explicitly accepts the conclusion |
+| Engineering plan | GitHub `plan` with native sub-issues / dependencies | When its sub-tasks end, it waits for analysis or a human decision |
+| Code change | `code` issue, separate worktree, PR | guard/test pass and an independent review passes for the current SHA; then it is merged as the Merge field says |
+| A set of experiments | `run` issue | Closed when every command has a record and the complete results and the spec check are posted |
+| One attempt | With CVSM, one native MLflow run | Records the real final state; failures, stops and retries are all kept |
 
-保留 CVSM 的 publish / merge / budget / conclude 四个 gate。人已明确授权的范围不重复询问；代码通过检查不等于研究结论成立。MLflow 只保存运行事实，任务状态始终回查 GitHub。
+The four CVSM gates (publish / merge / budget / conclude) are kept. Scope that a human has explicitly authorized is not asked again. Code that passes its checks does not mean that a research conclusion holds. MLflow keeps only run facts. Always read task state back from GitHub.
 
-## 从 recipe 筛选到预训练
+## From recipe screen to pretraining
 
-筛选、确认和长程预训练使用同一套状态机，以不同 study 的 Criteria 和 Budget 表达，不新增阶段状态表。派发新实验前，在 Question / Criteria 写清预期能观察到的主要信号，以及正、负结果各会改变什么重要决定。没有足够信号时收窄结论、停止追加投入；强信号再确认稳定性、解释和迁移范围。
+Screening, confirmation and long pretraining use the same state machine. Different studies express them through their Criteria and Budget. There is no new table of stage states. Before you dispatch a new experiment, write in Question / Criteria the main signal that you expect to observe. Also write which important decision a positive result and a negative result would each change. If the signal is not sufficient, narrow the conclusion and stop further investment. If the signal is strong, then confirm its stability, its explanation and its range of transfer.
 
-MoE / Loop 的比较必须先选清预算口径。固定输入 token 不代表固定 FLOPs；独立存储参数、激活参数和逻辑 block 调用也不是同一个量。Arms 只放有意改变的设置；Controlled 明确数据/顺序、tokenizer、模型/初始化、优化器/调度、有效 batch、训练长度、精度、调参预算、评测/选 checkpoint 和 seed，并逐项给理由。工程调整仅在 Adaptable 写明的规则内进行，不因 OOM 悄悄缩短训练或改变比较。
+A MoE / Loop comparison must first choose its budget definition. A fixed number of input tokens does not mean fixed FLOPs. Separately stored parameters, active parameters and logical block calls are also not the same quantity. Arms contain only the settings that change on purpose. Controlled states the data and order, tokenizer, model and initialization, optimizer and schedule, effective batch, training length, precision, tuning budget, evaluation and checkpoint selection, and seed, each with a reason. Engineering adjustments happen only within the rules written in Adaptable. Do not silently shorten training or change the comparison because of an OOM.
 
-已完成的 P1 使用两份冻结的[实际 JSON](training.md#p1-实际配方与双机训练)；V2 方法资格，以及 V3 的 P2、正式 C 面板、完整 downstream 和已安装 wheel 旅程，均已有实际验收，范围与来源见[验证记录](validation.md)。`scripts/smoke.py --print-spec` 只输出 CPU 工程检查规格，其 `record_kind=engineering-fixture` 和 `fixture.completed` 不能用作模型结果。
+The completed P1 uses two frozen [actual JSON files](training.md) (see the section on the actual P1 recipes and two-node training). V2 method qualification, and for V3 the P2, the formal C panel, the complete downstream evaluation and the installed-wheel journey, all have actual acceptance. For their scope and sources, see the [validation record](validation.md). `scripts/smoke.py --print-spec` prints only a CPU engineering check spec. Its `record_kind=engineering-fixture` and `fixture.completed` must not be used as model results.
 
-## 运行记录接口
+## Run record interface
 
-保留 `<run> --issue N [options] -- <cmd>` 和 `<results> --issue N [N ...] [--metric ...] [--spec FILE]`。命令见 AGENTS.md；`--spec -` 读 study 正文的标准输入，输出仍以 `规格核对：` 结束。
+The interfaces `<run> --issue N [options] -- <cmd>` and `<results> --issue N [N ...] [--metric ...] [--spec FILE]` are kept. For the commands, see AGENTS.md. `--spec -` reads the study body from standard input. The output still ends with the spec-check section.
 
-`capture_trainer()` 在 `config.build()` 后、`trainer.train()` 前观察原生对象，并在全局 rank 0 原子写入 `$RUN_DIR/config.json`。CVSM launcher 随后记录不可变的 `cfg.*` params 和原始 artifact，训练进程不必安装 MLflow。
+`capture_trainer()` observes the native objects after `config.build()` and before `trainer.train()`. On global rank 0, it writes `$RUN_DIR/config.json` atomically. The CVSM launcher then records immutable `cfg.*` params and the raw artifact. The training process does not need to install MLflow.
 
-| 配置键前缀 | 来源与含义 |
+| Configuration key prefix | Source and meaning |
 | --- | --- |
-| `native.*` | 实际 `trainer.config.to_dict()` 的全部字段，不手工重建或过滤 |
-| `derived.*` | 实际 world size、batch mesh degree、梯度累积、有效 batch、每步/目标输入位置数 |
-| `assets.*` | 数据 manifest、tokenizer 文件和可选 evaluation manifest 的内容 SHA-256 |
-| `sources.*` | 实际导入的 TorchTitan 和模型模块所在 Git checkout 的 SHA；要求干净，TorchTitan 必须匹配受保护的 pin |
-| `environment.*` | 当前 Python、训练包版本、Torch Git/CUDA 版本；无法观察的值为 null |
+| `native.*` | All fields of the actual `trainer.config.to_dict()`, not rebuilt or filtered by hand |
+| `derived.*` | The actual world size, batch mesh degree, gradient accumulation, effective batch, and input positions per step and in total (target) |
+| `assets.*` | Content SHA-256 of the data manifest, the tokenizer files and the optional evaluation manifest |
+| `sources.*` | SHA of the Git checkouts that hold the actually imported TorchTitan and model modules. They must be clean, and TorchTitan must match the protected pin. |
+| `environment.*` | The current Python, training package versions, and Torch Git/CUDA versions; a value that cannot be observed is null |
 
-例如 study 应固定 `derived.global_batch_size` 和 `derived.target_input_tokens`。只有保持这两项且比较允许改变 aux 的 microbatch 几何时，才可按明确规则调整 `native.training.local_batch_size` 与 `derived.gradient_accumulation_steps`。每个正式尺度/面板使用同一个事前固定 seed（42）。命令中使用实际生效的 `--debug.seed`，CVSM 记录为 `native.debug.seed`。
+For example, a study should fix `derived.global_batch_size` and `derived.target_input_tokens`. Only when these two stay fixed, and the comparison allows the aux microbatch geometry to change, can `native.training.local_batch_size` and `derived.gradient_accumulation_steps` change by an explicit rule. Each formal scale or panel uses the same seed (42), fixed in advance. The command uses the effective `--debug.seed`, and CVSM records it as `native.debug.seed`.
 
-完整 native 配置会保留输出目录等变化。确实与结果无关的路径，逐个以其真实键写入 Adaptable，并给规则，例如 `native.dump_folder  # 每次使用新的独立输出目录`。数据路径只有在相同 manifest/tokenizer 身份下才可适配；checkpoint 加载路径不能被当作普通输出路径消去。
+The complete native configuration keeps values that change, such as the output directory. Write each path that truly does not affect results into Adaptable, one by one with its real key, and give a rule. For example: `native.dump_folder  # a new separate output directory for each run`. A data path can adapt only under the same manifest/tokenizer identity. A checkpoint load path must not be removed as if it were a plain output path.
 
-`native-config.json` 保留同一原生配置；`metrics.json` 是 rank 0 写一次的有限数值快照；`log.txt` 来自 launcher。`derived.target_input_tokens` 是配置目标，MLflow `FINISHED` 是命令退出 0，原生 step 字段是状态计数；三者都不证明实际完成的优化步或 token。checkpoint、原始数据和大量日志放在显式外部存储，不能写入会被整体上传的 RUN_DIR。`uv.lock` 冻结控制环境，不能替代训练环境锁；运行环境观察同样不是完整可重建环境证明。
+`native-config.json` keeps the same native configuration. `metrics.json` is a snapshot of finite numbers that rank 0 writes once. `log.txt` comes from the launcher. `derived.target_input_tokens` is the configured target. MLflow `FINISHED` means that the command exited with 0. The native step field is a state counter. None of the three proves the optimizer steps or tokens that were actually completed. Checkpoints, raw data and large logs go to explicit external storage. Do not write them into RUN_DIR, because RUN_DIR is uploaded as a whole. `uv.lock` freezes the control environment. It cannot replace a lock of the training environment. The observation of the run environment is also not a complete proof that the environment can be rebuilt.
 
-manifest 哈希识别 manifest 本身，不代表重新核验了所有数据 shard；模型模块 SHA 不自动证明所有动态插件的身份。这些条件必须由具体数据/模型入口验收并在 study 中说明。
+A manifest hash identifies the manifest itself. It does not mean that all data shards were verified again. The SHA of a model module does not automatically prove the identity of all dynamic plugins. The specific data and model entry points must verify these conditions, and the study must state them.
 
-## 中断与恢复的边界
+## Limits of interruption and resume
 
-原生 TorchTitan 在 `train()` 内调用 checkpointer.load，初始化完成时的 `trainer.step` 不能作为恢复成功证据。实际进度由成功 optimizer updates、全 rank 数据/RNG 状态与 durable full DCP 核对；`--stop` 只改变本次绝对停止坐标，保留 recipe 的完整 schedule。
+Native TorchTitan calls checkpointer.load inside `train()`. Thus `trainer.step` at the end of initialization is not evidence of a successful resume. The actual progress is checked against successful optimizer updates, the data and RNG states of all ranks, and a durable full DCP. `--stop` changes only the absolute stop coordinate of this run. It keeps the complete schedule of the recipe.
 
-P1 的双机 HSDP16 已完成连续8步与4+恢复4步的模型、optimizer 和各 rank 状态比较，V2 新方法也已完成各自的完整状态恢复，见[P1 证据](evidence/p1.json)、[V2 证据](evidence/recipes-v2.json)。这些验收限于记录的配置；严格继续要求相同源码、数据/tokenizer、拓扑、optimizer/loss 与 schedule，以及 `num_workers=0`，不承诺任意 world size 恢复或 EP/TP。
+For P1, two-node HSDP16 compared the model, the optimizer and the state of each rank between 8 continuous steps and 4 steps plus 4 resumed steps. The new V2 methods also completed their own full-state resume. See the [P1 evidence](evidence/p1.json) and the [V2 evidence](evidence/recipes-v2.json). These acceptances are limited to the recorded configurations. A strict continuation requires the same source, data/tokenizer, topology, optimizer/loss and schedule, and `num_workers=0`. Resume at any world size, and EP/TP, are not promised.
 
-恢复前记录父尝试、checkpoint 身份、原 schedule、拓扑与恢复检查。`recipe_experiments.py` 要求显式 `--resume`，启动前把完整 DCP 保护到 rolling 目录之外。使用 CVSM 时，每次独立提交（包括失败后的重试）建立新的 MLflow run；一次提交内预定的分段保存/恢复保留各自的进程收据，不覆盖原记录。
+Before a resume, record the parent attempt, the checkpoint identity, the original schedule, the topology and the resume checks. `recipe_experiments.py` requires an explicit `--resume`. Before the start, it protects the complete DCP outside the rolling directory. With CVSM, each separate submission (a retry after a failure included) creates a new MLflow run. Planned segment saves and resumes inside one submission keep their own process receipts and do not overwrite the original record.
 
-`scripts/recipe_experiments.py` 在已经分配的 GPU 上运行，消费标准 torchrun 多节点环境；每个并行 agent/worktree 使用独立输出根，多节点的不同实验也使用独立 rendezvous。`scripts/run.py` 仍是可选的单机、前台命令记录端；`gpus=[]` 只关闭本地 GPU 租约。资源分配、持久作业监督、远端 GPU 小时计量和 walltime 上限由使用者的运行环境负责。
+`scripts/recipe_experiments.py` runs on GPUs that are already allocated, and it uses the standard torchrun multi-node environment. Each parallel agent or worktree uses its own output root. Different multi-node experiments also use their own rendezvous. `scripts/run.py` is still the optional single-machine, foreground command recorder. `gpus=[]` only turns off the local GPU lease. Resource allocation, supervision of persistent jobs, remote GPU-hour accounting and walltime limits are the job of the user's run environment.

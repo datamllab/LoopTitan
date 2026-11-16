@@ -215,7 +215,8 @@ def arm_row(reference, arm, *, source: str, seq_len: int, tolerance: float = 0.0
 def budget_table(atlas: dict, arms: list[dict] = ()) -> dict:
     """The docs table: per recipe, the nearest shape on the grid (a matching one if there is any) and its three
     relative differences to the reference. ``nearest`` is ``None`` if no shape has all three costs known.
-    ``arms`` are ``arm_row`` results; each is listed under the atlas recipe its name ends with (``p1_smelt``: smelt)."""
+    ``arms`` are ``arm_row`` results; each is listed under the atlas recipe its name ends with (``p1_smelt``: smelt),
+    and an arm whose name ends with none is a ValueError."""
     rows = []
     for name, count in atlas["summary"].items():
         known = [p for p in atlas["points"] if p["recipe"] == name and _residual(p) is not None]
@@ -223,14 +224,20 @@ def budget_table(atlas: dict, arms: list[dict] = ()) -> dict:
         rows.append({"recipe": name, **count,
                      "nearest": None if near is None else {"shape": near["shape"], "matched": near["matched"],
                                                            "relative_differences": near["relative_differences"]}})
+    placed = []
+    for arm in arms:
+        after = next((name for name in atlas["summary"] if arm["recipe"].endswith(f"_{name}")), None)
+        if after is None:
+            raise ValueError(f"--arm {arm['source']}: recipe name {arm['recipe']!r} does not end with _<recipe> for an "
+                             f"atlas recipe: {', '.join(f'_{name}' for name in atlas['summary'])} "
+                             "(e.g. p1_smelt is listed after smelt)")
+        placed.append({**arm, "after": after})
     reference = atlas["reference"]
     return {"reference": {key: reference[key] for key in ("source", "name", "seq_len", "tolerance", "cost_formula_version",
                                                           *METRICS.values())},
             "grid": {**{key: atlas["grid"][key] for key in ("dims", "hidden_dims", "num_experts")},
                      **{key: atlas["grid"]["fixed"][key] for key in ("head_dim", "num_kv_heads", "top_k")}},
-            "rows": rows,
-            "arms": [{**arm, "after": next(name for name in atlas["summary"] if arm["recipe"].endswith(f"_{name}"))}
-                     for arm in arms]}
+            "rows": rows, "arms": placed}
 
 
 def table_text(table: dict) -> str:
@@ -379,7 +386,10 @@ def main() -> None:
     if args.table is not None:
         arms = [arm_row(reference, RecipeSpec.from_dict(json.loads(Path(path).read_text())), source=path,
                         seq_len=seq_len, tolerance=args.tolerance) for path in args.arm]
-        text = table_text(budget_table(atlas, arms))
+        try:
+            text = table_text(budget_table(atlas, arms))
+        except ValueError as error:  # an --arm the table cannot place
+            parser.error(str(error))
         if not args.check:
             args.table.write_text(text)
             print(args.table)

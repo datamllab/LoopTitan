@@ -50,7 +50,8 @@ UNCHECKED = ("that training this configuration produced the log, metrics and eva
              "source.dirty is the state of the tracked files at launch, not a comparison of the code that ran with the commit",
              "the content of train.log (only its sha256 is compared) and runtime fields other than package versions",
              "the TorchTitan version as the training process saw it: it is recorded by the bench process only",
-             "the submission-level gpu_hours and core: declared values not bound to any file",
+             "the declared gpu_hours total against the gpu_hours in each run's metrics.json, and core (bound to no file)",
+             "for LR trials other than the selected one, eval-test.json (checked by hash only)",
              "the prepared data behind the manifest fingerprint (needs the data)")
 
 
@@ -330,7 +331,7 @@ def _differences(declared: Any, captured: Any, path: str = "") -> list[tuple[str
 
 
 def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[str, ...], files: Mapping[str, Any],
-                  log_sha256: str, submission: Submission, track: Track, protocol: list[str]) -> None:
+                  log_sha256: str, submission: Submission, track: Track, protocol: list[str], missing: list[str]) -> None:
     """Compare one run's captured config, metrics and evaluation outputs with its declaration and the track."""
     config, metrics = files["config.json"], files["metrics.json"]
     if not isinstance(config, Mapping) or not isinstance(metrics, Mapping):
@@ -357,6 +358,8 @@ def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[s
                 "config.json source.dirty (tracked files)": (source.get("dirty"), False),
                 "metrics.json completed_updates": (metrics.get("completed_updates"), entry.get("final_update")),
                 "train.log sha256": (log_sha256, entry.get("log_sha256"))}
+    if "torch" not in runtime:  # The training process always records its torch version.
+        missing.append(f"{label}: config.json runtime.torch is missing")
     for name, pin in trainer_pins().items():  # The training process's own runtime record too, where it has the package.
         required[f"config.json trainer.{name}"] = (str(trainer.get(name)).split("+")[0], pin)
         if name in runtime:
@@ -423,7 +426,8 @@ def _bind(submission: Submission, track: Track, folder: Path, protocol: list[str
         except ValueError as error:
             protocol.append(f"{label}: run evidence is not valid JSON: {error}")
             continue
-        _run_evidence(label, entry, lr, splits, files, bound[paths["train.log"]], submission, track, protocol)
+        _run_evidence(label, entry, lr, splits, files, bound[paths["train.log"]], submission, track, protocol,
+                      missing)
         checked.append(f"{label}: config.json in {run!r} against the declared recipe (seed, LR, schedule, updates, "
                        "global batch, model, optimizer) and the track (launch topology, data manifest, trainer and runtime "
                        "package pins, source commit with no tracked change); metrics.json, " + ", ".join(f"eval-{split}.json" for split in splits)

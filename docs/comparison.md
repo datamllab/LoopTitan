@@ -1,6 +1,6 @@
-# 成本与比较契约
+# Cost and comparison contract
 
-[`moeloop.costs.estimate_cost()`](../src/moeloop/costs.py) 与 [`moeloop.comparison`](../src/moeloop/comparison.py) 返回普通 JSON，不分配 GPU、不启动训练。参数存储、逻辑执行、数据暴露和实测结果分别报告。
+[`moeloop.costs.estimate_cost()`](../src/moeloop/costs.py) and [`moeloop.comparison`](../src/moeloop/comparison.py) return plain JSON. They do not allocate a GPU and do not start training. Parameter storage, logical execution, data exposure and measured results are reported separately.
 
 ```python
 from moeloop.recipes import foil_base_spec, foil_spec
@@ -17,7 +17,7 @@ print(sorted(comparison["unknown"]))  # ['data', 'evaluation', 'quality', 'runti
 print(len(diff_recipes(base, foil)) > 0)  # True
 ```
 
-采样深度的 recipe 同样返回数字，不再是 `None`：
+A recipe with sampled depth also returns numbers. It no longer returns `None`:
 
 ```python
 from moeloop.costs import estimate_cost
@@ -28,28 +28,28 @@ print(depth["formula_version"])  # sampled_depth_matrix_v1
 print(depth["flops"]["training_depth"]["quantile_visits"])  # {'p50': 4, 'p95': 8}
 ```
 
-## 报告口径
+## Reporting definitions
 
-| 字段 | 含义 |
+| Field | Meaning |
 |---|---|
-| `parameters.unique_total/unique_trainable` | 每个实际 owner 计一次；trainable 默认未冻结模型 |
-| `parameters.unique_non_embedding` | 同时排除独立 input embedding 和 output head，其余参数均保留 |
-| `parameters.by_component/by_region` | attention、norm、router、expert、head 及各区域 owner/几何 |
-| `calls` | 训练 forward/backward/recompute Cell、router、expert assignments、terminal head，以及独立的 inference_cells |
-| `flops` | 每 padded input position 的矩阵 forward/backward/recompute，含独立 head/router 分项 |
-| `tokens` | 估算采用的 batch/context/packed positions，实际有效 input/labels 待运行提供 |
-| `kv` | 以 spec.inference.num_visits 计算每逻辑 attention 调用的 K+V，指定 context/batch/dtype 下的 bytes |
-| `unknown` | 未估计的算子、optimizer、运行内存、实际 tokens 和实测工作量 |
+| `parameters.unique_total/unique_trainable` | Each actual owner counts once. Trainable defaults to the unfrozen model. |
+| `parameters.unique_non_embedding` | Excludes both the separate input embedding and the output head. All other parameters stay in. |
+| `parameters.by_component/by_region` | Attention, norm, router, expert and head, and the owners and geometry of each region |
+| `calls` | Training forward, backward and recompute Cells, router, expert assignments and terminal head, and separately `inference_cells` |
+| `flops` | Matrix forward, backward and recompute per padded input position, with separate head and router items |
+| `tokens` | The batch, context and packed positions that the estimate uses. The run supplies the actual valid inputs and labels. |
+| `kv` | K+V per logical attention call, computed with `spec.inference.num_visits`, in bytes at the given context, batch and dtype |
+| `unknown` | Operators that are not estimated, the optimizer, runtime memory, actual tokens and measured work |
 
-默认公式 `fixed_terminal_matrix_v1` 用一次 MAC=2 FLOPs；attention QK/AV 计两个稠密 S×S 矩阵乘，不扣 causal triangle/document mask。显式传入 `attention_pairs_per_sequence` 时使用 `fixed_terminal_document_matrix_v1`：按实际 input mask/document边界统计每条 packed sequence 允许的 causal query/key pairs（含对角线），传入其均值；不由 label 数或平均文档长度猜测。`estimate_cost()`、`compare_recipes()`、`smelt_p1_pair()` 都接受该参数。
+The default formula `fixed_terminal_matrix_v1` counts one MAC as 2 FLOPs. Attention QK and AV count as two dense S×S matrix multiplications. The formula does not subtract the causal triangle or the document mask. When you pass `attention_pairs_per_sequence` explicitly, the formula is `fixed_terminal_document_matrix_v1`. For this value, count the causal query/key pairs (diagonal included) that the actual input mask and document boundaries allow in each packed sequence, and pass their mean. Do not guess the value from the label count or from the mean document length. `estimate_cost()`, `compare_recipes()` and `smelt_p1_pair()` all accept this parameter.
 
-两种口径的 full-BPTT 矩阵 backward 均估为 forward 两倍。`full_cells` 追加 Cell 矩阵的一次 replay，terminal head/input adapter 不在这些 Cell 内。`activation_checkpointing=None` 表示未知 recompute，不当成零。文档 pairs 校正的是分析矩阵工作量，不等于 FlexAttention 实际 block/kernel 工作量或 wall time。
+In both definitions, the full-BPTT matrix backward is estimated as two times the forward. `full_cells` adds one replay of the Cell matrices. The terminal head and the input adapter are not in these Cells. `activation_checkpointing=None` means that the recompute is unknown. It does not mean zero. The document-pairs correction applies to the analytical matrix work. It is not equal to the actual block or kernel work of FlexAttention, and it is not wall time.
 
-采样深度和尾段梯度（`TrainingRecipe` 的 `sampled_visits`/`depth_rule`、`grad_visits`）使用 `sampled_depth_matrix_v1`（给定 `attention_pairs_per_sequence` 时为 `sampled_depth_document_matrix_v1`）：前向按期望深度计，反向与重算覆盖 prefix、suffix、head 和最后 `min(grad_visits, k)` 个 core visit，对声明的深度分布取期望（工作量对 k 与 `min(grad_visits, k)` 是线性的）。`flops.training_depth` 另给该规则下 p50/p95 深度的单次成本（`quantiles.p50/p95.training_per_token`，每 padded position，对应一次 update 或一个 microbatch），工作量随深度不减，所以它们是典型与偏大的单次代价。这些是声明分布上的估计，不是某次运行抽到的深度或实测工作量，后者看训练记录里每 microbatch 的实际 r。采样深度下 `calls` 的逻辑调用数为 `None`，nominal 深度的值另列在 `calls.nominal`。尾段梯度却没有 input injection（最终损失到前缀的路径被截断），或目标不被支持时，没有可信 training FLOPs，相应值为 `None` 并说明原因。dispatch、norm、softmax、CE、optimizer、通信和 allocator 未计项保留 unknown；矩阵 FLOPs 不替代 wall time、MFU 或峰值显存。参数共享不合并逻辑 KV slot。
+Sampled depth and tail gradients (`sampled_visits`/`depth_rule` and `grad_visits` of `TrainingRecipe`) use `sampled_depth_matrix_v1` (`sampled_depth_document_matrix_v1` when `attention_pairs_per_sequence` is given). The forward counts at the expected depth. Backward and recompute cover the prefix, the suffix, the head and the last `min(grad_visits, k)` core visits. The estimate takes the expectation over the declared depth distribution (the work is linear in k and in `min(grad_visits, k)`). `flops.training_depth` also gives the cost of one step at the p50 and p95 depths of this rule (`quantiles.p50/p95.training_per_token`, per padded position, for one update or one microbatch). The work does not decrease with depth, so these values are a typical cost and a high cost for one step. These values are estimates on the declared distribution. They are not the depths that one run sampled, and they are not measured work. For those, read the actual r of each microbatch in the training record. With sampled depth, the logical call counts in `calls` are `None`. The values at the nominal depth are in `calls.nominal`. When tail gradients have no input injection (the path from the final loss to the prefix is cut), or when the objective is not supported, there are no reliable training FLOPs. The value is then `None`, with a reason. Dispatch, norm, softmax, CE, optimizer, communication and allocator items are not counted and stay unknown. Matrix FLOPs do not replace wall time, MFU or peak memory. Parameter sharing does not merge logical KV slots.
 
-固定深度的训练 calls/FLOPs 使用 `model.num_visits`，可信训练估计还要求 `training.num_visits` 与之匹配（采样深度由深度规则决定，`model.num_visits` 只给 nominal 前向）；KV 独立使用 `spec.inference.num_visits`，缺省才回落到 model 深度。输出的 `calls.inference_cells`、`kv.num_visits` 和 `kv.logical_slots` 明示这一差别。因此只改声明的 inference depth 不会改训练 FLOPs，却会显示实际逻辑 KV 差异；per-visit 模块超过 `visit_capacity` 直接拒绝。比较需要分别固定训练和评价深度，不能用训练深度覆盖推理声明。
+Fixed-depth training calls and FLOPs use `model.num_visits`. A reliable training estimate also requires that `training.num_visits` matches it. (With sampled depth, the depth rule sets the depth, and `model.num_visits` gives only the nominal forward.) The KV cache uses `spec.inference.num_visits` independently. Only when that value is not set does it fall back to the model depth. The output fields `calls.inference_cells`, `kv.num_visits` and `kv.logical_slots` show this difference. Thus a change of only the declared inference depth does not change the training FLOPs, but it does show the actual logical KV difference. A per-visit module above `visit_capacity` is rejected. A comparison must fix the training depth and the evaluation depth separately. It must not use the training depth to override the inference declaration.
 
-## CLI 和普通 JSON
+## CLI and plain JSON
 
 ```sh
 python scripts/compare_recipes.py inspect smelt --seq-len 2048
@@ -61,29 +61,29 @@ python scripts/compare_recipes.py compare recipes/p1_moe.json recipes/p1_smelt.j
 python scripts/compare_recipes.py pair > /tmp/moeloop-smelt-pair.json
 ```
 
-在 checkout 根运行，或使用脚本绝对路径；recipe 参数也可用 `RecipeSpec.to_dict()` 保存的 JSON 路径。`inspect` 输出 recipe/cost，`diff` 展示 resolved model/training/optimizer/run/inference 的实际差异，`compare` 生成比较记录。区域继承先 resolve，避免把显式写出继承值当成机制差异。`inspect/compare` 支持显式传入文档 pairs；`diff` 不计算成本，`pair` 保留自己的小型 dense-S² 合约，均不接受该参数。
+Run the commands from the checkout root, or use the absolute path of the script. A recipe argument can also be the path of a JSON file saved with `RecipeSpec.to_dict()`. `inspect` prints the recipe and its cost. `diff` shows the actual differences of the resolved model, training, optimizer, run and inference sections. `compare` makes a comparison record. Region inheritance is resolved first. Thus an inherited value that is written out explicitly does not show as a mechanism difference. `inspect` and `compare` accept explicit document pairs. `diff` does not compute costs, and `pair` keeps its own small dense-S² contract. Neither of these two accepts the parameter.
 
-`compare_recipes(reference, candidate, seq_len=..., data=..., evaluation=...)` 可接收普通数据/评价身份。比较前固定 question/arms、manifest/tokenizer、validation/test 隔离、有效数据暴露、objective、optimizer/schedule、seed、终点、推理深度/读出、共同 heldout 指标（CE 或字节精确的 BPB）和选择规则。CLI 未附加实际身份时，相应项保持 unknown。
+`compare_recipes(reference, candidate, seq_len=..., data=..., evaluation=...)` can take plain data and evaluation identities. Before the comparison, fix these items: the question and arms, the manifest and tokenizer, validation/test isolation, the effective data exposure, the objective, the optimizer and schedule, the seed, the endpoint, the inference depth and readout, the common held-out metric (CE or byte-exact BPB) and the selection rule. When the CLI does not attach actual identities, these items stay unknown.
 
-四个分类是 `matched`、`controlled`、`measured-different`、`unknown`：前三个分析预算在容差内才 matched，确实相同的配置才 controlled；`measured-different` 保存已算出的预算差异，以 `basis=analytical_estimate` 说明来源，组名不表示做过 GPU 实测。未知不会被判为 matched。
+The four categories are `matched`, `controlled`, `measured-different` and `unknown`. The three analytical budgets are matched only when they are within the tolerance. A setting is controlled only when the configurations are actually identical. `measured-different` keeps the budget differences that were computed, with `basis=analytical_estimate` to show their source. The group name does not mean that a GPU measurement was made. An unknown item is never judged as matched.
 
-## 历史小型工程配对
+## Historical small engineering pair
 
-`smelt_budget_pair()` 固定枚举 SMELT E∈{8,10,12,14,16} 五个形状，返回选定 E=12 的比较。baseline 是 12 个独立层、每层 8 experts；SMELT 是 8 物理层（2 prefix、4 core×2、2 suffix）、每 bank 12 experts；均有 12 次逻辑 Cell 调用。共同 d=128、单 expert hidden=256、top-k=2、heads=4/2。
+`smelt_budget_pair()` enumerates a fixed set of five SMELT shapes, E∈{8,10,12,14,16}, and returns the comparison for the selected E=12. The baseline has 12 independent layers with 8 experts each. SMELT has 8 physical layers (2 prefix, 4 core×2, 2 suffix) with 12 experts per bank. Both have 12 logical Cell calls. Both use d=128, a hidden size of 256 per expert, top-k=2 and heads=4/2.
 
-API 默认 vocab50257、context2048、batch1、BF16 KV、无 AC 时，unique non-embedding 参数为 10,042,496 / 9,844,864，矩阵 training FLOPs/position 为 94,114,560 / 94,151,424，逻辑 KV 均为 6,291,456 bytes。三项均满足相对 baseline 的绝对差异≤5%；5% 是工程规则，不冒充原文容差。这是默认分析例子；DCLM 实际运行须显式使用 manifest 的 vocab151669，重新计算含 head 的工作量。`pair` 固定其 CLI 假设，其他 AC/dtype/batch/容差用 `compare`。
+With the API defaults (vocab50257, context2048, batch1, BF16 KV, no AC), the unique non-embedding parameters are 10,042,496 / 9,844,864. The matrix training FLOPs per position are 94,114,560 / 94,151,424. The logical KV is 6,291,456 bytes for both. For all three, the absolute difference relative to the baseline is ≤5%. The 5% is an engineering rule. It is not presented as a tolerance from the original paper. This is the default analytical example. Actual DCLM runs must use the manifest's vocab151669 explicitly and compute the work again with the head included. `pair` fixes its CLI assumptions. For other AC, dtype, batch or tolerance values, use `compare`.
 
-该 JSON 证明声明的分析预算配对。真实 pair pilot、四方法短训、恢复和 HF 证据由实际产物核验，见[验证记录](validation.md)；它没有给出质量排名。
+This JSON proves the declared analytical budget pair. The real pair pilot, the four-method short training, resume and the HF evidence are checked against the actual artifacts; see the [validation record](validation.md). The JSON gives no quality ranking.
 
-## P1 与文档内 attention 预算
+## P1 and the within-document attention budget
 
-`smelt_p1_pair()` 固定普通基线 d672/L10/E64/top8/F544/heads7/KV1，SMELT 为 d576、10物理层（2+5+3，中间5层执行两遍）、E96/top8/heads9/KV1；只在12个预声明 FFN widths（384至472、步长8）中按最大分析预算差异选形，不使用 heldout 质量选形。两臂 vocab151669、context4096，SMELT 共15次逻辑 Cell 调用。
+`smelt_p1_pair()` fixes the ordinary baseline as d672/L10/E64/top8/F544/heads7/KV1. SMELT is d576 with 10 physical layers (2+5+3, the middle 5 layers run twice) and E96/top8/heads9/KV1. The shape is selected only among 12 pre-declared FFN widths (384 to 472, step 8). The selected shape has the smallest maximum analytical budget difference. Held-out quality is not used to select the shape. Both arms use vocab151669 and context4096. SMELT has 15 logical Cell calls in total.
 
-普通基线的100M-active档是一次遍历约98.5M active non-embedding body；唯一 non-embedding 参数约712.7M，含两个独立词表 owner 的总参数约916.5M。实际 SMELT F440 约737.8M non-embedding unique、总参数约912.6M；active、unique、逻辑访问工作量分别由输出字段解释，不能用“100M”指总模型大小。
+The 100M-active tier of the ordinary baseline is an active non-embedding body of about 98.5M for one pass. Its unique non-embedding parameters are about 712.7M. Its total parameters, with the two separate vocabulary owners, are about 916.5M. The actual SMELT F440 has about 737.8M unique non-embedding parameters and about 912.6M total parameters. The output fields explain the active, unique and logical-visit work separately. Do not use "100M" for the total model size.
 
-本次数据已完成 train24,000,067,249、validation10,001,497、test10,009,889有效 labels；两臂实际完成各19,537次更新、20,486,029,312 fresh labels。预算采用[完整训练 prefix 统计](evidence/p1-data-statistics.json)：epoch0、seed42、world16下5,001,472个4096-token blocks，无padding，每序列允许的文档内 causal query/key pairs 均值为 **4,180,216.9229844734**，包括对角线。它覆盖完整拟训练 prefix，已用实际 loader 交叉检查，不是20M-label小样本，也不等于 dense-S² 或完整 causal triangle。
+The data of this run has train 24,000,067,249, validation 10,001,497 and test 10,009,889 valid labels. Each arm completed 19,537 updates and 20,486,029,312 fresh labels. The budget uses the [statistics of the complete training prefix](evidence/p1-data-statistics.json): epoch0, seed42, world16, 5,001,472 blocks of 4096 tokens, no padding. The mean number of within-document causal query/key pairs allowed per sequence is **4,180,216.9229844734**, diagonal included. This value covers the complete planned training prefix and was cross-checked with the actual loader. It is not from a small sample of 20M labels. It is not equal to dense-S² or to the full causal triangle.
 
-直接加载发布的精确 JSON 复算；下例仅运行 CPU 分析，不启动训练：
+Load the published exact JSON directly to compute the values again. The example below runs only the CPU analysis. It does not start training.
 
 ```python
 import json
@@ -103,35 +103,35 @@ comparison = compare_recipes(
 print(json.dumps(comparison["matched"], indent=2))
 ```
 
-| 分析预算，按 reference 的相对差 | 普通 MoE | SMELT | 差异 |
+| Analytical budget, relative difference to the reference | Ordinary MoE | SMELT | Difference |
 |---|---:|---:|---:|
-| unique non-embedding 参数 | 712,656,672 | 737,845,056 | +3.5344% |
+| unique non-embedding parameters | 712,656,672 | 737,845,056 | +3.5344% |
 | training matrix FLOPs / padded position | 1,284,757,348.671 | 1,248,742,044.863 | −2.8033% |
-| logical KV bytes，batch1 / 4096ctx / 2 bytes | 15,728,640 | 15,728,640 | 0% |
+| logical KV bytes, batch1 / 4096ctx / 2 bytes | 15,728,640 | 15,728,640 | 0% |
 
-三个预算都落在预声明5%以内；batch1仅为成本报告单位，实际训练 global batch 为256条序列。固定12个FFN候选的预算筛选选中 F440，未使用质量指标。`p1_smelt_spec()` 给出这个 F440 臂（实测 pairs 口径，与 P2 相同）；无 pairs 的 `smelt_p1_pair()`/`recipe_anchor.py` 按 dense-S² 选出从未训练过的 F424；生成新 provisional JSON 不会生成本次实际冻结身份。数据重建、16卡2×8 HSDP 与完整 WSD 命令见[训练文档](training.md#p1-实际配方与双机训练)。
+All three budgets are within the pre-declared 5%. batch1 is only the unit of the cost report. The actual training global batch is 256 sequences. The budget screen over the fixed 12 FFN candidates selected F440 and used no quality metric. `p1_smelt_spec()` gives this F440 arm (with the measured-pairs definition, the same as P2). Without pairs, `smelt_p1_pair()` and `recipe_anchor.py` use dense-S² and select F424, which was never trained. A newly generated provisional JSON does not reproduce the actual frozen identity of this run. For the data rebuild, the 16-GPU 2×8 HSDP and the complete WSD commands, see the section on the actual P1 recipes and two-node training in the [training documentation](training.md).
 
-本次训练源码为 `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`。两臂相同数据顺序、seed42、batch/microbatch、优化器、终点与读出；训练、数据、运行与评价身份在开跑前冻结。后续公开入口补丁只暴露已有参数和实际工件，不将其新 HEAD 写成训练来源。
+The training source of this run is `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`. Both arms use the same data order, seed42, batch and microbatch, optimizer, endpoint and readout. The training, data, run and evaluation identities were frozen before the start. Later patches to the public entry points only expose existing parameters and actual artifacts. Their new HEAD is not written down as the training source.
 
-### 如何读 P1 结果
+### How to read the P1 results
 
-[P1 证据](evidence/p1.json)分开报告完整约10M-label validation/test 端点、[原生约1M-label验证曲线](evidence/p1-native-curves.svg)及[末段放大](evidence/p1-native-late-curves.svg)、实际 GPUHr 和三预算。相同数据量 D 的端点回答等数据下的质量；共同解析计算 C 的曲线只在两臂共同观测范围内插值，并保留相邻点/权重，不外推到未训练区域。C 使用冻结矩阵公式乘以真实 padded positions，不能称为实测 GPU FLOPs。完整FP32 HF终点评价与原生BF16固定验证片段不混成同一条曲线。
+The [P1 evidence](evidence/p1.json) reports these items separately: the complete validation/test endpoints of about 10M labels each, the [native validation curves of about 1M labels](evidence/p1-native-curves.svg) with a [zoom on the late part](evidence/p1-native-late-curves.svg), the actual GPU hours and the three budgets. The endpoints at the same data amount D answer the question of quality at equal data. The curves at common analytical compute C interpolate only inside the range that both arms observed. They keep the neighbouring points and weights, and they do not extrapolate into a region that was not trained. C is the frozen matrix formula times the actual padded positions. Do not call it measured GPU FLOPs. The complete FP32 HF endpoint evaluation and the native BF16 fixed validation slice are not merged into one curve.
 
-SMELT−MoE 的 CE 差为负表示前者更好。配对文档评价要求同一数据/上下文/读出与各文档 label counts；它不估计训练 seed 方差。本次只训练 seed42；小幅或没有优势的结果照实保留，不以单点领先声称普适收益或完整复现 SMELT 论文。
+A negative SMELT−MoE CE difference means that SMELT is better. Paired document evaluation requires the same data, context and readout, and the label count of each document. It does not estimate the variance across training seeds. This run trained only seed42. A small advantage or no advantage is kept as it is. A single-point lead is not used to claim a general gain or a complete reproduction of the SMELT paper.
 
-运行成本与实现对照也分开：P1 如实报告两种结构的墙钟和 GPUHr。普通 MoE 与官方 TorchTitan 的[同几何8卡 FSDP 对照](evidence/performance-fsdp8.json)测得 median step time 开销1.95%，使用 GPU-resident synthetic 数据、无数据加载/验证/存盘；它不覆盖跨机或全部方法，也不是完整BF16逐梯度等价证明。SMELT 有15次逻辑 Cell 调用，MoE有10次；两种模型的成本差不能直接归因于同一模型实现的性能回退。
+Run cost and the implementation check are also separate. P1 reports the wall-clock time and the GPU hours of the two structures as measured. The [same-geometry 8-GPU FSDP check](evidence/performance-fsdp8.json) of the ordinary MoE against the official TorchTitan measured a median step-time overhead of 1.95%. That check used GPU-resident synthetic data, with no data loading, validation or checkpoint saving. It does not cover multi-node runs or all methods. It is also not a complete proof of BF16 equivalence gradient by gradient. SMELT has 15 logical Cell calls and the MoE has 10. Thus the cost difference between the two models cannot be attributed directly to a performance regression of the same model implementation.
 
-## 比较回答的问题
+## Questions that a comparison answers
 
-同底座机制消融保持无关机制和评价一致；资源匹配 recipe 竞争允许明示结构/optimizer 差异，记录预算与替换；总训练计算下的数据/深度分配还需要实际工作量和数据暴露。三类问题分别报告。跨方法质量采用共同标准 LM heldout：Bench 和跨 tokenizer 的比较用字节精确的 BPB（`evaluate_heldout` 的 `bpb`），CE 同时保留；训练 objective 单独报告；后续 Ouro expected/entropy 目标不能与 terminal CE 混排。
+A mechanism ablation on the same base keeps unrelated mechanisms and the evaluation the same. A resource-matched recipe competition allows stated differences in structure or optimizer, and records the budgets and the substitutions. An allocation of data and depth under a total training compute also needs the actual work and the data exposure. Report the three kinds of question separately. Cross-method quality uses a common standard LM held-out set. The Bench and comparisons across tokenizers use byte-exact BPB (`bpb` of `evaluate_heldout`), and CE is kept as well. The training objective is reported separately. Later Ouro expected/entropy objectives must not be ranked together with terminal CE.
 
 ## Looped MoE Bench
 
-[`eval/bench/tracks.json`](../eval/bench/tracks.json) 冻结了四条 track：S（C-grid 规模，约26M unique non-embedding 参数，单卡入门）、M（P1 几何，5B labels 的筛选）、L（P1 几何和冻结的 P1 schedule，约20.5B labels）、P2（P2 几何，约200M 激活参数，5B labels，Phase 1 研究的主轨道，其余规则同 M）；数值以该文件为准，S 的 label 预算标为 provisional，首次参考 run 前由人重新冻结。每条 track 固定数据 manifest 与 tokenizer、序列长度、global batch、schedule、优化器设置、seed 规则，以及学习率（S/M 档固定学习率网格，L 与 P2 档每个优化器一个学习率），评价是完整 validation/test 上的字节精确 BPB。
+[`eval/bench/tracks.json`](../eval/bench/tracks.json) freezes four tracks. S: C-grid scale, about 26M unique non-embedding parameters, a single-GPU entry track. M: P1 geometry, a screen at 5B labels. L: P1 geometry and the frozen P1 schedule, about 20.5B labels. P2: P2 geometry, about 200M active parameters, 5B labels, the main track of the Phase 1 study, with the other rules the same as M. The file is the authority for the values. The label budget of S is marked provisional, and a maintainer freezes it again before the first reference run. Each track fixes the data manifest and tokenizer, the sequence length, the global batch, the schedule, the optimizer settings, the seed rule and the learning rate (a fixed learning-rate grid for S and M, one learning rate per optimizer for L and P2). The evaluation is byte-exact BPB on the complete validation and test splits.
 
-预算按本页的 `compare_recipes` 判定：unique non-embedding 参数、训练矩阵 FLOPs/token、逻辑 KV bytes 三项相对 track 参考 recipe 的差异都在 5% 以内；口径是稠密 S²、不计重算，数的是模型工作而不是执行策略。S 和 M 的 LR 在 validation BPB 上按网格选择，L 与 P2 每个优化器只有一个固定 LR、不做试验；排名只看 test BPB；seed 42 必选，其余可选，榜上给均值、范围和 seed 数。GPU 小时与吞吐只报告，不是资格条件。
+Budgets are judged with `compare_recipes` from this page. Unique non-embedding parameters, training matrix FLOPs per token and logical KV bytes must each be within 5% of the track's reference recipe. The accounting uses dense S² and no recompute. It counts model work, not the execution policy. For S and M, the LR is selected on the grid by validation BPB. L and P2 have one fixed LR per optimizer and no trials. Ranking uses test BPB only. Seed 42 is required, and other seeds are optional. The leaderboard gives the mean, the range and the number of seeds. GPU hours and throughput are only reported. They are not eligibility conditions.
 
-[`moeloop.bench`](../src/moeloop/bench.py) 读一份提交 JSON，给出 `eligible`、`budget-mismatch`、`protocol-mismatch`、`missing-evidence` 之一并列出全部原因；`leaderboard` 按 test BPB 均值给合格提交排名：
+[`moeloop.bench`](../src/moeloop/bench.py) reads one submission JSON and gives one verdict of `eligible`, `budget-mismatch`, `protocol-mismatch` and `missing-evidence`, with a list of all reasons. `leaderboard` ranks the eligible submissions by mean test BPB:
 
 ```python
 import json
@@ -144,15 +144,15 @@ print(report.verdict, report.reasons)
 print(leaderboard([report])["rows"])
 ```
 
-核对器只检查提交里声明的内容和证据哈希是否齐全，不重跑训练或评测、不打开被哈希的文件、不判断质量。入口是 `moeloop.bench` 的 Python API；命令行（run、sweep、validate、leaderboard）由 `scripts/bench.py` 提供。
+The snippet checks the declaration alone, so its verdict is never `eligible`. A submission is judged as a folder: `validate(submission, track, folder)`, or `scripts/bench.py validate --dir`, hashes the files the submission declares and compares their content with the declaration and the track, as [Benchmark submission folder](#benchmark-submission-folder) describes. It does not re-run training or evaluation and it does not judge quality; `scripts/bench.py` gives the command line (run, sweep, validate, leaderboard).
 
-## 状态与多轮目标的成本边界
+## Cost boundaries of state updates and multi-visit objectives
 
-固定expected CE使用`fixed_expected_matrix_v1`（显式document pairs时为对应document版本）：每轮coda/head/gate前向、矩阵反向，以及chunked CE checkpoint额外的head投影重算分别计量；最终gate的概率不作为额外退出，训练仍执行所有轮。EMA/RMS/entropy等非矩阵工作按现有policy不计入矩阵FLOPs并明示，不把它们当实测GPU成本。
+Fixed expected CE uses `fixed_expected_matrix_v1` (the matching document version when document pairs are given explicitly). It counts these items separately: the coda, head and gate forward of each visit, the matrix backward, and the extra head-projection recompute of the chunked CE checkpoint. The probability of the final gate does not count as an extra exit. Training still runs all visits. Under the current policy, non-matrix work such as EMA, RMS and entropy is not counted in the matrix FLOPs, and the output states this. This work is not treated as measured GPU cost.
 
-随机深度/尾段梯度的训练work按上文 `sampled_depth_matrix_v1` 取期望，p50/p95的单次成本另列；nominal固定深度示例只是一次前向，不是实际工作。每microbatch实际r/min(k,r)及真实token计数由训练进度另记录。参数owner、固定推理KV和cache资格独立报告，uncached预算不表示实现了缓存。不同训练objective的loss不直接排名，使用有明确推理策略的共同terminal LM heldout。
+For random depth and tail gradients, the training work is the expectation under `sampled_depth_matrix_v1` above. The costs of one step at p50 and p95 are listed separately. The nominal fixed-depth example is only one forward. It is not the actual work. Training progress records the actual r and min(k,r) of each microbatch and the real token counts separately. Parameter owners, the fixed inference KV cache and cache eligibility are reported independently. An uncached budget does not mean that a cache is implemented. Losses of different training objectives are not ranked directly. Use a common terminal LM held-out set with an explicit inference policy.
 
-[新增方法证据](evidence/recipes-v2.json)按冻结估计器的默认dense-S²矩阵口径记录理论成本，和实际native GPUHr分开；#6特定document统计预算保持原身份。该证据早于采样深度的成本模型，其中 Huginn 的 `training_per_token` 仍是 `None`（`fixed_terminal_matrix_v1` 的 nominal 记录）；证据记录不改写，现在重新估计会得到上面的期望值。
+The [evidence for the new methods](evidence/recipes-v2.json) records the theoretical cost with the default dense-S² matrix definition of the frozen estimator, separate from the actual native GPU hours. The budget of #6, with its specific document statistics, keeps its original identity. This evidence is older than the sampled-depth cost model. In it, the `training_per_token` of Huginn is still `None` (the nominal record of `fixed_terminal_matrix_v1`). Evidence records are not rewritten. A new estimate now gives the expected values above.
 
 ## Benchmark submission folder
 
@@ -168,6 +168,6 @@ A Bench entry is a folder, and `python scripts/bench.py validate --dir FOLDER` j
 
 The selected run (seed 42) sits at the top; on a track with an LR grid every other trial has the same files in `lr-<LR>/`. Checkpoints stay outside the folder: a seed names its checkpoint by `checkpoint_sha256`, the sha256 of the DCP `.metadata` file (tensor layout, not weights), and an optional `checkpoint_url`.
 
-The check binds the declaration to these files. It recomputes the sha256 of every file and compares it with `files`: a declared file that is absent, a file that does not match its hash, or a file with no declared hash is `missing-evidence`. For each seed and trial it then compares the captured `config.json` with the declared recipe (seed, LR, schedule and number of updates, global batch, model, optimizer) and with the frozen track (launch topology against the global batch, data manifest, the pinned versions of the `train` extra of `pyproject.toml`: torch as recorded by the bench process and, where it recorded it, by the training process, TorchTitan as recorded by the bench process only; the declared source commit with no tracked file changed when the trial was launched, untracked files such as prepared data not counting), and the evaluation outputs and `metrics.json` with the declared final update and BPB, the recipe's inference depth, and the track's tokenizer and evaluation identity; any disagreement is `protocol-mismatch`. A submission is `eligible` only when every declared hash has its file, every file matches, and every captured configuration agrees. The in-memory `moeloop.bench.validate(submission, track)` without a folder checks the declaration only and is never `eligible`.
+The check binds the declaration to these files. It recomputes the sha256 of every file and compares it with `files`: a declared file that is absent, a file that does not match its hash, or a file with no declared hash is `missing-evidence`. For each seed and trial it then compares the captured `config.json` with the declared recipe (seed, LR, schedule and number of updates, global batch, model, optimizer) and with the frozen track (launch topology against the global batch, data manifest, the pinned versions of the `train` extra of `pyproject.toml`: torch as recorded by the bench process and by the training process (a captured configuration without the training process's record is `missing-evidence`), TorchTitan as recorded by the bench process only; the declared source commit with no tracked file changed when the trial was launched, untracked files such as prepared data not counting), and the evaluation outputs and `metrics.json` with the declared final update and BPB, the recipe's inference depth, and the track's tokenizer and evaluation identity; any disagreement is `protocol-mismatch`. A submission is `eligible` only when every declared hash has its file, every file matches, and every captured configuration agrees.
 
-The report lists under `checked` what was compared and under `unchecked` what it does not compare: that training this configuration produced these outputs, which weights the evaluation outputs scored (they carry no model identity), that the source commit exists (the check uses no network), the recorded source file hashes against the files of that commit (`source.dirty` is the state of the tracked files at launch), the content of `train.log` beyond its hash and runtime fields other than package versions, the TorchTitan version inside the training process, the submission-level `gpu_hours` and `core` (declared, bound to no file), the data behind the manifest fingerprint, and each checkpoint, named by hash and URL. The pins are read from the checkout that runs the check, so changing the `train` extra changes what every stored entry is judged against. Anyone who edits a file and its declared hash together produces a consistent folder; the folder makes a claim inspectable and comparable, and only a rerun reproduces it.
+The report lists under `checked` what was compared and under `unchecked` what it does not compare: that training this configuration produced these outputs, which weights the evaluation outputs scored (they carry no model identity), that the source commit exists (the check uses no network), the recorded source file hashes against the files of that commit (`source.dirty` is the state of the tracked files at launch), the content of `train.log` beyond its hash and runtime fields other than package versions, the TorchTitan version inside the training process, the declared `gpu_hours` total against the `gpu_hours` in each run's `metrics.json`, the declared `core` (bound to no file), the test evaluation output of an LR trial other than the selected one (checked by hash only), the data behind the manifest fingerprint, and each checkpoint, named by hash and URL. The pins are read from the checkout that runs the check, so changing the `train` extra changes what every stored entry is judged against. Anyone who edits a file and its declared hash together produces a consistent folder; the folder makes a claim inspectable and comparable, and only a rerun reproduces it.

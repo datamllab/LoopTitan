@@ -75,7 +75,7 @@ def release(plan, role):
 def test_card_has_required_sections_and_evidence_numbers(plan):
     evidence = p1_evidence()
     card = release(plan, "looped")["card"]
-    assert card.startswith("---\nlicense: apache-2.0\nlibrary_name: transformers\n")
+    assert card.startswith("---\nlicense: mit\nlibrary_name: transformers\n")
     assert '- "org/dclm-fixture"' in card and '- "looped-moe"' in card
     for heading in ("## Recipe", "## Matched analytical budgets", "## Data", "## Training", "## Evaluation",
                     "## Provenance", "## Usage", "## Scope", "## Paired model"):
@@ -154,7 +154,7 @@ def test_dry_run_lists_exact_files_and_hashes(plan, capsys, monkeypatch):
         data = (export / name).read_bytes()
         assert f"{sha(data)}  {len(data):>14,}  {name}" in out
     assert "unlisted.bin" not in out and out.count("generated README.md follows") == 2
-    assert "--- README.md ---\n---\nlicense: apache-2.0" in out
+    assert "--- README.md ---\n---\nlicense: mit" in out
     api.assert_not_called()
 
 

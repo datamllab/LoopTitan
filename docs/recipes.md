@@ -1,6 +1,6 @@
-# 方法配方与阅读入口
+# Method recipes and where to start reading
 
-[`moeloop.recipes`](../src/moeloop/recipes.py) 的 `smelt_spec()` 等函数返回普通 [`RecipeSpec`](../src/moeloop/recipe_spec.py)，不导入 TorchTitan；公开 `trainer_config(spec)` 或去掉 `_spec` 的内置 factory 才构造 native trainer 配置。阅读顺序是 spec → [`LoopedLM.forward` / `Cell.forward`](../src/moeloop/model.py) → [`training.objective`](../src/moeloop/training.py)。`LoopedLM` 是公开名称，`RecursiveLM` 是同一个类对象的兼容别名（不发警告），类在 `model.py` 中就定义为 `LoopedLM`。
+`smelt_spec()` and the other functions of [`moeloop.recipes`](../src/moeloop/recipes.py) return a plain [`RecipeSpec`](../src/moeloop/recipe_spec.py) and do not import TorchTitan. Only the public `trainer_config(spec)`, or a built-in factory (the function name without `_spec`), builds a native trainer configuration. Read in this order: spec → [`LoopedLM.forward` / `Cell.forward`](../src/moeloop/model.py) → [`training.objective`](../src/moeloop/training.py). `LoopedLM` is the public name. `RecursiveLM` is a compatibility alias for the same class object (no warning). `model.py` defines the class as `LoopedLM`.
 
 ```python
 import json
@@ -15,31 +15,32 @@ print(restored.source["selected_E_D_L"])  # [8, 1, 4]
 print(restored.model.core.num_experts)  # 8
 ```
 
-`RecipeSpec` schema 1 中，`model` 描述参数和执行结构，`training` 描述目标/梯度/深度；`source`、`preserved`、`adaptations` 说明原文与适配，`optimizer`、`inference`、`run` 记录运行默认值，`evidence` 留给真实产物身份。空 evidence 和 `run.successful_updates=512` 都不是完成证据。
+In `RecipeSpec` schema 1, `model` describes the parameters and the execution structure, and `training` describes the objective, gradients and depth. `source`, `preserved` and `adaptations` describe the source paper and the adaptations. `optimizer`, `inference` and `run` record the run defaults. `evidence` is for the identities of real artifacts. Neither an empty `evidence` nor `run.successful_updates=512` is evidence of completion.
 
-## 九条选定路径
+## Nine selected paths
 
-前四项已有历史工程资格；SMELT另有下文完整预训练对照。新增Huginn-inspired、LOOM、Ouro及LOOM×attention均已通过512步两卡FSDP、各自完整恢复和独立HF；工程轨迹及范围见[验证记录](validation.md#新增训练动态与组合资格)和[机器可读证据](evidence/recipes-v2.json)。最后的 sandwich 与 relaxed 只有 CPU 上的 recipe 与一致性测试，没有 GPU 运行或证据记录。
+The first four have a historical engineering qualification. SMELT also has the full pretraining comparison below. The added Huginn-inspired, LOOM, Ouro and LOOM×attention paths each passed 512 updates of two-GPU FSDP, their own full resume and standalone HF. [Validation](validation.md) and the [machine-readable evidence](evidence/recipes-v2.json) give the engineering traces and scope. Sandwich, relaxed and the LatentLoop residual variant of SMELT have no engineering qualification record of this kind. They pass the recipe and conformance tests on CPU. Run issues #232 (sandwich, relaxed) and #254 (LatentLoop residual) trained them on GPU with AdamW and with Muon, exported them to HF and evaluated them.
 
-| 方法与入口 | 保留语义 | 共同底座适配 |
+| Method and entry | Preserved semantics | Adaptations to the common stack |
 |---|---|---|
-| [SMELT v3 §3/附录 A](https://arxiv.org/html/2609.01343v3)，`smelt_spec(physical_layers=8)` | prefix/core/suffix 物理层数 2/4/2；core 完整执行两遍；core 的 attention、FFN residual 各乘 1/2，外围为 1 | 公开文本、共同 sparse cells 与 AdamW；普通 MoE 预算配对另定义 |
-| [Meta Looped MoE v1 C.1–C.2](https://arxiv.org/html/2609.40316v1)，`meta_spec(core_layers=2, passes=4)` | 独立 prelude/coda，中段共享循环；固定深度、完整 BPTT、terminal CE | 共同 softmax top-k、选中权重归一化、dropless、AdamW 和独立 embedding/head；不声称验证 scaling law |
-| [Foil v1 §2.1–2.2](https://arxiv.org/html/2609.35751v1)，`foil_spec(num_experts=4, core_layers=4, passes=1)` | core `(E,D,L)→(2E,D/2,2L)`，D 是物理 bank 数；每逻辑 visit 独立 attention，bank 内共享 experts/router/norm | 共同 cell、公开数据和优化器；保留独立 prelude/coda，外围 expert 数为原 E |
-| [Tying v1 §3/附录 B](https://arxiv.org/html/2606.16825v1)，`expert_tying_spec(groups=2, group_size=4)` | 每组 g 个连续逻辑层仅共享 experts，attention/router/norm 逐层独立；expert LR=`base_lr/sqrt(g)`，其他 LR 不变，WD 系数不补偿 | recipe 默认用 AdamW，原文背景是 Muon；`optimizer.name` 改为 `"Muon"` 时 core 专家仍按 `expert_lr_multiplier` 缩放 LR，WD 不补偿；按实际 canonical core expert owner 分组 |
-| [Huginn v2 §3/4.1](https://arxiv.org/html/2502.05171v2)，`huginn_spec()` | 独立随机latent、live prelude anchor、microbatch深度采样、最后 `min(k,r)` 轮反传、独立coda | 公共pre-norm MoE替代原dense/sandwich背景；小模型采样参数显式；fixed-depth zero-init评测、无cache |
-| [LOOM v1 §3/4.2.1](https://arxiv.org/html/2610.01153v1)，`loom_spec()` | 两条normalized EMA、embedding重注入、残差缩放、每轮独立router；full BPTT | 首条路径固定H=3；无段间detach/optimizer step；无cache |
-| [Ouro v5 §3.2–3.4](https://arxiv.org/html/2510.25741v5)，`ouro_spec()` | 逐token逐轮expected CE−entropy；共享gate、末轮接收剩余概率、完整反传 | 共享gate零初始化、entropy系数0.1为公开栈选择；HF只提供固定深度terminal读出 |
-| [Looped Models Done Right, Part I (v1) §2.1/3.1/3.4.2/4.1/附录 A](https://arxiv.org/html/2610.23036v1)，`sandwich_spec()`；稠密路径 `sandwich_spec(dense=True)` | 独立 prelude/coda 包围一个共享 core stack，执行 `passes` 遍；每遍 core 前状态变为 `exp(-dt·a)·z + dt·W e`（`diag_decay`，e 是 prelude 输出，不加 RMSNorm，`W=I`、`a=1`、`dt=1` 起步），`z_0 = e`；固定深度、full BPTT、terminal CE。默认 P2-R3x8-C2 保持论文 P8-R12x8-C8 的 2:3:2 比例 | MoE 路径每个 FFN 是 top-2 专家 bank、无 shared experts，balance 系数 0.001，取发布代码的 input-initialized 路径（论文 MoE 表报告的是 random-state Huginn MoE）；`dense=True` 是 §3.4.2 的稠密路径，无 aux；softmax top-k 替代 sigmoid top-2，论文的 1536 宽 cell、序列长度、词表与优化器设置不复现 |
-| [Relaxed Recursive Transformers v3 §2.2/2.3/3.5/附录 C](https://arxiv.org/html/2410.20672v3)，`relaxed_spec()`；稠密路径 `relaxed_spec(dense=True)` | CYCLE 共享：一个共享层 block（含 norm）按 stack 顺序执行 `passes` 遍，无独立 prelude/coda；每个共享层每轮一份 LoRA，`h = W'x + BAx`，无 alpha 缩放，第 l 轮的 LoRA 只在第 l 轮使用；零初始化（`B = 0`、`A` 高斯），训练从普通 Recursive Transformer 出发，共享参数与 LoRA 都训练；固定深度、full BPTT、terminal CE。默认 4 层 × 2 轮、rank 16 | MoE 路径：每个 FFN 是共享的 top-k 专家 bank，router 与路由专家不加 LoRA，只放松 q/k/v/out，balance 系数取仓库默认 0.01（论文没有 MoE）；`dense=True` 是论文路径，q/k/v/out 与 SwiGLU w1/w3/w2 都加 LoRA，无 aux；从随机权重训练而非 uptraining Gemma/TinyLlama/Pythia，因此 Stepwise/Average/Lower 与截断 SVD 初始化不适用（`LoRA.svd_init` 提供公式 4，用于转换全尺寸权重）；attention 与 FFN 各用一个 rank，不复现按组件的 rank 消融；早退与按深度批处理不在此路径 |
+| [SMELT v3 §3/Appendix A](https://arxiv.org/html/2609.01343v3), `smelt_spec(physical_layers=8)` | prefix/core/suffix physical layer counts 2/4/2; the core runs twice in full; the core attention and FFN residuals are each multiplied by 1/2, the outer cells use 1 | Public text, common sparse cells and AdamW; the budget pairing with an ordinary MoE is defined separately |
+| [Meta Looped MoE v1 C.1–C.2](https://arxiv.org/html/2609.40316v1), `meta_spec(core_layers=2, passes=4)` | Independent prefix/suffix, a shared loop in the middle; fixed depth, full BPTT, terminal CE | Common softmax top-k, normalization of the selected weights, dropless dispatch, AdamW and an independent embedding/head; no claim to verify the scaling law |
+| [Foil v1 §2.1–2.2](https://arxiv.org/html/2609.35751v1), `foil_spec(num_experts=4, core_layers=4, passes=1)` | core `(E,D,L)→(2E,D/2,2L)`, where D is the number of physical banks; each logical visit has its own attention; experts, router and norms are shared within a bank | Common cell, public data and optimizer; the independent prefix/suffix stay, with the original E experts |
+| [Tying v1 §3/Appendix B](https://arxiv.org/html/2606.16825v1), `expert_tying_spec(groups=2, group_size=4)` | Each group of g consecutive logical layers shares only the experts; attention, router and norm are independent per layer; expert LR=`base_lr/sqrt(g)`, other LRs do not change, the WD coefficient is not compensated | The recipe defaults to AdamW; the paper's background is Muon. With `optimizer.name` set to `"Muon"`, the core experts still scale their LR by `expert_lr_multiplier`, and WD is not compensated. Groups follow the real canonical core expert owners |
+| [Huginn v2 §3/4.1](https://arxiv.org/html/2502.05171v2), `huginn_spec()` | Independent random latent, live prefix anchor, depth sampled per microbatch, backpropagation through the last `min(k,r)` visits, independent suffix | The common pre-norm MoE replaces the original dense sandwich background; the sampling parameters for a small model are explicit; fixed-depth zero-init evaluation, no cache |
+| [LOOM v1 §3/4.2.1](https://arxiv.org/html/2610.01153v1), `loom_spec()` | Two normalized EMAs, embedding re-injection, residual scaling, per-visit router; full BPTT | The first path fixes H=3; no detach or optimizer step between segments; no cache |
+| [Ouro v5 §3.2–3.4](https://arxiv.org/html/2510.25741v5), `ouro_spec()` | Per-token, per-visit expected CE−entropy; shared gate, the last visit takes the remaining probability, full BPTT | Zero initialization of the shared gate and the entropy coefficient 0.1 are public-stack choices; HF gives only the fixed-depth terminal readout |
+| [Looped Models Done Right, Part I (v1) §2.1/3.1/3.4.2/4.1/Appendix A](https://arxiv.org/html/2610.23036v1), `sandwich_spec()`; dense path `sandwich_spec(dense=True)` | An independent prefix and suffix surround one shared core stack that runs `passes` times. Before each core visit, the state becomes `exp(-dt·a)·z + dt·W e` (`diag_decay`; e is the prefix output, with no RMSNorm; start at `W=I`, `a=1`, `dt=1`), with `z_0 = e`. Fixed depth, full BPTT, terminal CE. The default P2-R3x8-C2 keeps the 2:3:2 ratio of the paper's P8-R12x8-C8 | In the MoE path, each FFN is a top-2 expert bank with no shared experts and balance coefficient 0.001; it takes the input-initialized path of the released code (the paper's MoE tables report the random-state Huginn MoE). `dense=True` is the dense path of §3.4.2, with no aux. Softmax top-k replaces sigmoid top-2. The paper's 1536-wide cells, sequence length, vocabulary and optimizer settings are not reproduced |
+| [Relaxed Recursive Transformers v3 §2.2/2.3/3.5/Appendix C](https://arxiv.org/html/2410.20672v3), `relaxed_spec()`; dense path `relaxed_spec(dense=True)` | CYCLE sharing: one shared block of layers (norms included) runs `passes` times in stack order, with no independent prefix/suffix. Each shared layer has one LoRA per visit, `h = W'x + BAx`, with no alpha scaling; the visit-l LoRA is used only at visit l. Zero initialization (`B = 0`, Gaussian `A`): training starts from a plain Recursive Transformer, and both the shared parameters and the LoRAs train. Fixed depth, full BPTT, terminal CE. Default 4 layers × 2 visits, rank 16 | MoE path: each FFN is a shared top-k expert bank; routers and routed experts get no LoRA, so only q/k/v/out are relaxed; balance coefficient 0.01, the repository default (the paper has no MoE). `dense=True` is the paper's path: q/k/v/out and SwiGLU w1/w3/w2 all get LoRA, with no aux. Training starts from random weights, not from uptraining Gemma/TinyLlama/Pythia, so the Stepwise/Average/Lower and truncated-SVD initializations do not apply (`LoRA.svd_init` gives eq. 4, for converted full-size weights). Attention and FFN each use one rank; the per-component rank ablation is not reproduced. Early exit and depth-wise batching are not in this path |
+| Variant of SMELT: [LatentLoop v1 §2.1/3.1, Figure 2, Table 5](https://arxiv.org/html/2610.19975v1), `latentloop_residual_spec()` | SMELT's split: the middle half of the physical layers runs twice, with every core owner (attention, router, experts, norms) shared, the paper's MoE Loop (§2.1). Each core attention and FFN residual branch is multiplied by 0.25 at the first visit and by 1 at the second (`visit_residual_scales`); the independent prefix/suffix use 1. Fixed depth, full BPTT, terminal CE | This is the fixed (0.25, 1) per-visit residual of §3.1 on SMELT's loop, not the paper's final LatentLoop method (a 2x mean-pooled first visit, a learned scaled decoder and a wider model, §3.2–3.4), which needs sequence pooling that the common model does not have. Fixed (0.25, 1) replaces learned per-visit coefficients. Attention stays shared across visits (Table 5). The common AdamW, schedule and run defaults replace the paper's training settings |
 
-前四条、sandwich 和 relaxed 使用固定深度/full BPTT/terminal CE；Huginn、LOOM、Ouro 三条的训练差异不能被这些默认值覆盖。所有路径保留显式router aux归约（dense 的 sandwich 与 relaxed 无 aux）。九个 `*_spec()` 的 `optimizer` 默认都是 AdamW；改用 Muon 只改 `optimizer`，分组规则见[架构](architecture.md#5-训练动态必须看得见)和[训练文档](training.md#修改研究机制)。RMSNorm/RoPE/SwiGLU、独立embedding/head、数据和运行环境是共同背景，应记录完整身份。这些是选定核心路径的公开适配，不是原论文全部工程与效果的复现。
+The first four, sandwich, relaxed and the LatentLoop residual variant use fixed depth, full BPTT and terminal CE. Huginn, LOOM and Ouro train differently; these defaults do not apply to them. All paths keep the explicit router aux reduction (the dense sandwich and relaxed paths have no aux). The `optimizer` of all nine `*_spec()` recipe constructors, and of the variant, defaults to AdamW. To use Muon, change only `optimizer`; [Architecture](architecture.md#5-training-dynamics-must-be-visible) and [Training](training.md) give the grouping rule. RMSNorm/RoPE/SwiGLU, the independent embedding/head, the data and the run environment are the common background; record their complete identity. These are public adaptations of the selected core paths. They do not reproduce all the engineering and results of the original papers.
 
-历史四方法工程资格使用300M/1M/1M train/validation/test的预分词 DCLM fixture，继续保留为 smoke；旧副本上游下载 commit 未知，以 parent manifest/chunk SHA 标识。导入保留原 tokens/EOS、不 decode/reencode，只前加本库 BOS=EOS=PAD151645。P1 另用可公开重建的原始 DCLM，已完成24,000,067,249 /10,001,497 /10,009,889 train/validation/test有效 labels。Qwen3-30B-A3B tokenizer pin 为 `ae659febe817e4b3ebd7355f47792725801204c9`、vocab151669；普通 factory 应显式读取 manifest 词表再构造 spec。数据身份、四源文件 tokenizer 和 `--resume` 入口见[训练文档](training.md)。
+The historical engineering qualification of the four methods used a pre-tokenized DCLM fixture of 300M/1M/1M train/validation/test labels. It stays as a smoke test. The upstream download commit of the old copy is unknown; its parent manifest/chunk SHA identifies it. The import keeps the original tokens/EOS, does not decode or re-encode, and only prepends the BOS of this library, BOS=EOS=PAD151645. P1 uses raw DCLM that anyone can rebuild from public sources, with 24,000,067,249 /10,001,497 /10,009,889 train/validation/test valid labels completed. The Qwen3-30B-A3B tokenizer is pinned at `ae659febe817e4b3ebd7355f47792725801204c9`, vocab151669. A plain factory reads the vocabulary from the manifest explicitly before it builds the spec. [Training](training.md) gives the data identity, the tokenizer of four source files and the `--resume` entry.
 
-## P1 普通 MoE / SMELT
+## P1 ordinary MoE / SMELT
 
-实际训练配置已原样发布为 [`p1_moe.json`](../recipes/p1_moe.json) 与 [`p1_smelt.json`](../recipes/p1_smelt.json)。直接加载普通 `RecipeSpec`，保留模型、训练、优化器、完整 schedule 和冻结身份：
+The real training configurations are published unchanged as [`p1_moe.json`](../recipes/p1_moe.json) and [`p1_smelt.json`](../recipes/p1_smelt.json). Load them directly as plain `RecipeSpec` objects. They keep the model, training, optimizer, the full schedule and the frozen identity:
 
 ```python
 import json
@@ -51,34 +52,34 @@ print(spec.model.hidden_dim)  # 440
 print(spec.run["schedule_total_steps"])  # 19537
 ```
 
-| 几何 | 普通 MoE | SMELT |
+| Geometry | Ordinary MoE | SMELT |
 |---|---:|---:|
 | residual width | 672 | 576 |
-| 单 expert hidden | 544 | 440 |
+| single-expert hidden | 544 | 440 |
 | experts / top-k | 64 / 8 | 96 / 8 |
-| 物理 prefix/core/suffix | 0 / 10 / 0 | 2 / 5 / 3 |
-| core visits / 逻辑 Cell calls | 1 / 10 | 2 / 15 |
+| physical prefix/core/suffix | 0 / 10 / 0 | 2 / 5 / 3 |
+| core visits / logical cell calls | 1 / 10 | 2 / 15 |
 | heads / KV heads / head dim | 7 / 1 / 96 | 9 / 1 / 64 |
 
-两臂均为151669词表、独立 embedding/head、4096ctx、固定深度/full BPTT/terminal CE；SMELT 只对 core 两条 residual 各乘1/2。100M-active档指普通基线单次遍历约98.5M active body 参数，排除 embedding/head；其 non-embedding unique约712.7M、模型总量约916.5M，三者不能混称。
+Both arms have the 151669-token vocabulary, an independent embedding/head, 4096ctx, and fixed depth/full BPTT/terminal CE. Only SMELT multiplies the two core residuals by 1/2 each. The 100M-active tier means about 98.5M active body parameters in a single traversal of the ordinary baseline, without the embedding/head. Its non-embedding unique parameters are about 712.7M, and the total model is about 916.5M. These three numbers have different names and must not be mixed.
 
-F440 来自完整拟训练 prefix 的4096ctx文档 packing：epoch0/seed42/world16、5,001,472个 blocks，每序列平均4,180,216.9229844734个文档内 causal attention pairs。预声明12个 FFN widths 的分析筛选仅按 unique non-embedding 参数、training matrix FLOPs 和逻辑 KV 三预算选形，没有看模型质量。`p1_moe_spec()` 与 `p1_smelt_spec()` 重建这两个训练过的臂（F440，与 P2 同为实测 pairs 口径）；不给 pairs 的默认 dense-S² 分析会选出从未训练过的 F424。
+F440 comes from the 4096ctx document packing of the complete planned 20.486B-label training prefix: epoch0/seed42/world16, 5,001,472 blocks, on average 4,180,216.9229844734 within-document causal attention pairs per sequence. An analytical screen of 12 pre-declared FFN widths selected the shape only by three budgets: unique non-embedding parameters, training matrix FLOPs and logical KV. It did not look at model quality. `p1_moe_spec()` and `p1_smelt_spec()` rebuild these two trained arms (F440, with the measured-pairs convention that P2 also uses). The default dense-S² analysis with no pairs selects F424, which was never trained.
 
-两臂实际完成19,537更新、各20,486,029,312 fresh labels、唯一 seed42；采用16×H200双机 HSDP（replicate2×shard8）、local16/GA1/global256序列。完整 WSD 为20步 warmup、stable至10000、9537步 cosine decay，peak LR3e-4，终点降至.1倍。实际训练源码为 `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`；发布后的 CLI/文档接线不改变该来源。
+Both arms completed 19,537 updates, each with 20,486,029,312 fresh labels and the single seed42. They used 16×H200 on two nodes with HSDP (replicate2×shard8) and local16/GA1/global256 sequences. The full WSD schedule is a 20-step warmup, stable up to step 10000 and a 9537-step cosine decay, with peak LR3e-4 that decays to .1× at the end. The real training source is `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`. CLI and documentation wiring after the release does not change this source.
 
-完整终点评价、原生曲线和实际成本见 [P1 证据](evidence/p1.json)，分析预算与科学结论的边界见[成本与比较](comparison.md#p1-与文档内-attention-预算)，数据重建及多机训练命令见[训练文档](training.md#p1-实际配方与双机训练)。这是一组公开 DCLM/共同模型栈适配，不声称复现原论文语料或把一个规模的收益外推到所有 looped MoE 方法。
+[P1 evidence](evidence/p1.json) gives the full endpoint evaluation, the native curves and the real cost. [Cost and comparison](comparison.md) gives the analytical budgets and the limits of the scientific conclusions. [Training](training.md) gives the data rebuild and the multi-node training commands. This is an adaptation to public DCLM and the common model stack. It does not claim to reproduce the corpus of the original paper, and it does not extend a gain at one scale to all looped MoE methods.
 
-## Foil Base 与 Tying topology
+## Foil Base and Tying topology
 
-`foil_base_spec()` 和 `foil_spec()` 接收同一组 Base E,D,L。二者都为每个逻辑 core visit 分配独立 attention，所以 flatten 前后 D×L 个 attention owner 不变，hidden width 和单 expert FFN width 也不变。仅独立 attention 不等于完整 Foil。
+`foil_base_spec()` and `foil_spec()` take the same Base E,D,L. Both give each logical core visit its own attention. So the D×L attention owners do not change with flattening, and the hidden width and the single-expert FFN width also do not change. Per-visit attention alone is not the complete Foil.
 
-E=4,D=2,L=2 时，Base 有两个 4-expert bank、每 bank 两次调用；Foil 有一个 8-expert bank、四次调用。外围各用原 E。D 必须为正偶数。Base-tied 的 shared attention 是另一消融，应另命名和记录差异。
+With E=4,D=2,L=2, Base has two 4-expert banks with two calls per bank. Foil has one 8-expert bank with four calls. The outer cells use the original E in both. D must be a positive even number. The shared attention of Base-tied is a different ablation; give it its own name and record the difference.
 
-Tying `groups=2, group_size=4` 对应连续组 `[0,1,2,3]`、`[4,5,6,7]`：第一份 bank 连续执行四次后进入下一份 bank。native adapter 在 optimizer 构建后识别 canonical core expert 参数，单独应用学习率倍率；attention/router/norm 不缩放，不用含混的参数名正则代替 owner 判断。
+Tying `groups=2, group_size=4` gives the consecutive groups `[0,1,2,3]` and `[4,5,6,7]`. The first bank runs four times in a row; then the next bank starts. After the optimizer is built, the native adapter finds the canonical core expert parameters and applies the learning-rate multiplier to them only. Attention, router and norm are not scaled. No vague regular expression on parameter names replaces the owner check.
 
-## 修改区域
+## Change a region
 
-`ModelConfig` schema 4 的 `prefix/core/suffix: RegionConfig` 可覆盖各区域的 `hidden_dim`、`num_experts`、`top_k`、`always_on_hidden_dim`、`residual_scale`。区域共享 residual width 和 attention 几何；复用配置值不会产生模块/参数别名。旧schema1/2/3按原默认行为读取，新状态/gate/注入默认关闭；配置可读不等于跨源码strict continuation。
+In `ModelConfig` schema 4, `prefix/core/suffix: RegionConfig` can override `hidden_dim`, `num_experts`, `top_k`, `always_on_hidden_dim` and `residual_scale` per region. The regions share the residual width and the attention geometry. A reused configuration value creates no module or parameter alias. Old schemas 1/2/3 load with their original default behaviour; new state, gate and injection options are off by default. A readable configuration does not mean strict continuation across source versions.
 
 ```python
 from dataclasses import replace
@@ -95,17 +96,17 @@ model = LoopedLM(variant.model)
 print(model.config.region_config("core").num_experts)  # 8
 ```
 
-研究变体应更新来源/适配、比较契约与运行证据。改变参数 owner、梯度或目标后，旧运行不能自动证明新路径通过。
+A research variant updates its source/adaptations, its comparison contract and its run evidence. After a change of parameter owners, gradients or the objective, old runs do not prove that the new path passes.
 
-## 三种新增训练语义
+## Three added training semantics
 
-`huginn_spec()` 默认使用shifted Poisson-lognormal：`r=1+Poisson(exp(tau))`，`tau`的参数使平均深度为4，log std为0.5，反传尾段k=2。深度按seed、成功update与microbatch定位、跨ranks同步，无硬cap。训练latent为独立truncated normal，std=`sqrt(2/5)`、边界±3std；评测显式改用zero-init和`eval_passes=4`。这两个初态分布不能混为同一实验条件。
+`huginn_spec()` defaults to a shifted Poisson-lognormal: `r=1+Poisson(exp(tau))`. The parameters of `tau` give a mean depth of 4 and a log std of 0.5. The backpropagated tail is k=2. The depth is a function of the seed, the successful-update count and the microbatch index. It is synchronized across ranks and has no hard cap. The training latent is an independent truncated normal with std=`sqrt(2/5)` and bounds ±3std. Evaluation explicitly uses zero-init and `eval_passes=4` instead. These two initial-state distributions are not the same experimental condition.
 
-`loom_spec(core_layers=2, passes=3)` 使用 `gamma=lambda/(H*sqrt(M))`，后续轮以 `g_t=lambda/(t*sqrt(M))` 重注入embedding，默认lambda=beta=0.5。global EMA每forward清零、local EMA每轮清零；scaled attention写入后取两个normalized read直接相加，再接output-normalized MoE残差。状态临时且可微，不是跨样本buffer。
+`loom_spec(core_layers=2, passes=3)` uses `gamma=lambda/(H*sqrt(M))`. Later visits re-inject the embedding with `g_t=lambda/(t*sqrt(M))`. The defaults are lambda=beta=0.5. The global EMA resets at each forward; the local EMA resets at each visit. After the scaled attention write, the two normalized reads are added directly; then the output-normalized MoE residual follows. The state is temporary and differentiable. It is not a buffer across samples.
 
-`ouro_spec(passes=3, entropy_coeff=.1)` 的共享gate产生逐token条件停止概率。前R−1轮按hazard分配质量，末轮接收剩余质量；目标为 `sum_r p_r*CE_r - beta*H(p)`，加独立aux。训练执行全部轮，保留概率、head与backbone梯度。原生expected CE按chunk重算head以限制词表中间量；HF的`labels`与标准heldout仍为terminal CE，不是此训练目标。
+In `ouro_spec(passes=3, entropy_coeff=.1)`, the shared gate gives per-token conditional halting probabilities. The first R−1 visits get probability mass by the hazard; the last visit takes the remaining mass. The objective is `sum_r p_r*CE_r - beta*H(p)`, plus the separate aux. Training runs all visits and keeps the gradients of the probabilities, the head and the backbone. The native expected CE recomputes the head per chunk to limit the vocabulary-size intermediates. The HF `labels` and the standard held-out evaluation stay terminal CE; they are not this training objective.
 
-下面只演示可读配置和固定深度参考前向，不启动训练或声称方法资格：
+The example below shows only the readable configurations and a fixed-depth reference forward. It does not start training and does not claim method qualification:
 
 ```python
 import json
@@ -124,9 +125,9 @@ for make in (huginn_spec, loom_spec, ouro_spec):
     print(spec.name, spec.training.objective, tuple(output.logits.shape))
 ```
 
-## 组合与组件边界
+## Combinations and components
 
-attention×router四格由四份普通配置表达：固定expert bank、调用图、norm、目标和训练规则，只改变两个owner开关。它检验组件组合，不宣称总参匹配或完整Foil×LOOM：
+Four plain configurations express the attention×router grid. The expert bank, the call graph, norms, the objective and the training rules are fixed; only the two owner switches change. The grid tests the combination of components. It does not claim a matched total parameter count or a complete Foil×LOOM:
 
 ```python
 from dataclasses import replace
@@ -140,18 +141,18 @@ grid = {
 }
 ```
 
-`loom_spec(attention_per_visit=True)` 是另一条完整状态×结构组合：保留两EMA、重注入、缩放、逐轮router和full BPTT，只增加逐轮attention owner。其方法资格单独记录，不能替代LOOM基础路径。
+`loom_spec(attention_per_visit=True)` is another complete state×structure combination. It keeps the two EMAs, re-injection, scaling, the per-visit router and full BPTT, and adds only per-visit attention owners. Its method qualification is recorded separately. It does not replace the base LOOM path.
 
-| 组件入口 | 含义 |
+| Component entry | Meaning |
 |---|---|
-| `dense_spec()` / `moe_spec()` | 普通非循环基线，资源对齐另算 |
-| `recursive_moe_spec()` | 共享的 stack 循环体 |
-| `per_visit_router_spec()` | 每 visit 独立 router，单独使用不含LOOM memory/状态 |
-| `input_anchor_spec()` | live anchor、update-level深度采样和尾段梯度；单独使用不含Huginn随机初态/Poisson-lognormal过程 |
-| `ModelConfig(input_injection="diag_decay" 或 "orthogonal")` | xllm-loop Part II 的两种注入算子（schema 4）；`diag_decay` 由 `sandwich_spec` 使用，`orthogonal` 目前没有命名 recipe；初始化见[架构](architecture.md#4-核心模型保持普通-pytorch) |
-| `ModelConfig(lora_attention_rank=r, lora_ffn_rank=r)` | 逐轮 LoRA（新字段，默认 0，缺这两个字段的旧记录按 0 读取）：只作用于 core，路由专家不加；与 EMA 状态互斥，要求固定深度与 full BPTT；`relaxed_spec` 使用 |
-| `tiny_spec()` | 安装和工程开发的小配置 |
+| `dense_spec()` / `moe_spec()` | Ordinary non-looped baselines; resource matching is a separate step |
+| `recursive_moe_spec()` | A shared stack loop body |
+| `per_visit_router_spec()` | A per-visit router; used alone, it has no LOOM memory or state |
+| `input_anchor_spec()` | Live anchor, update-level depth sampling and tail gradient; used alone, it has no Huginn random initial state or Poisson-lognormal process |
+| `ModelConfig(input_injection="diag_decay" or "orthogonal")` | The two injection operators of xllm-loop Part II (schema 4); `sandwich_spec` uses `diag_decay`; `orthogonal` has no named recipe yet; [Architecture](architecture.md#4-the-core-model-stays-plain-pytorch) gives the initialization |
+| `ModelConfig(lora_attention_rank=r, lora_ffn_rank=r)` | Per-visit LoRA (new fields, default 0; an old record without these two fields reads them as 0). It acts only on the core, not on routed experts. It excludes the EMA state and needs fixed depth and full BPTT. `relaxed_spec` uses it |
+| `tiny_spec()` | A small configuration for installation and engineering development |
 
-从此版本开始，`loom()` 构造完整memory方法；旧router组件应使用 `per_visit_router()`。`injected()` 仍是 `input_anchor()` 的deprecated别名。旧checkpoint应读取其实际配置/来源，不能凭旧factory名字替换为新方法后声称exact resume。
+From this version on, `loom()` builds the complete memory method. Use `per_visit_router()` for the old router component. `injected()` stays a deprecated alias of `input_anchor()`. For an old checkpoint, read its real configuration and source. Do not replace it with the new method by the old factory name and then claim an exact resume.
 
-Huginn尾段梯度与全轮expected CE等缺少本阶段梯度定义的组合明确拒绝；Ouro Stage II、真实token早退及其KV策略不在此选定路径。新状态更新继续使用短的明确forward，复用数据/训练/HF接缝。继续阅读[架构](architecture.md)、[成本与比较](comparison.md)和[训练与恢复](training.md)。
+Combinations with no gradient definition at this stage, such as the Huginn tail gradient with the all-visit expected CE, are rejected explicitly. Ouro Stage II, real token early exit and its KV strategy are not in this selected path. A new state update still uses a short explicit forward and reuses the data, training and HF seams. Continue with [Architecture](architecture.md), [Cost and comparison](comparison.md) and [Training and resume](training.md).

@@ -390,6 +390,20 @@ def test_a_trained_arm_off_the_grid_is_compared_by_the_contract():
     assert atlas.arm_row(ref, replace(arm, model=replace(arm.model, hidden_dim=1024)), source="x", seq_len=4096)["matched"] is False
 
 
+def test_an_arm_without_an_atlas_recipe_suffix_is_a_clear_error(tmp_path, monkeypatch, capsys):
+    ref = load("p1_moe")
+    row = atlas.arm_row(ref, load("methods/foil-adamw"), source="recipes/methods/foil-adamw.json", seq_len=4096)
+    with pytest.raises(ValueError, match="'method-foil-adamw' does not end with _<recipe>.*_moe, _smelt"):
+        atlas.budget_table(build({"moe": {"layers": (4,)}, "smelt": {"physical_layers": (4,)}}, ref=ref), [row])
+    monkeypatch.setattr("sys.argv", ["recipe_atlas.py", "--reference", str(ROOT / "recipes/p1_moe.json"),
+                                     "--table", str(tmp_path / "table.json"), "--grid", "recipes=moe",
+                                     "--arm", str(ROOT / "recipes/methods/foil-adamw.json")])
+    with pytest.raises(SystemExit) as stop:
+        atlas.main()
+    assert stop.value.code == 2 and not (tmp_path / "table.json").exists()
+    assert "recipe name 'method-foil-adamw' does not end with _<recipe> for an atlas recipe: _moe" in capsys.readouterr().err
+
+
 def test_the_docs_table_is_the_p1_atlas(p1_atlas):
     committed = (ROOT / "eval/atlas/recipe-atlas-p1.json").read_text()
     p1 = load("p1_moe")
