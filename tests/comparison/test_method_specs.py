@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from moeloop import bench, recipes
-from moeloop.comparison import compare_recipes
+from moeloop.comparison import compare_recipes, diff_recipes
 from moeloop.config import ModelConfig
 from moeloop.recipe_spec import RecipeSpec
 from moeloop.recipes import resolve
@@ -181,6 +181,14 @@ def test_m0_loop_is_m0_with_m3s_loop_and_checkpointing(optimizer):
     assert spec["optimizer"] == m0["optimizer"]  # Track P2's calibrated LR
     assert spec["run"] == m0["run"] | {"panel": "methods", "activation_checkpointing": "full_cells"}
 
+
+@pytest.mark.parametrize("optimizer", ["adamw", "muon"])
+def test_diff_recipes_reports_only_what_the_trainer_reads(optimizer):
+    # phase1 specs still carry keys no code reads (REMOVED_RUN_KEYS, REMOVED_OPTIMIZER_KEYS); the method specs drop them.
+    differences = diff_recipes(phase1("m0", optimizer), RecipeSpec.from_dict(SPECS[f"m0-loop-{optimizer}"]))
+    assert sorted(differences) == sorted([*(f"model.{key}" for key in TOPOLOGY[:4]), "model.core.residual_scale",
+                                          "training.num_visits", "inference.num_visits",
+                                          "run.panel", "run.activation_checkpointing"])
 
 @pytest.mark.parametrize("optimizer", ["adamw", "muon"])
 def test_latentloop_residual_is_m3_with_asymmetric_core_residual_scales(optimizer):

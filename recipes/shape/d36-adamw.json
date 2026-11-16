@@ -58,10 +58,10 @@
     "entropy_coeff": 0.0
   },
   "source": {
-    "kind": "phase1_arm",
+    "kind": "shape_arm",
     "version": 1,
-    "arm": "m0",
-    "base_recipe": "recipes/p2_moe.json"
+    "arm": "d36",
+    "base_recipe": "recipes/phase1/m0-adamw.json"
   },
   "preserved": [
     "M0 made deeper and narrower: 36 layers of width 704, 16 heads of dim 44 (smaller heads keep the KV cache of more layers within 5% of M0's), 66 experts of width 256 each, top-8, residual not scaled."

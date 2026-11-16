@@ -59,7 +59,9 @@ def test_each_spec_differs_from_its_source_only_in_the_listed_fields(name):
     source, spec = phase1(source_arm, optimizer), SPECS[name]
     assert spec["name"] == f"shape-{name}"
     assert len(spec["preserved"]) == 1
-    expected = source | {"name": spec["name"], "preserved": spec["preserved"], "model": source["model"] | changes}
+    expected = source | {"name": spec["name"], "preserved": spec["preserved"], "model": source["model"] | changes,
+                         "source": {"kind": "shape_arm", "version": 1, "arm": arm,
+                                    "base_recipe": f"recipes/phase1/{source_arm}-{optimizer}.json"}}
     if arm in FULL_CELLS:
         expected["run"] = source["run"] | {"activation_checkpointing": "full_cells"}
     assert spec == RecipeSpec.from_dict(expected).to_dict()
@@ -79,7 +81,8 @@ def test_every_arm_is_within_the_p2_budget_of_m0(name):
 def test_the_split_arms_differ_from_m0r_only_in_the_residual_scale_and_their_scale(arm):
     m0r, spec = SPECS["m0r-adamw"], SPECS[f"{arm}-adamw"]
     core = m0r["model"]["core"] | {"residual_scale": 1.0, SPLIT[arm]: 0.5}
-    assert spec == m0r | {"name": spec["name"], "preserved": spec["preserved"], "model": m0r["model"] | {"core": core}}
+    assert spec == m0r | {"name": spec["name"], "preserved": spec["preserved"], "model": m0r["model"] | {"core": core},
+                          "source": m0r["source"] | {"arm": arm}}
     assert spec["run"]["activation_checkpointing"] == "none"
 
 

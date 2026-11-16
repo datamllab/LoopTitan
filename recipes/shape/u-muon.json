@@ -58,10 +58,10 @@
     "entropy_coeff": 0.0
   },
   "source": {
-    "kind": "phase1_arm",
+    "kind": "shape_arm",
     "version": 1,
-    "arm": "m4",
-    "base_recipe": "recipes/p2_smelt.json"
+    "arm": "u",
+    "base_recipe": "recipes/phase1/m4-muon.json"
   },
   "preserved": [
     "M4's depth and width as one uniform stack: 18 layers of width 1056, 58 experts each, residual not scaled."

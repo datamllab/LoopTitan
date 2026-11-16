@@ -10,11 +10,15 @@ from typing import Any, Mapping
 
 from .costs import estimate_cost
 from .recipe_spec import RecipeSpec
-from .recipes import moe_spec, p1_moe_spec, p1_smelt_spec, p2_moe_spec, p2_smelt_spec, smelt_spec
+from .recipes import moe_spec, p1_moe_spec, p1_smelt_spec, p2_moe_spec, p2_smelt_spec, resolve, smelt_spec
 
 
 def diff_recipes(reference: RecipeSpec, candidate: RecipeSpec) -> dict[str, Any]:
-    """Return actual resolved model/training/optimizer/run/inference differences."""
+    """Return actual resolved model/training/optimizer/run/inference differences.
+
+    Both specs are compared as the trainer reads them (``resolve``): run defaults filled in,
+    keys no code reads dropped.
+    """
     result: dict[str, Any] = {}
 
     def walk(path: str, left: Any, right: Any) -> None:
@@ -24,7 +28,7 @@ def diff_recipes(reference: RecipeSpec, candidate: RecipeSpec) -> dict[str, Any]
         elif left != right:
             result[path] = {"reference": left, "candidate": right}
 
-    left, right = reference.to_dict(), candidate.to_dict()
+    left, right = resolve(reference).to_dict(), resolve(candidate).to_dict()
     for values, spec in ((left, reference), (right, candidate)):
         # Compare resolved regional values, so an explicit inherited value is
         # not mistaken for a different model mechanism.
