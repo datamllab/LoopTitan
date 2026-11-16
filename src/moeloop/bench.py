@@ -44,8 +44,9 @@ _IDENTITY_KEYS = {"tokenizer": ("id", "revision", "vocab_size", "tokenizer_json_
                                  "byte_table_sha256")}
 NO_FOLDER = "no submission folder: declared hashes are not bound to files"
 UNCHECKED = ("that training this configuration produced the log, metrics and evaluation outputs (needs rerunning training)",
-             "the BPB values against the trained weights (needs the checkpoint and a re-evaluation)",
-             "that source_commit exists and holds the captured source (no network access here)",
+             "which weights the evaluation outputs scored: they carry no model identity (needs the checkpoint and a re-evaluation)",
+             "that source_commit exists and that source.files match it (no network access here)",
+             "the content of train.log (only its sha256 is compared) and runtime fields other than package versions",
              "the prepared data behind the manifest fingerprint (needs the data)")
 
 
@@ -339,7 +340,7 @@ def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[s
         expected["optimizer"]["muon"] = dict(expected["optimizer"].get("muon") or {}) | {"lr": lr}
     for path, declared, captured in _differences(expected, {key: config.get(key) for key in expected}):
         protocol.append(f"{label}: config.json {path} is {captured!r}, the declared recipe has {declared!r}")
-    launch, source, trainer = (config.get(key) or {} for key in ("launch", "source", "trainer"))
+    launch, source, trainer, runtime = (config.get(key) or {} for key in ("launch", "source", "trainer", "runtime"))
     try:
         positions = (launch["world_size"] * launch["local_batch_size"] * launch["gradient_accumulation_steps"]
                      * track.seq_len)
@@ -349,11 +350,14 @@ def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[s
                 "config.json launch.manifest_fingerprint": (launch.get("manifest_fingerprint"),
                                                             track.data["manifest_fingerprint"]),
                 "config.json source.commit": (source.get("commit"), submission.source_commit),
-                "config.json source.dirty": (source.get("dirty"), False),
+                "config.json source.dirty (tracked files)": (source.get("dirty"), False),
                 "metrics.json completed_updates": (metrics.get("completed_updates"), entry.get("final_update")),
                 "train.log sha256": (log_sha256, entry.get("log_sha256"))}
-    required |= {f"config.json trainer.{name}": (str(trainer.get(name)).split("+")[0], pin)
-                 for name, pin in trainer_pins().items()}
+    for name, pin in trainer_pins().items():  # The training process's own runtime record too, where it has the package.
+        required[f"config.json trainer.{name}"] = (str(trainer.get(name)).split("+")[0], pin)
+        if name in runtime:
+            required[f"config.json runtime.{name}"] = (str(runtime[name]).split("+")[0], pin)
+    depth = (recipe.get("inference") or {}).get("num_visits", (recipe.get("model") or {}).get("num_visits"))
     labels = {"validation": "selection_label_tokens", "test": "ranking_label_tokens"}
     for split in splits:
         output, name = files[f"eval-{split}.json"], f"eval-{split}.json"
@@ -363,6 +367,7 @@ def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[s
         tokenizer = output.get("tokenizer") or {}
         required |= {f"{name} split": (output.get("split"), split),
                      f"{name} seq_len": (output.get("seq_len"), track.evaluation["seq_len"]),
+                     f"{name} num_visits": (output.get("num_visits"), depth),
                      f"{name} complete_split": (output.get("complete_split"), track.evaluation["complete_split"]),
                      f"{name} valid_tokens": (output.get("valid_tokens"), track.evaluation[labels[split]]),
                      f"{name} byte_table_sha256": (output.get("byte_table_sha256"), track.evaluation["byte_table_sha256"]),
@@ -377,8 +382,8 @@ def _run_evidence(label: str, entry: Mapping[str, Any], lr: Any, splits: tuple[s
 
 
 def _bind(submission: Submission, track: Track, folder: Path, protocol: list[str], missing: list[str],
-          checked: list[str]) -> dict[str, str]:
-    """Hash every file of the folder and check each run's evidence; return the files that match their hash."""
+          checked: list[str]) -> None:
+    """Hash every file of the folder and check each run's evidence."""
     declared = submission.files if isinstance(submission.files, Mapping) else {}
     present = {path.relative_to(folder).as_posix(): path for path in sorted(folder.rglob("*")) if path.is_file()}
     present.pop("submission.json", None)
@@ -416,10 +421,10 @@ def _bind(submission: Submission, track: Track, folder: Path, protocol: list[str
             continue
         _run_evidence(label, entry, lr, splits, files, bound[paths["train.log"]], submission, track, protocol)
         checked.append(f"{label}: config.json in {run!r} against the declared recipe (seed, LR, schedule, updates, "
-                       "global batch, model, optimizer) and the track (launch topology, data manifest, trainer pins, "
-                       "source commit); metrics.json, " + ", ".join(f"eval-{split}.json" for split in splits)
-                       + " and train.log against the declared values and the track's tokenizer and evaluation identity")
-    return bound
+                       "global batch, model, optimizer) and the track (launch topology, data manifest, trainer and runtime "
+                       "package pins, source commit with no tracked change); metrics.json, " + ", ".join(f"eval-{split}.json" for split in splits)
+                       + " and train.log sha256 against the declared values, inference depth and the track's "
+                       "tokenizer and evaluation identity")
 
 
 def validate(submission: Submission, track: Track, folder: str | Path | None = None) -> Report:
@@ -507,19 +512,14 @@ def validate(submission: Submission, track: Track, folder: str | Path | None = N
         protocol.append(f"seed {track.required_seed} is required")
 
     # Evidence bound to files.
-    checked, unchecked, bound = [], list(UNCHECKED), {}
+    checked, unchecked = [], list(UNCHECKED)
     if folder is None:
         missing.append(NO_FOLDER)
     else:
-        bound = _bind(submission, track, Path(folder), protocol, missing, checked)
-    for entry in submission.seeds:
-        digest = entry.get("checkpoint_sha256")
-        matches = [name for name, value in bound.items() if value == digest]
-        if matches:
-            checked.append(f"seed {entry.get('seed')!r}: checkpoint sha256 matches {matches[0]}")
-        else:
-            unchecked.append(f"seed {entry.get('seed')!r}: checkpoint sha256 {digest} at "
-                             f"{entry.get('checkpoint_url') or 'no URL declared'}: not checked here")
+        _bind(submission, track, Path(folder), protocol, missing, checked)
+    unchecked += [f"seed {entry.get('seed')!r}: checkpoint_sha256 {entry.get('checkpoint_sha256')} (of the DCP .metadata "
+                  f"file only: tensor layout, not weights) at {entry.get('checkpoint_url') or 'no URL declared'}: "
+                  "not checked here" for entry in submission.seeds]
 
     reasons = {name: tuple(values) for name, values in
                (("protocol-mismatch", protocol), ("budget-mismatch", budget), ("missing-evidence", missing)) if values}

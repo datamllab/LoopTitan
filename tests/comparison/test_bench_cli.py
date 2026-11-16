@@ -11,11 +11,11 @@ import importlib
 import json
 import math
 from pathlib import Path
+import subprocess
 
 import pytest
 
 torch = pytest.importorskip("torch")
-pytest.importorskip("torchtitan")  # bench.py records the trainer's package versions.
 
 from moeloop import bench
 
@@ -65,8 +65,12 @@ def bpb(lr):
 def launched(monkeypatch, tmp_path, track):
     """Fake launcher: writes one finished, evaluated experiment output per command; records each LR.
 
-    ``state["bpb"]`` is the validation curve; tests may replace it.
+    ``state["bpb"]`` is the validation curve; tests may replace it. Each trial records the trainer's
+    package versions, so these tests need TorchTitan installed; the test checkout may have local
+    edits, so its tracked-file status is reported clean.
     """
+    pytest.importorskip("torchtitan")
+    monkeypatch.setattr(bench_cli, "tracked_changes", lambda: False)
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"tokenizer": {"files": {
         "tokenizer/tokenizer.json": track.tokenizer["tokenizer_json_sha256"]}}}))
@@ -96,6 +100,7 @@ def launched(monkeypatch, tmp_path, track):
         for split, labels in (("validation", "selection_label_tokens"), ("test", "ranking_label_tokens")):
             files[f"eval-{split}.json"] = {
                 "split": split, "seq_len": track.seq_len, "complete_split": True, "valid_tokens": track.evaluation[labels],
+                "num_visits": spec.inference.get("num_visits", spec.model.num_visits),
                 "manifest_fingerprint": track.data["manifest_fingerprint"],
                 "bpb": state["bpb"](lr) + (0.005 if split == "test" else 0), "byte_table_sha256": track.evaluation["byte_table_sha256"],
                 "tokenizer": {key: track.tokenizer[key] for key in ("id", "revision", "vocab_size")}}
@@ -291,50 +296,101 @@ def test_a_folder_written_by_run_is_eligible_and_says_what_it_checked(launched, 
     assert report["verdict"] == "eligible", report["reasons"]
     assert report["checked"][0] == "sha256 of the 5 files in the folder against the 5 declared"
     assert report["checked"][1].startswith("seed 42: config.json in '.' against the declared recipe")
-    assert report["unchecked"][-1] == f"seed 42: checkpoint sha256 {value['seeds'][0]['checkpoint_sha256']} " \
-                                      "at no URL declared: not checked here"
+    assert report["unchecked"][-1] == (f"seed 42: checkpoint_sha256 {value['seeds'][0]['checkpoint_sha256']} (of the DCP "
+                                       ".metadata file only: tensor layout, not weights) at no URL declared: not checked here")
+    assert not any("checkpoint" in line for line in report["checked"])
     assert any("needs rerunning training" in line for line in report["unchecked"])
 
 
-@pytest.mark.parametrize("tamper, verdict, reason", [
-    # An edited metric: in an evaluation output, in metrics.json, or in the declaration.
-    (lambda f: edit(f / "eval-test.json", lambda v: v | {"bpb": 0.9}),
-     "missing-evidence", "eval-test.json: file does not match its declared sha256"),
-    (lambda f: edit(f / "metrics.json", lambda v: v | {"test_bpb": 0.9}),
-     "missing-evidence", "metrics.json: file does not match its declared sha256"),
-    (lambda f: (edit(f / "eval-test.json", lambda v: v | {"bpb": 0.9}), rehash(f, "eval-test.json")),
-     "protocol-mismatch", "seed 42: eval-test.json bpb is 0.9, expected 1.005"),
-    (lambda f: edit(f / "submission.json", lambda v: v | {"seeds": [v["seeds"][0] | {"test_bpb": 0.9}]}),
-     "protocol-mismatch", "seed 42: eval-test.json bpb is 1.005, expected 0.9"),
-    # An edited config: unhashed, or rehashed and then disagreeing with the recipe, the track or the pins.
-    (lambda f: edit(f / "config.json", lambda v: v | {"run": v["run"] | {"seed": 43}}),
-     "missing-evidence", "config.json: file does not match its declared sha256"),
-    (lambda f: (edit(f / "config.json", lambda v: v | {"run": v["run"] | {"seed": 43}}), rehash(f, "config.json")),
-     "protocol-mismatch", "seed 42: config.json run.seed is 43, the declared recipe has 42"),
-    (lambda f: (edit(f / "config.json", lambda v: v | {"optimizer": v["optimizer"] | {"base_lr": 6e-4}}),
-                rehash(f, "config.json")),
-     "protocol-mismatch", "seed 42: config.json optimizer.base_lr is 0.0006, the declared recipe has 0.0012"),
-    (lambda f: (edit(f / "config.json", lambda v: v | {"launch": v["launch"] | {"local_batch_size": 8}}),
-                rehash(f, "config.json")),
-     "protocol-mismatch", "seed 42: config.json launch global batch positions is 524288, expected 1048576"),
-    (lambda f: (edit(f / "config.json", lambda v: v | {"trainer": v["trainer"] | {"torchtitan": "0.2.0"}}),
-                rehash(f, "config.json")),
-     "protocol-mismatch", "seed 42: config.json trainer.torchtitan is '0.2.0', expected '0.3.0'"),
-    (lambda f: (edit(f / "config.json", lambda v: v | {"source": v["source"] | {"commit": "b" * 40}}),
-                rehash(f, "config.json")),
-     "protocol-mismatch", f"seed 42: config.json source.commit is {'b' * 40!r}, expected {'a' * 40!r}"),
-    # A missing file, an undeclared one, and a declaration without the captured config.
+def field(name, path, value):
+    """Set a dotted key of a folder JSON file."""
+    def change(folder):
+        data = json.loads((folder / name).read_text())
+        *parents, key = path.split(".")
+        target = data
+        for parent in parents:
+            target = target[parent]
+        target[key] = value
+        (folder / name).write_text(json.dumps(data))
+    return change
+
+
+def rehashed(name, path, value):
+    """Edit a file and declare its new sha256, as a forger would: the content check must catch it."""
+    return lambda folder: (field(name, path, value)(folder), rehash(folder, name))
+
+
+A = "seed 42: "
+TAMPERING = [  # One row per check: the edit, the verdict, the reason.
+    # Hashes: an edited file left unrehashed, a missing file, an undeclared file, a run without its config.
+    (field("eval-test.json", "bpb", 0.9), "missing-evidence", "eval-test.json: file does not match its declared sha256"),
+    (field("metrics.json", "test_bpb", 0.9), "missing-evidence", "metrics.json: file does not match its declared sha256"),
+    (field("config.json", "run.seed", 43), "missing-evidence", "config.json: file does not match its declared sha256"),
     (lambda f: (f / "train.log").unlink(), "missing-evidence", "train.log: declared sha256 has no file in the folder"),
     (lambda f: (f / "notes.txt").write_text("x"), "missing-evidence", "notes.txt: file has no declared sha256"),
-    (lambda f: ((f / "config.json").unlink(), edit(f / "submission.json", lambda v: v | {
-        "files": {k: h for k, h in v["files"].items() if k != "config.json"}})),
-     "missing-evidence", "seed 42: run evidence ['config.json'] is not a file matching its declared sha256"),
-])
+    (lambda f: ((f / "config.json").unlink(), field("submission.json", "files", {
+        k: h for k, h in json.loads((f / "submission.json").read_text())["files"].items() if k != "config.json"})(f)),
+     "missing-evidence", A + "run evidence ['config.json'] is not a file matching its declared sha256"),
+    (lambda f: field("submission.json", "seeds", [{k: v for k, v in json.loads((f / "submission.json").read_text())[
+        "seeds"][0].items() if k != "run"}])(f), "missing-evidence", A + "run folder is not declared"),
+    (lambda f: ((f / "metrics.json").write_text("[]"), rehash(f, "metrics.json")),
+     "protocol-mismatch", A + "config.json and metrics.json must be JSON objects"),
+    (lambda f: ((f / "eval-test.json").write_text("[]"), rehash(f, "eval-test.json")),
+     "protocol-mismatch", A + "eval-test.json must be a JSON object"),
+    (lambda f: ((f / "metrics.json").write_text("{"), rehash(f, "metrics.json")),
+     "protocol-mismatch", A + "run evidence is not valid JSON"),
+    # The captured configuration against the declared recipe and the track.
+    (rehashed("config.json", "run.seed", 43), "protocol-mismatch", A + "config.json run.seed is 43, the declared recipe has 42"),
+    (rehashed("config.json", "optimizer.base_lr", 6e-4), "protocol-mismatch",
+     A + "config.json optimizer.base_lr is 0.0006, the declared recipe has 0.0012"),
+    (rehashed("config.json", "launch.local_batch_size", 8), "protocol-mismatch",
+     A + "config.json launch global batch positions is 524288, expected 1048576"),
+    (rehashed("config.json", "launch.manifest_fingerprint", "0" * 64), "protocol-mismatch",
+     A + "config.json launch.manifest_fingerprint is '" + "0" * 64),
+    (rehashed("config.json", "source.commit", "b" * 40), "protocol-mismatch",
+     A + f"config.json source.commit is {'b' * 40!r}, expected {'a' * 40!r}"),
+    (rehashed("config.json", "source.dirty", True), "protocol-mismatch",
+     A + "config.json source.dirty (tracked files) is True, expected False"),
+    (rehashed("config.json", "trainer.torchtitan", "0.2.0"), "protocol-mismatch",
+     A + "config.json trainer.torchtitan is '0.2.0', expected '0.3.0'"),
+    (rehashed("config.json", "runtime.torch", "2.9.0+cu128"), "protocol-mismatch",
+     A + "config.json runtime.torch is '2.9.0', expected '2.14.0'"),
+    # metrics.json and the log against the declaration.
+    (rehashed("metrics.json", "completed_updates", 4000), "protocol-mismatch",
+     A + "metrics.json completed_updates is 4000, expected 4769"),
+    (rehashed("metrics.json", "validation_bpb", 0.9), "protocol-mismatch", A + "metrics.json validation_bpb is 0.9, expected 1.0"),
+    (rehashed("metrics.json", "test_bpb", 0.9), "protocol-mismatch", A + "metrics.json test_bpb is 0.9, expected 1.005"),
+    (lambda f: ((f / "train.log").write_text("step=1 CE=1.0\n"), rehash(f, "train.log")), "protocol-mismatch",
+     A + "train.log sha256 is"),
+    # Each evaluation output against the declaration, the recipe's inference depth and the track.
+    (rehashed("eval-test.json", "bpb", 0.9), "protocol-mismatch", A + "eval-test.json bpb is 0.9, expected 1.005"),
+    (lambda f: edit(f / "submission.json", lambda v: v | {"seeds": [v["seeds"][0] | {"test_bpb": 0.9}]}),
+     "protocol-mismatch", A + "eval-test.json bpb is 1.005, expected 0.9"),
+    (rehashed("eval-test.json", "num_visits", 4), "protocol-mismatch", A + "eval-test.json num_visits is 4, expected 1"),
+    (rehashed("eval-test.json", "split", "validation"), "protocol-mismatch",
+     A + "eval-test.json split is 'validation', expected 'test'"),
+    (rehashed("eval-validation.json", "seq_len", 2048), "protocol-mismatch",
+     A + "eval-validation.json seq_len is 2048, expected 4096"),
+    (rehashed("eval-test.json", "complete_split", False), "protocol-mismatch",
+     A + "eval-test.json complete_split is False, expected True"),
+    (rehashed("eval-test.json", "valid_tokens", 1000), "protocol-mismatch",
+     A + "eval-test.json valid_tokens is 1000, expected 10009889"),
+    (rehashed("eval-test.json", "byte_table_sha256", "0" * 64), "protocol-mismatch",
+     A + "eval-test.json byte_table_sha256 is '" + "0" * 64),
+    (rehashed("eval-validation.json", "manifest_fingerprint", "0" * 64), "protocol-mismatch",
+     A + "eval-validation.json manifest_fingerprint is '" + "0" * 64),
+    (rehashed("eval-test.json", "tokenizer.revision", "main"), "protocol-mismatch",
+     A + "eval-test.json tokenizer.revision is 'main'"),
+]
+
+
+@pytest.mark.parametrize("tamper, verdict, reason", TAMPERING)
 def test_each_kind_of_tampering_has_its_verdict(launched, tmp_path, capsys, tamper, verdict, reason):
     folder = run_p2(tmp_path, launched["manifest"], "m0-adamw", 1.2e-3)
     tamper(folder)
     report = validate_dir(folder, capsys)
-    assert report["verdict"] == verdict and reason in report["reasons"][verdict], report["reasons"]
+    assert report["verdict"] == verdict, report["reasons"]
+    assert any(line.startswith(reason) for line in report["reasons"][verdict]), report["reasons"]
 
 
 def test_an_edited_lr_trial_in_a_sweep_folder_is_caught(launched, tmp_path, capsys):
@@ -344,3 +400,17 @@ def test_an_edited_lr_trial_in_a_sweep_folder_is_caught(launched, tmp_path, caps
                                                                   + v["lr_trials"][1:]})
     report = validate_dir(folder, capsys)
     assert "LR trial 0.00015: eval-validation.json bpb is 1.09, expected 0.5" in report["reasons"]["protocol-mismatch"]
+
+
+def test_only_tracked_files_make_a_source_tree_dirty(tmp_path):
+    """Prepared data or outputs inside the checkout leave an honest run clean; an edited tracked file does not."""
+    git = lambda *args: subprocess.run(["git", "-C", str(tmp_path), *args], check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / "model.py").write_text("x = 1\n")
+    git("add", "model.py")
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "init")
+    (tmp_path / "data/prepared").mkdir(parents=True)
+    (tmp_path / "data/prepared/manifest.json").write_text("{}")
+    assert bench_cli.tracked_changes(tmp_path) is False
+    (tmp_path / "model.py").write_text("x = 2\n")
+    assert bench_cli.tracked_changes(tmp_path) is True

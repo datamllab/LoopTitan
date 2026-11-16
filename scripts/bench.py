@@ -20,7 +20,8 @@ no LR trials. Both write the submission folder ``DIR/submission`` (replacing an 
 one) and print its ``moeloop.bench.validate`` report. The folder holds the selected
 trial, which is the seed-42 run, at its top and every other LR trial in ``lr-<LR>/``; each
 run has its captured ``config.json`` (spec, launch topology, source and runtime from the
-trial's request, trainer package versions), ``metrics.json``, ``eval-validation.json``,
+trial's request, trainer package versions; ``source.dirty`` says whether a tracked file
+differed from the commit, untracked files do not count), ``metrics.json``, ``eval-validation.json``,
 ``eval-test.json`` and ``train.log`` (the last training launch's log), and
 ``submission.json`` declares the sha256 of every file. Under ``scripts/run.py`` they
 also write, at the end, ``$RUN_DIR/config.json`` (the selected run's) and
@@ -73,6 +74,16 @@ def launch(command: list[str]) -> None:
     subprocess.run(command, env=env, check=True)
 
 
+def tracked_changes(root: Path = ROOT) -> bool | None:
+    """Whether a tracked file differs from the checked-out commit; None outside a git checkout.
+
+    Untracked files (prepared data, run outputs) do not count: they cannot change the code that ran.
+    """
+    status = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=root,
+                            text=True, capture_output=True)
+    return bool(status.stdout.strip()) if status.returncode == 0 else None
+
+
 def trial(output: Path, manifest: Path, lr: float, gpus: int) -> dict:
     """Launch one LR unless its record exists; return the record read from its experiment output."""
     path, directory = output / f"lr-{lr}.json", output / f"lr-{lr}"
@@ -89,7 +100,8 @@ def trial(output: Path, manifest: Path, lr: float, gpus: int) -> dict:
              "log_sha256": process["log_sha256"],
              "checkpoint_sha256": digest(directory / outcome["full_checkpoint"] / ".metadata"),
              "gpu_hours": (time.monotonic() - started) * gpus / 3600,
-             "trainer": {name: importlib.metadata.version(name) for name in bench.trainer_pins()}}
+             "trainer": {name: importlib.metadata.version(name) for name in bench.trainer_pins()},
+             "tracked_changes": tracked_changes()}
     write_json(path, value)
     return value
 
@@ -116,7 +128,9 @@ def write_run(folder: Path, directory: Path, track: bench.Track, trials: list[di
     config = {key: spec[key] for key in ("name", "model", "training", "optimizer", "inference", "run")}
     config["launch"] = {key: request[key] for key in
                         ("world_size", "local_batch_size", "gradient_accumulation_steps", "manifest_fingerprint")}
-    config |= {"source": request["source"], "runtime": request["runtime"], "trainer": record["trainer"],
+    # The trial's own dirty flag also counts untracked files; a source-revision.json install keeps it.
+    dirty = request["source"]["dirty"] if record["tracked_changes"] is None else record["tracked_changes"]
+    config |= {"source": request["source"] | {"dirty": dirty}, "runtime": request["runtime"], "trainer": record["trainer"],
                "bench": {"track": track.name, "trial_lrs": [t["lr"] for t in trials]}}
     write_json(folder / "config.json", config)
     write_json(folder / "metrics.json", {"completed_updates": record["final_update"], "lr": record["lr"],
