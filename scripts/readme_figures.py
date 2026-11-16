@@ -369,13 +369,14 @@ def badge(label, value, t):
 # The README's destination capsules, in row order: (key, label, colour family, mark). Marks of other organisations
 # are their own files in docs/assets/brand/external/, placed unchanged (SOURCES.md there gives source and terms).
 PLACES = [("homepage", "Homepage", "ours", "brand/looptitan-shell-small"), ("docs", "Documentation", "ours", "octicons-book-16"),
-          ("models", "Models", "hf", "huggingface-logo"), ("paper", "Paper", "ours", "octicons-file-16"),
+          ("models", "Models", "hf", "huggingface-logo"), ("paper", "Paper", "arxiv", "arxiv-logomark-small"),
           ("results", "Results", "ours", "bars"), ("record", "Record", "github", "octicons-issue-opened-16"),
           ("contribute", "Contribute", "github", "octicons-git-pull-request-16")]
-HOSTS = {"paper": "arXiv"}  # the service named in words where the mark cannot name it
+HOSTS = {"paper": "arXiv"}  # the service named in words beside its mark
 # per family and theme: (ground, border, mark colour); LoopTitan's own places take the identity's indigo
 HUES = {"ours": {"light": ("#F2F4FD", "#C8CFF5", "#3346D3"), "dark": ("#151A2E", "#2C3672", "#7486F2")},
         "hf": {"light": ("#FFF8DD", "#F3D77A", None), "dark": ("#241F0E", "#5E4F1C", None)},
+        "arxiv": {"light": ("#FCEFEF", "#EAB8B8", None), "dark": ("#2A1416", "#6A2A2D", None)},
         "github": {"light": ("#EEF7F1", "#B5DCC1", "#1A7F37"), "dark": ("#0F2418", "#21543A", "#3FB950")}}
 
 
@@ -422,7 +423,7 @@ def capsule(key, label, family, mark, primary, t, host=None):
         out += [rect(pad + 1.5 + i * 4.6, 22 - bh, 3.2, bh, 1, colour if i == 2 else ink) for i, bh in enumerate([6, 9, 12])]
     elif mark.startswith("brand/"):
         out.append(placed(f"{mark}-{'white' if t is LIGHT else 'ink'}.svg", pad, 8.5, 15))
-    elif mark == "huggingface-logo":  # its artwork leaves a margin in its square: drawn 2 px larger to match
+    elif mark in ("huggingface-logo", "arxiv-logomark-small"):  # full-colour marks with margins: 2 px larger to match
         out.append(placed(f"brand/external/{mark}.svg", pad - 1, 7, 18))
     else:
         out.append(placed(f"brand/external/{mark}.svg", pad, 8, 16, colour))
