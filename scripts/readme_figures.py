@@ -322,15 +322,6 @@ def badge(label, value, t):
     return svg(round(w), h, f"{label}: {value}", f"{label}: {value}", t, body)
 
 
-def institution(t, n):
-    """A neutral slot for the logo of affiliation n; the authors replace the file's use in README.md."""
-    w, h = 176, 52
-    body = (rect(.75, .75, w - 1.5, h - 1.5, 14, t["card"], t["hair"], 1.5, dash="4 4") +
-            circle(34, 26, 10, t["faint"]) + text(34, 30.3, str(n), 12, t["mid"], 600, "middle") +
-            text(54, 31, "Institution", 14, t["mid"], 500))
-    return svg(w, h, f"Institution {n}", f"A placeholder for the logo of institution {n}.", t, body)
-
-
 def hero(t):
     """The Phase 1 loop: bars on a line, the middle layers run twice; a light passes the looped ones twice."""
     narrow = t is AUTO
@@ -1125,9 +1116,6 @@ def figures():
     for key, (label, value) in badges().items():
         for variant, theme in [("light", LIGHT), ("dark", DARK)]:
             out[f"badge-{key}-{variant}.svg"] = badge(label, value, theme)
-    for n in (1, 2):
-        for variant, theme in [("light", LIGHT), ("dark", DARK)]:
-            out[f"institution-{n}-{variant}.svg"] = institution(theme, n)
     return out
 
 

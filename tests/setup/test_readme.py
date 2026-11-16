@@ -3,6 +3,9 @@ import json
 import re
 from pathlib import Path
 
+import hf_release
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 README = ROOT / "README.md"
 FENCE = re.compile(r"^(```|~~~).*?^\1", re.M | re.S)
@@ -70,3 +73,20 @@ def test_chain_table_equals_phase1_data():
 
 def test_no_cjk_characters():
     assert not CJK.search(README.read_text())
+
+
+def test_bibtex_entry_equals_the_model_card_entry():
+    """README, model cards and CITATION.cff give one citation: the card's entry is rendered from the cff."""
+    block = re.compile(r"^```bibtex\n(.*?)^```", re.M | re.S)
+    plan = json.loads((ROOT / "docs" / "release" / "phase1-models.example.json").read_text())
+    plan["results"] = str(ROOT / "docs" / "results" / "phase1.json")
+    plan["dataset"] = str(ROOT / "docs" / "evidence" / "p1-dclm-source.json")
+    plan["models"] = plan["models"][:1]
+    card = hf_release.single_releases(plan, ROOT / "docs" / "release", "acme")[0]["card"]
+    entry = block.findall(README.read_text())
+    assert len(entry) == 1
+    assert entry == block.findall(card)
+    cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
+    assert f"@software{{{cff['title'].lower()}," in entry[0] and f"title = {{{cff['title']}}}" in entry[0]
+    assert f"author = {{{{{cff['authors'][0]['name']}}}}}" in entry[0]
+    assert f"version = {{{cff['version']}}}" in entry[0] and f"url = {{{cff['url']}}}" in entry[0]
