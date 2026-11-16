@@ -21,10 +21,10 @@ config.json. It reads the lines of ### Arms (`<arm>: <key>=<value> ...`), ### Co
 Controlled lines without a reason, a missing Arms or Controlled section, keys in several
 sections); runs where a Controlled line does not hold or whose config lacks its key (未记录);
 runs matching no arm or several; arms missing values of an `in` line among their running or
-successful runs; keys in no section whose values differ across the runs that recorded a
-config; arms with no run; and the values each Adaptable key took per arm. Values
-compare as JSON when they parse as JSON (numbers by value), else as strings. With a spec, the
-table gains each group's arms.
+successful runs that meet every Controlled line; keys in no section whose values differ across
+the runs that recorded a config; arms with no run; and the values each Adaptable key took per
+arm. Values compare as JSON when they parse as JSON (numbers by value), else as strings. With a
+spec, the table gains each group's arms.
 """
 import argparse
 import json
@@ -137,6 +137,7 @@ def check(spec, runs):
         return ["- 没有给出规格（--spec）"]
     arms = spec["arms"]
     out = [f"- {problem}" for problem in spec["problems"]]
+    broken = set()  # ids of runs where some Controlled line does not hold or its key is unrecorded
     for item, key, values in spec["controlled"]:
         allowed = {norm(v) for v in values}
         if missing := [r for r in runs if key not in r["cfg"]]:
@@ -144,6 +145,7 @@ def check(spec, runs):
         if wrong := [r for r in runs if key in r["cfg"] and norm(r["cfg"][key]) not in allowed]:
             out.append(f"- `{item}` 不成立：{len(wrong)} 个 run，"
                        + ", ".join(f"{r['id']}（{r['cfg'][key]}）" for r in wrong))
+        broken |= {r["id"] for r in missing + wrong}
     if none := [r for r in runs if not r["arms"]]:
         out.append(f"- {len(none)} 个 run 不属于任何 arm：{ids(none)}")
     if several := [r for r in runs if len(r["arms"]) > 1]:
@@ -152,8 +154,8 @@ def check(spec, runs):
     member = {arm: [r for r in runs if arm in r["arms"]] for arm in arms}
     for item, key, values in spec["controlled"]:
         for arm, rs in member.items():
-            took = {norm(r["cfg"][key]) for r in rs if key in r["cfg"] and not r["deleted"]
-                    and (r["ok"] or r["status"] == "RUNNING")}  # failed runs cover nothing
+            took = {norm(r["cfg"][key]) for r in rs if r["id"] not in broken and not r["deleted"]
+                    and (r["ok"] or r["status"] == "RUNNING")}  # failed or broken runs cover nothing
             if len(values) > 1 and rs and (lack := [v for v in values if norm(v) not in took]):
                 out.append(f"- arm {arm} 缺 `{item}` 的取值：{', '.join(lack)}")
     recorded = [r for r in runs if r["cfg"]]

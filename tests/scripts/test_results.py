@@ -127,6 +127,18 @@ def test_spec_check_lists_each_deviation(repo, tmp_path):
     assert not {r1, r2, r6} & set(re.findall(r"[0-9a-f]{32}", spec_check(out)))  # r6 failed: seed 2 stays missing
 
 
+def test_runs_breaking_a_controlled_line_cover_no_value(repo):
+    finished(repo, 1000, cfg={"method": "a", "seed": "1", "lr": "0.1"})
+    finished(repo, 2000, cfg={"method": "a", "seed": "2", "lr": "0.1"})
+    finished(repo, 3000, cfg={"method": "b", "seed": "1", "lr": "0.1"})
+    wrong = finished(repo, 4000, cfg={"method": "b", "seed": "2", "lr": "0.2"})
+    unrecorded = finished(repo, 5000, cfg={"method": "b", "seed": "2"})
+    spec = "### Arms\n\nbase: method=a\nours: method=b\n\n### Controlled\n\nlr=0.1  # x\nseed in 1,2  # y\n"
+    assert spec_check(repo.results("--spec", "-", input=spec)) == (
+        f"- `lr=0.1`：1 个 run 未记录 `lr`：{unrecorded}\n- `lr=0.1` 不成立：1 个 run，{wrong}（0.2）\n"
+        "- arm ours 缺 `seed in 1,2` 的取值：2\n")
+
+
 def test_spec_from_stdin_without_deviations(repo):
     spec = SPEC.replace("deep: method=b depth=2\nc: method=c\nbroken line\n", "").replace("wd=0\n", "")
     spec = spec.replace("optim.betas in [0.9,0.999],[0.9,0.95]  # both used in the literature\n", "")
