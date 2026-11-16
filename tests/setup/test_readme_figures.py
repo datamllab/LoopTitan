@@ -30,3 +30,15 @@ def test_budget_counts_follow_the_compare_result(monkeypatch):
     monkeypatch.setattr(readme_figures, "budgets", one_outside)
     assert "2 of 3 budgets within ±5%" in readme_figures.pillars(readme_figures.LIGHT)
     assert "2 of 3 within ±5%" in readme_figures.compare_fig(readme_figures.LIGHT)
+
+
+def test_banners_place_the_brand_lockups_as_they_are():
+    import re
+    import readme_figures
+
+    def inner(name):
+        text = (ROOT / "docs" / "assets" / "brand" / f"looptitan-lockup-{name}.svg").read_text()
+        return re.search(r"<svg[^>]*>(.*)</svg>", text, re.S).group(1)
+    light, dark, narrow = (readme_figures.banner(t) for t in (readme_figures.LIGHT, readme_figures.DARK, readme_figures.AUTO))
+    assert inner("medium-indigo") in light and inner("medium-dark") in dark
+    assert inner("medium-indigo") in narrow and inner("medium-dark") in narrow

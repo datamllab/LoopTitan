@@ -57,6 +57,7 @@ import readme_figures as figures
 from results_table import METRICS, OPTIMIZERS, REFERENCE, lr, signed, spec
 
 ROOT = Path(__file__).resolve().parents[1]
+CITATION = ROOT / "CITATION.cff"
 ROLES = {"looped": "candidate", "control": "reference"}
 SPLITS = ("validation", "test")
 NAMESPACE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -163,7 +164,7 @@ def single_releases(plan, base, namespace):
     page = (base / plan["results"]).resolve().relative_to(ROOT).with_suffix(".md").as_posix()
     runs = {run["config"]: (row, optimizer, run) for group in results["groups"] for row in group["rows"]
             for optimizer, run in row["runs"].items()}
-    dataset, cff = read_json(base / plan["dataset"]), yaml.safe_load((ROOT / "CITATION.cff").read_text())
+    dataset, cff = read_json(base / plan["dataset"]), yaml.safe_load(CITATION.read_text())
     releases = []
     for model in plan["models"]:
         require(model["config"] in runs, f"{model['repo']}: {model['config']} is not a run of {plan['results']}")
@@ -308,8 +309,6 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
     repo, name, config, train = cff["repository-code"], OPTIMIZERS[optimizer], recipe["model"], recipe["run"]
     tolerance = load_tracks()["P2"].budget["tolerance"]
     outside = {key: value for key, value in run["budgets"].items() if abs(value) > tolerance}
-    authors = " and ".join("{" + a["name"] + "}" if "name" in a else f"{a['family-names']}, {a['given-names']}"
-                           for a in cff["authors"])
     tags = ["looptitan", "mixture-of-experts", "looped-moe" if config["num_visits"] > 1 else "moe", "custom_code", optimizer]
     lines = ["---", f"license: {cff['license'].lower()}", "library_name: transformers", "pipeline_tag: text-generation",
              "tags:", *[f"- {json.dumps(tag)}" for tag in tags], "datasets:", f"- {json.dumps(dataset['id'])}",
@@ -354,8 +353,7 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"- Configuration: [`{model['config']}`]({repo}/blob/main/{model['config']})",
               f"- Documentation: [docs]({repo}/tree/main/docs)", f"- Results: [results page]({repo}/blob/main/{page})",
               f"- Run record: [#{run['issue']}]({repo}/issues/{run['issue']})", "",
-              "## Citation", "", "```bibtex", f"@software{{{cff['title'].lower()},", f"  title = {{{{{cff['title']}}}}},",
-              f"  author = {{{authors}}},", f"  version = {{{cff['version']}}},", f"  url = {{{repo}}}", "}", "```", "",
+              "## Citation", "", "```bibtex", figures.bibtex(cff), "```", "",
               "## Licence", "", f"[{cff['license']}]({repo}/blob/main/LICENSE).", ""]
     return "\n".join(lines)
 
@@ -372,7 +370,7 @@ def banner(config_path, config):
     w, h, scale = 880, 280, 2.2
     body, total = figures.glyph(config_path.removeprefix("recipes/").rsplit("-", 1)[0], 0, 0, figures.LIGHT, k=2)
     return figures.svg(w, h, banner_text(config), banner_text(config), figures.LIGHT,
-                       figures.card(0, 0, w, h, figures.LIGHT) +
+                       figures.card(0, 0, w, h, figures.LIGHT) + figures.lockup("medium-ink", 28, 26, 24)[0] +
                        f'<g transform="translate({figures.num((w - scale * total) / 2)} 145) scale({figures.num(scale)})">{body}</g>' +
                        figures.text(w / 2, h - 20, banner_text(config), 14, figures.LIGHT["mid"], 400, "middle"))
 
@@ -394,7 +392,7 @@ def budgets(config_path, reference_path, run, name):
     inside = all(abs(entry["relative_difference"]) <= entry["relative_tolerance"] for entry in entries.values())
     out = [figures.card(0, 0, w, h, t), figures.text(x, 42, f"Budgets against the ordinary MoE ({name})", 14, t["ink"], 600),
            figures.text(x + span, 42, f"{'within' if inside else 'outside'} ±{figures.pct(track.budget['tolerance'])}",
-                        13, t["acc"] if inside else t["ink"], 600, "end", mono=True)]
+                        13, t["ink"], 600, "end", mono=True)]
     for i, (key, label) in enumerate(figures.BUDGETS):
         entry, y = entries[key], 92 + i * 54
         row = figures.budget_row(t, entry, key, label, x, y, span)

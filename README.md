@@ -317,6 +317,7 @@ LoopTitan builds on the work of many people. We thank them.
 
 Cite the repository and the exact source commit: [CITATION.cff](CITATION.cff). Cite the papers of the designs you use separately; the [method map](docs/method-map.md) lists them.
 
+<!-- citation: generated from CITATION.cff by scripts/readme_figures.py -->
 ```bibtex
 @software{looptitan,
   title = {{LoopTitan}},
@@ -325,6 +326,7 @@ Cite the repository and the exact source commit: [CITATION.cff](CITATION.cff). C
   url = {https://github.com/datamllab/LoopTitan}
 }
 ```
+<!-- /citation -->
 
 ## Licence
 

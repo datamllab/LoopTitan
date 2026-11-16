@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+import yaml
 
 import hf_release
 import readme_figures as figures
@@ -413,8 +414,27 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
                  "https://github.com/datamllab/LoopTitan/tree/main/docs", "https://github.com/datamllab/LoopTitan/issues/180",
                  "https://github.com/datamllab/LoopTitan/blob/main/LICENSE"):
         assert link in card
-    assert "@software{looptitan," in card and "author = {{The LoopTitan authors}}" in card
+    assert f"## Citation\n\n```bibtex\n{figures.bibtex(yaml.safe_load((ROOT / 'CITATION.cff').read_text()))}\n```\n" in card
     assert str(single_plan.parent) not in card and str(ROOT) not in card
+
+
+PAPER = ("@misc{looptitan2026,\n  title = {{A Paper Title With Capitals}},\n  author = {{The LoopTitan authors}},\n"
+         "  year = {2026},\n  eprint = {2611.00001},\n  archivePrefix = {arXiv},\n  primaryClass = {cs.LG},\n"
+         "  url = {https://arxiv.org/abs/2611.00001}\n}")
+
+
+def test_card_cites_the_preferred_citation_of_citation_cff_and_only_that(single_plan, monkeypatch):
+    fixture = ROOT / "tests" / "delivery" / "fixtures" / "citation-paper.cff"
+    cff = yaml.safe_load(fixture.read_text())
+    assert figures.bibtex(cff) == PAPER
+    monkeypatch.setattr(hf_release, "CITATION", fixture)
+    card = hf_release.load_plan(single_plan, NAMESPACE)[0]["card"]
+    assert f"## Citation\n\n```bibtex\n{PAPER}\n```\n" in card and "@software" not in card
+    journal = cff["preferred-citation"] | {"journal": "Journal of Tests", "identifiers": [], "doi": "10.0000/test"}
+    assert figures.bibtex(cff | {"preferred-citation": journal}) == (
+        "@article{looptitan2026,\n  title = {{A Paper Title With Capitals}},\n  author = {{The LoopTitan authors}},\n"
+        "  year = {2026},\n  journal = {Journal of Tests},\n  doi = {10.0000/test},\n"
+        "  url = {https://arxiv.org/abs/2611.00001}\n}")
 
 
 def test_unmatched_row_says_so():
@@ -470,6 +490,9 @@ def test_banner_draws_layers_and_the_loop_from_the_configuration():
     assert "12 layers stored, 18 run</text>" in looped and "#3346D3" not in plain
     assert plain.count(bar) == 12 and "12 layers</text>" in plain
     assert figures.glyph("phase1/m3", 0, 0, figures.LIGHT, k=2)[0] in looped  # the README's drawing, light variant
+    mark = (ROOT / "docs" / "assets" / "brand" / "looptitan-lockup-medium-ink.svg").read_text()
+    mark = mark[mark.index(">") + 1:mark.rindex("</svg>")]
+    assert mark in looped and mark in plain  # the lockup, placed as it is
 
 
 def test_evaluation_bpb_must_reproduce_the_results(single_plan):
