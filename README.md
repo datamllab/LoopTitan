@@ -37,7 +37,7 @@ Unique parameters, training FLOPs and KV cache come from the configuration, on a
 
 ### Checked against independent code.
 
-The model matches the official Transformers Qwen3-MoE in logits, gradients, optimizer steps and cache ([check](docs/baselines.md)). Two published looped checkpoints convert with the same logits ([#199](https://github.com/datamllab/LoopTitan/issues/199), [#201](https://github.com/datamllab/LoopTitan/issues/201)). Your own configuration gets the same conformance check in seconds ([conformance](docs/development.md#conformance-tests-and-diagnostics)).
+The model matches the official Transformers Qwen3-MoE in logits, gradients, optimizer steps and cache ([check](docs/baselines.md)). Two published looped checkpoints convert with the same logits ([#199](https://github.com/datamllab/LoopTitan/issues/199), [#201](https://github.com/datamllab/LoopTitan/issues/201)).
 
 ## Quick start
 
@@ -50,17 +50,34 @@ uv pip install 'torch==2.14.0' --index-url https://download.pytorch.org/whl/cpu
 uv pip install '.[data,hf]'
 ```
 
-Compare the ordinary MoE with the loop of [Phase 1](#studies-run-on-looptitan). The three budgets are within 5%:
+Compare the loop of [Phase 1](#studies-run-on-looptitan) with its untied twin, which owns separate weights for each visit. The command prints one JSON record; its `matched` section, shown here, holds the three budgets:
 
 ```console
 $ python scripts/compare_recipes.py compare \
-    recipes/phase1/m0-adamw.json recipes/phase1/m3-adamw.json --seq-len 4096 \
-    | jq '.matched | map_values(.relative_difference)'
-{
-  "logical_kv_bytes": 0.03125,
-  "training_flops_per_token": 0.02438036283252924,
-  "unique_non_embedding_parameters": -0.002667773879929664
-}
+    recipes/phase1/m3-adamw.json recipes/phase1/m4-adamw.json --seq-len 4096
+  "matched": {
+    "logical_kv_bytes": {
+      "basis": "analytical_estimate",
+      "candidate": 25952256,
+      "reference": 25952256,
+      "relative_difference": 0.0,
+      "relative_tolerance": 0.05
+    },
+    "training_flops_per_token": {
+      "basis": "analytical_estimate",
+      "candidate": 3213955008,
+      "reference": 3217300416,
+      "relative_difference": -0.0010398183468857637,
+      "relative_tolerance": 0.05
+    },
+    "unique_non_embedding_parameters": {
+      "basis": "analytical_estimate",
+      "candidate": 1329281184,
+      "reference": 1314771744,
+      "relative_difference": 0.01103571024112304,
+      "relative_tolerance": 0.05
+    }
+  },
 ```
 
 Build a looped model, run it and cost it:
@@ -93,93 +110,39 @@ A looped MoE is an ordinary MoE with a few decisions changed. Each decision is a
 
 | Mechanism | Field | Designs |
 |:---|:---|:---|
-| Where the loop sits and how often it runs | `prefix_cells`, `num_cells`, `suffix_cells`, `num_visits` | <sup>[1,&nbsp;3,&nbsp;4,&nbsp;6–10](#references)</sup> |
-| Experts per region | `prefix`, `core`, `suffix` (`num_experts`, `hidden_dim`, `top_k`) | <sup>[1, 4](#references)</sup> |
-| What a visit shares | `attention_per_visit`, `router_per_visit`, `norm_per_visit` | <sup>[4, 8](#references)</sup> |
-| Residual scale, global or per visit | `core.residual_scale`, `visit_residual_scales` | <sup>[1, 2](#references)</sup> |
-| Input re-entry | `input_injection` | <sup>[6, 7](#references)</sup> |
-| Initial state and state update | `initial_state`, `state_update` | <sup>[6, 8](#references)</sup> |
-| Depth: fixed, sampled or learned | `depth_rule`, `grad_visits`, `exit_distribution` | <sup>[6, 9](#references)</sup> |
-| Low-rank delta per visit | `lora_attention_rank`, `lora_ffn_rank` | <sup>[10](#references)</sup> |
-| Experts tied across layers | `order="layer"` with attention, router and norms per visit | <sup>[5](#references)</sup> |
+| Where the loop sits and how often it runs | `prefix_cells`, `num_cells`, `suffix_cells`, `num_visits` | [\[1–⁠4,&nbsp;6–⁠10\]](#references) |
+| Experts per region | `prefix`, `core`, `suffix` (`num_experts`, `hidden_dim`, `top_k`) | [\[1,&nbsp;4\]](#references) |
+| What a visit shares | `attention_per_visit`, `router_per_visit`, `norm_per_visit` | [\[4,&nbsp;8\]](#references) |
+| Residual scale, global or per visit | `core.residual_scale`, `visit_residual_scales` | [\[1,&nbsp;2\]](#references) |
+| Input re-entry | `input_injection` | [\[6,&nbsp;7\]](#references) |
+| Initial state and state update | `initial_state`, `state_update` | [\[6–⁠8\]](#references) |
+| Depth: fixed, sampled or learned | `depth_rule`, `grad_visits`, `exit_distribution` | [\[6,&nbsp;9\]](#references) |
+| Low-rank delta per visit | `lora_attention_rank`, `lora_ffn_rank` | [\[10\]](#references) |
+| Experts tied across layers | `order="layer"` with attention, router and norms per visit | [\[5\]](#references) |
 
-A superscript marks a published design that uses the mechanism and is implemented here. The [method map](docs/method-map.md) says what each configuration keeps from its source and what it adapts.
-
-### Lineage
-
-Every frozen configuration names its parent and the fields it changes. The tree is checked against the recipe files ([test](tests/comparison/test_lineage.py)).
+A reference number marks a published design that uses the mechanism and is implemented here. Each frozen configuration names its parent and the fields it changes. An excerpt of the one-change chain, in the real order (a line `…` stands for lines left out, and `…` in brackets for fields left out):
 
 ```console
-$ python scripts/lineage.py        # shortened; … marks fields left out
+$ python scripts/lineage.py
 phase1/m0
-  shape/g  [hidden_dim, num_experts, top_k]
-  phase1/m0-2e  [num_experts]
+  …
   phase1/m3  [dim, hidden_dim, num_heads, num_experts, …, num_visits, core]
     phase1/m4  [num_cells, num_visits, core]
+      phase1/m4-elr
       shape/u  [prefix_cells, num_cells, suffix_cells, num_experts, core]
       shape/r  [core]
-    methods/smelt-v3  [num_cells, num_visits, core]
-    methods/smelt-v4  [num_cells, num_visits, core]
-    methods/latentloop-residual  [visit_residual_scales, core]
-  methods/m0-loop  [prefix_cells, num_cells, suffix_cells, num_visits, core]
-  methods/meta  [num_experts, prefix_cells, num_cells, suffix_cells, num_visits]
-  methods/foil  [attention_per_visit, prefix_cells, num_cells, suffix_cells, num_visits, …]
-  methods/expert-tying  [num_experts, num_cells, num_visits, order, attention_per_visit, …]
-  methods/huginn  [hidden_dim, num_heads, num_experts, …, input_injection, initial_state]
-    methods/sandwich  [hidden_dim, num_heads, …, injection_dt, initial_state]
-  methods/loom  [num_experts, num_cells, num_visits, router_per_visit, state_update]
-  methods/ouro  [dim, hidden_dim, num_heads, …, num_visits, exit_distribution]
-  methods/relaxed  [num_experts, num_cells, num_visits, lora_attention_rank]
+  …
 ```
 
-| Node | What it changes against its parent |
-|:---|:---|
-| [`phase1/m3`](recipes/phase1/m3-adamw.json) | The middle 6 of 12 layers run twice, residual ×0.5, every part shared<sup>[1](#references)</sup> |
-| [`phase1/m4`](recipes/phase1/m4-adamw.json) | The untied twin: 12 middle layers, each with its own weights |
-| [`methods/smelt-v3`](recipes/methods/smelt-v3-adamw.json), [`-v4`](recipes/methods/smelt-v4-adamw.json) | The same loop with 3 or 4 visits, residual ×1/3 or ×1/4<sup>[1](#references)</sup> |
-| [`methods/latentloop-residual`](recipes/methods/latentloop-residual-adamw.json) | Residual ×0.25 on the first visit and ×1 on the second<sup>[1, 2](#references)</sup> |
-| [`methods/m0-loop`](recipes/methods/m0-loop-adamw.json) | The ordinary MoE's middle 6 layers run twice: no new weights, more compute<sup>[1](#references)</sup> |
-| [`methods/meta`](recipes/methods/meta-adamw.json) | A shared middle stack of 2 layers runs 4 times<sup>[3](#references)</sup> |
-| [`methods/foil`](recipes/methods/foil-adamw.json) | Half the middle layers with twice the experts, run twice, attention per visit<sup>[4](#references)</sup> |
-| [`methods/expert-tying`](recipes/methods/expert-tying-adamw.json) | Each 4 consecutive layers share one expert bank; attention, router and norms per layer<sup>[5](#references)</sup> |
-| [`methods/huginn`](recipes/methods/huginn-adamw.json) | A middle core runs a sampled number of times from a random start; the input re-enters every visit<sup>[6](#references)</sup> |
-| [`methods/sandwich`](recipes/methods/sandwich-adamw.json) | One core layer runs 8 times with a decaying input re-entry<sup>[6, 7](#references)</sup> |
-| [`methods/loom`](recipes/methods/loom-adamw.json) | The whole stack runs 3 times with a router per visit and an EMA state<sup>[8](#references)</sup> |
-| [`methods/ouro`](recipes/methods/ouro-adamw.json) | The whole stack runs 3 times, trained over a learned exit distribution<sup>[9](#references)</sup> |
-| [`methods/relaxed`](recipes/methods/relaxed-adamw.json) | The whole stack runs twice with a low-rank attention delta per visit<sup>[10](#references)</sup> |
-
-Each configuration in the table has an AdamW file and a Muon file in [`recipes/`](recipes).
+The command prints the whole tree. Each configuration in plain words: [Phase 1 results](docs/results/phase1.md); what each keeps from its source and what it adapts: [method map](docs/method-map.md).
 
 ## Compare
 
-`compare` costs two configurations and sorts each quantity into matched, controlled, measured-different or unknown. It allocates no GPU. The controls of a study ship as configurations. The untied twin owns separate weights for each visit and keeps every budget:
-
-```console
-$ python scripts/compare_recipes.py compare \
-    recipes/phase1/m3-adamw.json recipes/phase1/m4-adamw.json --seq-len 4096 \
-    | jq '{changed: .recipe_differences | map_values("\(.reference) -> \(.candidate)"),
-           matched: .matched | map_values(.relative_difference)}'
-{
-  "changed": {
-    "inference.num_visits": "2 -> 1",
-    "model.core.num_experts": "88 -> 44",
-    "model.num_cells": "6 -> 12",
-    "model.num_visits": "2 -> 1",
-    "training.num_visits": "2 -> 1"
-  },
-  "matched": {
-    "logical_kv_bytes": 0.0,
-    "training_flops_per_token": -0.0010398183468857637,
-    "unique_non_embedding_parameters": 0.01103571024112304
-  }
-}
-```
-
-[`scripts/recipe_atlas.py`](scripts/recipe_atlas.py) sweeps the shapes of a configuration and marks those that match a reference on all three budgets. Definitions and the CLI: [cost and comparison](docs/comparison.md#cli-and-plain-json).
+`compare` writes one record that sorts each quantity into matched, controlled, measured-different or unknown, and allocates no GPU. The controls of a study ship as configurations: the untied twin of the quick start and the one-change chain of [Phase 1](#studies-run-on-looptitan). [`scripts/recipe_atlas.py`](scripts/recipe_atlas.py) sweeps the shapes of a configuration and marks those that match a reference on all three budgets. Definitions and the CLI: [cost and comparison](docs/comparison.md#cli-and-plain-json).
 
 ## Check
 
-Six configurations, from an ordinary MoE to shared stacks and tied experts, are checked against the official Transformers Qwen3-MoE: full logits, loss, the gradient of every parameter, four AdamW steps and cached decoding ([method](docs/baselines.md), [CPU record](docs/evidence/qwen3-cpu.json), [tests](tests/reference)). Released looped checkpoints convert to this model with the same logits ([tests](tests/hf)). Any configuration runs the conformance battery on a CPU:
+Evidence: [method](docs/baselines.md), [CPU record](docs/evidence/qwen3-cpu.json), [reference tests](tests/reference), [conversion tests](tests/hf). The conformance check tests a configuration against the model's own contracts (parameter ownership, shared gradients, cost-model calls, cache, export round trip, identity) on a CPU in seconds ([details](docs/development.md#conformance-tests-and-diagnostics)):
 
 ```python
 from moeloop.recipe_spec import RecipeSpec, TrainingRecipe
@@ -192,11 +155,13 @@ print({name: check["status"] for name, check in report["checks"].items()})
 #  'cache': 'pass', 'hf_roundtrip': 'pass', 'identity': 'pass'}
 ```
 
-Here `config` is the model of the quick start. The six checks are listed in [Development](docs/development.md#conformance-tests-and-diagnostics).
+Here `config` is the model of the quick start.
 
 ## Train and export
 
-Training runs on [TorchTitan](https://github.com/pytorch/torchtitan) with AdamW or Muon. Initial weights, data order and validation samples do not depend on the GPU count ([architecture](docs/architecture.md#7-data-resume-and-export-are-the-product-core), [#175](https://github.com/datamllab/LoopTitan/issues/175)). Resume on the same GPU layout is bit-exact ([#175](https://github.com/datamllab/LoopTitan/issues/175), [validation](docs/validation.md#distributed-training-full-state-resume-and-model-delivery)). Export writes a standalone Hugging Face model ([export](docs/training.md#export-evaluate-and-generate)).
+Training runs on [TorchTitan](https://github.com/pytorch/torchtitan) with AdamW or Muon. Initial weights, data order and validation samples do not depend on the GPU count ([architecture](docs/architecture.md#7-data-resume-and-export-are-the-product-core), [#175](https://github.com/datamllab/LoopTitan/issues/175)). Resume is bit-exact in model and optimizer state ([validation](docs/validation.md#distributed-training-full-state-resume-and-model-delivery)). Export writes a standalone Hugging Face model ([export](docs/training.md#export-evaluate-and-generate)).
+
+Training needs a CUDA build of Torch 2.14.0 and the `train` extra ([setup](docs/training.md#set-up-the-environment)):
 
 ```sh
 python scripts/recipe_experiments.py run --spec recipes/phase1/m3-muon.json \
@@ -216,15 +181,15 @@ The study walks one change at a time from an ordinary MoE to a looped MoE, at eq
 | 0 | [Ordinary MoE](recipes/phase1/m0-adamw.json): 12 layers of 64 experts | 0.9995 | | 0.9744 | |
 | 1 | [Finer experts](recipes/shape/g-adamw.json): 72 smaller experts, top-9 | 0.9953 | −4.2 | 0.9735 | −0.9 |
 | 2 | [Deeper and narrower](recipes/shape/u-adamw.json): 18 layers at width 1056 | 0.9926 | −6.9 | 0.9702 | −4.2 |
-| 3 | [Looped layout](recipes/shape/r-adamw.json): 88 experts in the 6 outer layers, 44 in the 12 middle | 0.9936 | −5.9 | 0.9710 | −3.4 |
+| 3 | [Expert layout](recipes/shape/r-adamw.json): 88 experts in the 6 outer layers, 44 in the 12 middle | 0.9936 | −5.9 | 0.9710 | −3.4 |
 | 4 | [Residual scale](recipes/phase1/m4-adamw.json): middle residual ×0.5 | 0.9906 | −8.9 | 0.9710 | −3.3 |
 | 5 | [The loop](recipes/phase1/m3-adamw.json): the 12 middle layers become 6 layers of 88 experts, run twice | 0.9905 | −9.0 | 0.9707 | −3.7 |
 
-Test bits per byte after 5.0B tokens of DCLM (4,769 updates of 1,048,576 tokens, seed 42); Δ against step 0 with the same optimizer, in mBPB; parameters, training FLOPs and KV cache of every step are within 5% of step 0. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3); the loop of step 5 selects the same value under the same grid; every other configuration inherits it.
+Test bits per byte (BPB) after 5.0B tokens of DCLM (4,769 updates of 1,048,576 tokens, seed 42); lower is better. Δ is the difference to step 0 with the same optimizer, in mBPB; a negative Δ is a gain. Parameters, training FLOPs and KV cache of every step are within 5% of step 0. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3); the loop of step 5 selects the same value under the same grid; every other configuration inherits it.
 
-1. **Revisiting the same weights adds little.** The loop is level with its untied twin under both optimizers (step 5 against step 4).
-2. **The gain comes from shape and residual scale, and Muon shrinks it.** The chain gains 9.0 mBPB under AdamW and 3.7 under Muon. Muon alone gains 25 mBPB on the ordinary MoE.
-3. **Beyond equal budgets, one more visit is worth twice the experts.** Running the ordinary MoE's middle layers twice (32% more training FLOPs, no new weights) gains at least as much as doubling its experts (97% more weights; [outside matched budgets](docs/results/phase1.md#outside-matched-budgets)).
+1. **At equal budgets, the loop step adds little.** The loop is level with its untied twin (step 5 against step 4).
+2. **Shape gives most of the gain.** Steps 1–2 gain 6.9 mBPB under AdamW and 4.2 under Muon. The residual scale gains 3.0 under AdamW and nothing under Muon.
+3. **Beyond equal budgets, one more visit gains at least as much as twice the experts.** Running the ordinary MoE's middle layers twice (31% more training FLOPs, no new weights) gains 14.8 mBPB under AdamW and 12.2 under Muon; doubling its experts gains 14.3 and 9.9 ([outside matched budgets](docs/results/phase1.md#outside-matched-budgets)).
 
 Every configuration, the controls and both optimizers: [Phase 1 results](docs/results/phase1.md) ([data](docs/results/phase1.json)). The record of the study: [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216), [#225](https://github.com/datamllab/LoopTitan/issues/225).
 
@@ -232,7 +197,7 @@ Later phases join this list when they are released.
 
 ## An open record
 
-Each study is an issue that declares its arms, controlled settings and budget before the runs ([#225](https://github.com/datamllab/LoopTitan/issues/225)). Each run records its resolved configuration, and the results comment checks every run against the declared settings ([#232](https://github.com/datamllab/LoopTitan/issues/232)). Failed runs and short checks stay in the record ([#243](https://github.com/datamllab/LoopTitan/issues/243), [protocol](docs/protocol.md#state-and-decisions)). The [issues](https://github.com/datamllab/LoopTitan/issues) are a copy of the development record under the original issue numbers, with studies, runs, code tasks and pull-request records; private paths and details of the operating environment were removed, and numbers, tables and verdicts are unchanged.
+Each study is an issue that declares its arms, controlled settings and budget before the runs ([#225](https://github.com/datamllab/LoopTitan/issues/225)). [`scripts/results.py`](scripts/results.py) checks the runs of a study against its declared design ([#232](https://github.com/datamllab/LoopTitan/issues/232)). Failed runs and short checks stay in the record ([#243](https://github.com/datamllab/LoopTitan/issues/243), [protocol](docs/protocol.md#state-and-decisions)). The [issues](https://github.com/datamllab/LoopTitan/issues) are a copy of the development record under the original issue numbers, with pull-request records among them ([#199](https://github.com/datamllab/LoopTitan/issues/199)).
 
 The benchmark is a frozen protocol of four tracks ([`eval/bench/tracks.json`](eval/bench/tracks.json)). A checker binds a submission folder to its files and lists what it cannot check ([benchmark](docs/comparison.md#benchmark-submission-folder)). It does not yet accept outside entries.
 

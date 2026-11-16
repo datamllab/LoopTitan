@@ -2,19 +2,19 @@
 <title id="title">One looped model</title>
 <desc id="desc">Twelve layers in a row on one residual stream: three outer layers, six middle layers that run twice with one set of weights, and three outer layers.</desc>
 <rect width="880" height="248" fill="#FFFFFF"/>
-<path d="M83.0 146 H127.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M163.0 146 H177.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M213.0 146 H227.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M263.0 146 H297.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M333.0 146 H347.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M383.0 146 H397.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M433.0 146 H447.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M483.0 146 H497.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M533.0 146 H547.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M583.0 146 H617.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M653.0 146 H667.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M703.0 146 H717.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
-<path d="M753.0 146 H797.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="butt" fill="none"/>
+<path d="M83.0 146 H127.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M163.0 146 H177.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M213.0 146 H227.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M263.0 146 H297.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M333.0 146 H347.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M383.0 146 H397.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M433.0 146 H447.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M483.0 146 H497.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M533.0 146 H547.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M583.0 146 H617.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M653.0 146 H667.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M703.0 146 H717.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M753.0 146 H797.0" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" fill="none"/>
 <path d="M788.0 139 L797.0 146 L788.0 153" stroke="#D5D8DE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 <rect x="287.0" y="84.0" width="306.0" height="124" rx="18" fill="#EEF0FB"/>
 <rect x="128.25" y="95.25" width="33.5" height="101.5" rx="9" fill="none" stroke="#16181D" stroke-width="2.5"/>
