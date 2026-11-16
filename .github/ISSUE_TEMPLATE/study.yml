@@ -1,47 +1,47 @@
-name: 研究
-description: 一个研究问题，由 code 和 run 子 issue 来回答；Arms、Controlled、Adaptable 是每个 run 都要对照的规格。
+name: Study
+description: 'One research question, answered by code and run sub-issues. Arms, Controlled and Adaptable are the spec that each run is checked against.'
 labels: [study]
 body:
   - type: textarea
     id: question
     attributes:
       label: Question
-      description: 这个研究要回答的问题。
+      description: The question that this study answers.
     validations:
       required: true
   - type: textarea
     id: arms
     attributes:
       label: Arms
-      description: '每行一组：`<arm>: <key>=<value> [<key>=<value> ...]`，只写各组之间不同的设置，例如 `lora: model.adapter=lora model.lora.rank=8`。键是 run 配置（config.json）里的点号键，一个键最多出现在 Arms、Controlled、Adaptable 中的一节；值能按 JSON 解析（数字、true/false/null、列表）就按 JSON 比较，否则按字符串。每行末尾可加 `  # <注释>`。'
+      description: 'One arm per line: `<arm>: <key>=<value> [<key>=<value> ...]`. Write only the settings in which the arms differ, for example `lora: model.adapter=lora model.lora.rank=8`. A key is a dotted key of the run config (config.json). A key can be in only one of Arms, Controlled and Adaptable. A value that parses as JSON (a number, true/false/null, a list) compares as JSON; other values compare as strings. A line can end with `  # <comment>`.'
     validations:
       required: true
   - type: textarea
     id: controlled
     attributes:
       label: Controlled
-      description: '每行一个所有 run 都要满足的设置，理由必填（论文、记录或之前的结果）：`<key>=<value>  # <理由>` 表示每个 run 都取这个值；`<key> in <v1>,<v2>,...  # <理由>` 表示每组都要跑遍这些值，如 seed 和调参网格。常见的混杂因素中适用的逐项写上：数据与划分、预处理与增强、模型与初始化、优化器与调度、有效 batch 与训练长度、精度、调参预算、评测协议与 checkpoint 选择、seed。例如 `train.effective_batch=256  # 论文 X 表 2`、`seed in 1,2,3  # 论文 X 用 3 个 seed`。'
+      description: 'One setting per line that all runs must meet, with a reason (a paper, a record or an earlier result). `<key>=<value>  # <reason>` means that every run uses this value. `<key> in <v1>,<v2>,...  # <reason>` means that every arm runs all these values, for example seeds and tuning grids. Write each usual confounder that applies: data and split, preprocessing and augmentation, model and initialization, optimizer and schedule, effective batch and training length, precision, tuning budget, evaluation protocol and checkpoint selection, seed. For example `train.effective_batch=256  # paper X, table 2` and `seed in 1,2,3  # paper X uses 3 seeds`.'
     validations:
       required: true
   - type: textarea
     id: adaptable
     attributes:
       label: Adaptable
-      description: '可选。可以因 run 而不同、执行中可以按规则调整的工程设置，每行一个：`<key>  # <规则>`，例如 `train.per_device_batch  # 按显存调整，有效 batch 固定在 Controlled`。'
+      description: 'Optional. Engineering settings that can differ between runs and that can change during execution by a rule, one per line: `<key>  # <rule>`, for example `train.per_device_batch  # set by GPU memory; the effective batch is fixed in Controlled`.'
   - type: textarea
     id: criteria
     attributes:
       label: Criteria
-      description: 什么样的结果算回答了这个问题。
+      description: Which result answers the question.
     validations:
       required: true
   - type: input
     id: budget
     attributes:
       label: Budget
-      description: GPU 小时和时间，例如 4 GPU 小时、1 天。
+      description: GPU hours and time, for example 4 GPU hours, 1 day.
   - type: textarea
     id: context
     attributes:
       label: Context
-      description: 相关研究、结果评论和论文的链接。
+      description: Links to related studies, results comments and papers.

@@ -62,8 +62,8 @@ of the Run command such as `--gpus 4`; pass those through before `--`:
   background execution for long runs; stop one the way the Run command provides (here SIGTERM).
 - Right after launch, once the runs have recorded their configs (`cfg.*` params), run
   `gh issue view P --json body -q .body | <results> --issue N --spec -`. Stop every running
-  run that `规格核对` lists as breaking a Controlled `key=value` line, not recording one, or
-  matching no arm or several. A key under `未声明的差异` is a blocker; if it can affect results,
+  run that `Spec check` lists as breaking a Controlled `key=value` line, not recording one, or
+  matching no arm or several. An `Undeclared difference` is a blocker; if it can affect results,
   stop the runs first. Stopped runs stay recorded. Whether to relaunch a stopped line follows
   section 4, or the human's answer to the blocker; note every stopped or relaunched run for the
   results comment.
@@ -92,7 +92,7 @@ When every line has a finished or failed record:
 
 ```
 table=$(gh issue view P --json body -q .body | <results> --issue N --metric <Report metrics> --spec -)
-gh issue comment N --body "$(printf '%s\n\n%s\n' "<中文说明：跑了什么、失败与重跑及原因、每项 Adaptable 改动、超出预算与否>" "$table")"
+gh issue comment N --body "$(printf '%s\n\n%s\n' "<summary: what ran, failures and reruns with causes, each Adaptable change, budget kept or exceeded>" "$table")"
 gh issue close N --reason completed
 ```
 
@@ -103,7 +103,7 @@ gh issue close N --reason completed
 ```
 runs=$(gh api --paginate 'repos/{owner}/{repo}/issues/P/sub_issues' --jq '[.[] | select(any(.labels[]; .name == "run")) | .number] | join(" ")')
 table=$(gh issue view P --json body -q .body | <results> --issue $runs --metric <Report metrics> --spec -)
-gh issue comment P --body "$(printf '%s\n\n%s\n' "<一行中文说明：本研究全部 run issue 的结果与规格核对>" "$table")"
+gh issue comment P --body "$(printf '%s\n\n%s\n' "<one line: results and Spec check over all run issues of this study>" "$table")"
 ```
 
 Then clean up from the main clone:
@@ -116,5 +116,5 @@ git ls-remote --exit-code --heads origin t/N-<slug> && git push origin --delete 
 
 ## 6. Report
 
-Report the three lines of AGENTS.md Report in Chinese, with links to the results comment and to
-P. Do not conclude or close the study; that is gate 4.
+Report the three lines of AGENTS.md Report in the human's language, with links to the results
+comment and to P. Do not conclude or close the study; that is gate 4.

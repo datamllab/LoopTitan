@@ -1,38 +1,38 @@
-name: 代码任务
-description: 一次代码或文件改动，限定在固定的 Scope 内。
+name: Code task
+description: One change to code or files, limited to a fixed Scope.
 labels: [code]
 body:
   - type: textarea
     id: goal
     attributes:
       label: Goal
-      description: 最多 3 句。
+      description: At most 3 sentences.
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
       label: Scope
-      description: 路径 glob，每行一个，不能以通配符开头。
+      description: Path globs, one per line. A glob must not start with a wildcard.
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance
-      description: 命令，每行一个。
+      description: Commands, one per line.
     validations:
       required: true
   - type: input
     id: budget
     attributes:
       label: Budget
-      description: 时间预算，例如 2h。
+      description: Time budget, for example 2h.
   - type: dropdown
     id: merge
     attributes:
       label: Merge
-      description: 谁来合并。human：由人合并；agent：审查通过后由 agent 用 .github/scripts/merge.py 合并。碰了受保护路径的 PR 一律由人合并。
+      description: 'Who merges. human: a human merges. agent: after a passing review, an agent merges with .github/scripts/merge.py. A human always merges a PR that changes a protected path.'
       options:
         - human
         - agent

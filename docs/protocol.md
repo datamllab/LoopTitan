@@ -55,3 +55,28 @@ For P1, two-node HSDP16 compared the model, the optimizer and the state of each 
 Before a resume, record the parent attempt, the checkpoint identity, the original schedule, the topology and the resume checks. `recipe_experiments.py` requires an explicit `--resume`. Before the start, it protects the complete DCP outside the rolling directory. With CVSM, each separate submission (a retry after a failure included) creates a new MLflow run. Planned segment saves and resumes inside one submission keep their own process receipts and do not overwrite the original record.
 
 `scripts/recipe_experiments.py` runs on GPUs that are already allocated, and it uses the standard torchrun multi-node environment. Each parallel agent or worktree uses its own output root. Different multi-node experiments also use their own rendezvous. `scripts/run.py` is still the optional single-machine, foreground command recorder. `gpus=[]` only turns off the local GPU lease. Resource allocation, supervision of persistent jobs, remote GPU-hour accounting and walltime limits are the job of the user's run environment.
+
+## Terms in earlier threads
+
+Most issues, pull requests and comments before plan #274 are in Chinese. The keywords and headings that the tools parse (`### Goal`, `### Arms`, `## Changes`, `Closes #N`, `Verdict:`, `Decision:`, `Blocked:`) were English then and did not change. The table maps the other earlier terms to the English ones that the tools and skills use now.
+
+| Earlier Chinese | English |
+| --- | --- |
+| 代码任务 / 运行任务 / 研究 (form names) | Code task / Run task / Study |
+| `#N 的结果：n 个 run，k 组，按去掉 seed 的命令分组。` | `Results of #N: n runs in k groups, grouped by command with the seed removed.` |
+| 命令 / 失败数 / 均值 / 标准差 / 环境锁 / 数据 / 无 | command / n_failed / mean / std / env lock / data manifest / none |
+| 标注 | Flags |
+| commit 不同 / 环境不同 / 数据不同 | Commit differs / Env lock differs / Data manifest differs |
+| 缺环境锁文件 / 工作区不干净 / 成功退出但没有指标 | with missing env lock files / with a dirty worktree / with exit code 0 and no metrics |
+| 未完成（还在跑或已被杀）/ 已在 MLflow 中删除，但仍计入上表 | not finished (still running or killed) / deleted in MLflow but still counted in the table |
+| 规格核对 | Spec check |
+| 没有偏差 / 没有给出规格 | No deviations / No spec given |
+| 不成立 / 未记录 | does not hold / not recorded |
+| 不属于任何 arm / 属于多个 arm / 没有 run 的 arm | with no matching arm / in more than one arm / Arms with no run |
+| arm X 缺 … 的取值 | Arm X is missing values of … |
+| 未声明的差异 | Undeclared difference |
+| 读不懂的规格行 / Controlled 行没有写理由 / 规格里没有 … 一节 / 出现在多节 | Unreadable spec line / Controlled line without a reason / No … section in the spec / is in more than one section |
+| 等人合并 / 不合并 / 已合并 / 已按人的指示合并 | waiting for a human to merge / not merged / merged / merged on the human's instruction |
+| `Decision: 发布 …` / `Decision: 合并 PR …` | `Decision: publish …` / `Decision: merge PR …` |
+| `Blocked: 这个对比按规格做不了，因为 <X>` | `Blocked: this comparison cannot be done as specified, because <X>` |
+| 剩余的 minor 意见与处理建议；建议：开新 issue / 并进 #M / 不处理；理由 | Remaining minor findings and proposals; proposal: new issue / add to #M / no action; reason |

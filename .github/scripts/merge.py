@@ -28,24 +28,24 @@ def merge_mode(issue_body: str | None) -> str:
 def check(pr: dict, files: list[dict], comments: list[str], issue: dict | None, cfg: dict) -> list[str]:
     reasons, refs = [], closing_refs(pr.get("body") or "", pr.get("repo"))
     if len(refs) != 1:
-        reasons.append(f"PR 正文要恰好关闭一个 issue（`Closes #N`），现在是 {len(refs)} 个")
+        reasons.append(f"the PR body must close exactly one issue with `Closes #N` (found {len(refs)})")
     elif issue is None:
-        reasons.append(f"读不到 issue #{refs[0]}")
+        reasons.append(f"cannot read issue #{refs[0]}")
     elif merge_mode(issue.get("body")) != "agent":
-        reasons.append(f"issue #{refs[0]} 的 Merge 不是 agent")
+        reasons.append(f"the Merge field of issue #{refs[0]} is not agent")
 
     for f in files:
         for p in [f["filename"]] + ([f["previous_filename"]] if f.get("previous_filename") else []):
             if any_match(p, cfg["protected"]):
-                reasons.append(f"改了受保护路径 {p}")
+                reasons.append(f"changes the protected path {p}")
 
     firsts = [(c or "").strip().split("\n")[0].strip() for c in comments]
     verdict = next((line for line in reversed(firsts) if line.startswith("Verdict:")), None)
     m = PASS.fullmatch(verdict or "")
     if verdict is None:
-        reasons.append("PR 上没有审查结论（第一行 `Verdict: pass @ <head SHA>` 的评论）")
+        reasons.append("no review verdict on the PR (a comment whose first line is `Verdict: pass @ <head SHA>`)")
     elif m is None or not pr["head"].lower().startswith(m.group(1).lower()):
-        reasons.append(f"最新的审查结论不是当前 head {pr['head'][:7]} 的 pass：{verdict}")
+        reasons.append(f"the newest verdict is not a pass for the current head {pr['head'][:7]}: {verdict}")
     return reasons
 
 
@@ -61,12 +61,12 @@ def gh_api(path: str, *flags: str):
 def main(argv: list[str]) -> int:
     human, args = "--human" in argv, [a for a in argv if a != "--human"]
     if len(args) != 1 or not args[0].isdigit():
-        print("用法：python .github/scripts/merge.py <PR> [--human]（PR 编号）")
+        print("usage: python .github/scripts/merge.py <PR> [--human] (PR number)")
         return 1
     number = args[0]
     pr = gh_api(f"repos/{{owner}}/{{repo}}/pulls/{number}")
     if pr is None:
-        print(f"读不到 PR #{number}，没有合并")
+        print(f"cannot read PR #{number}; not merged")
         return 1
     head = pr["head"]["sha"]
     if not human:
@@ -75,7 +75,7 @@ def main(argv: list[str]) -> int:
         notes = gh_api(f"repos/{repo}/issues/{number}/comments", "--paginate", "--slurp")
         toml = gh_api(f"repos/{repo}/contents/.github/guard.toml?ref={quote(ref, safe='')}")
         if pages is None or notes is None or toml is None:
-            print(f"读不到 PR #{number} 的文件、评论，或 {ref} 上的 guard.toml，没有合并")
+            print(f"cannot read the files or comments of PR #{number}, or guard.toml on {ref}; not merged")
             return 1
         refs = closing_refs(pr.get("body") or "", repo)
         issue = gh_api(f"repos/{repo}/issues/{refs[0]}") if len(refs) == 1 else None
@@ -83,18 +83,18 @@ def main(argv: list[str]) -> int:
                         [f for page in pages for f in page], [c.get("body") or "" for page in notes for c in page],
                         issue, tomllib.loads(base64.b64decode(toml["content"]).decode()))
         if reasons:
-            print(f"不合并 PR #{number}：")
+            print(f"PR #{number} not merged:")
             for r in reasons:
                 print(f"- {r}")
-            print("等人合并")
+            print("waiting for a human to merge")
             return 2
     p = gh("pr", "merge", number, "--squash", "--match-head-commit", head,
            "--subject", f"{pr['title']} (#{number})", "--body", "")
     if p.returncode != 0:
-        print(f"合并 PR #{number} 失败：{(p.stderr or p.stdout).strip()}")
+        print(f"merge of PR #{number} failed: {(p.stderr or p.stdout).strip()}")
         return 1
-    print(f"已按人的指示合并 PR #{number}（squash，head {head[:7]}）" if human
-          else f"已合并 PR #{number}（squash，head {head[:7]}）")
+    print(f"merged PR #{number} on the human's instruction (squash, head {head[:7]})" if human
+          else f"merged PR #{number} (squash, head {head[:7]})")
     return 0
 
 
