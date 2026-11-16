@@ -54,4 +54,4 @@ def test_capsules_place_the_marks_as_they_are():
             name = f"{mark}-{'white' if theme is readme_figures.LIGHT else 'ink'}" if mark.startswith("brand/") else f"brand/external/{mark}"
             text = (ROOT / "docs" / "assets" / f"{name}.svg").read_text()
             inner = re.search(r"<svg[^>]*>(.*)</svg>", text, re.S).group(1)
-            assert inner in readme_figures.capsule(key, label, family, mark, False, theme), (key, name)
+            assert inner in readme_figures.capsule(key, label, family, mark, False, theme, readme_figures.HOSTS.get(key)), (key, name)

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="113" height="32" viewBox="0 0 113 32" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="101" height="32" viewBox="0 0 101 32" role="img" aria-labelledby="title desc">
 <title id="title">Results</title>
 <desc id="desc">Results</desc>
 <style>.s{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace}</style>
-<rect x="0.5" y="0.5" width="106" height="31" rx="15.5" style="fill:#F2F4FD;stroke:#C8CFF5;stroke-width:1"/><rect x="11.5" y="16" width="3.2" height="6" rx="1" style="fill:#16181D"/><rect x="16.1" y="13" width="3.2" height="9" rx="1" style="fill:#16181D"/><rect x="20.7" y="10" width="3.2" height="12" rx="1" style="fill:#3346D3"/><text class="s" x="63.03" y="21" text-anchor="middle" style="font-size:13px;font-weight:500;fill:#16181D">Results</text>
+<rect x="0.5" y="0.5" width="94" height="31" rx="15.5" style="fill:#F2F4FD;stroke:#C8CFF5;stroke-width:1"/><rect x="13.5" y="16" width="3.2" height="6" rx="1" style="fill:#16181D"/><rect x="18.1" y="13" width="3.2" height="9" rx="1" style="fill:#16181D"/><rect x="22.7" y="10" width="3.2" height="12" rx="1" style="fill:#3346D3"/><text class="s" x="36" y="21" textLength="44.64" lengthAdjust="spacing" style="font-size:13px;font-weight:500;fill:#16181D">Results</text>
 </svg>

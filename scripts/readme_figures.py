@@ -369,13 +369,13 @@ def badge(label, value, t):
 # The README's destination capsules, in row order: (key, label, colour family, mark). Marks of other organisations
 # are their own files in docs/assets/brand/external/, placed unchanged (SOURCES.md there gives source and terms).
 PLACES = [("homepage", "Homepage", "ours", "brand/looptitan-shell-small"), ("docs", "Documentation", "ours", "octicons-book-16"),
-          ("models", "Models", "hf", "huggingface-logo"), ("paper", "Paper", "plain", "octicons-file-16"),
+          ("models", "Models", "hf", "huggingface-logo"), ("paper", "Paper", "ours", "octicons-file-16"),
           ("results", "Results", "ours", "bars"), ("record", "Record", "github", "octicons-issue-opened-16"),
           ("contribute", "Contribute", "github", "octicons-git-pull-request-16")]
+HOSTS = {"paper": "arXiv"}  # the service named in words where the mark cannot name it
 # per family and theme: (ground, border, mark colour); LoopTitan's own places take the identity's indigo
 HUES = {"ours": {"light": ("#F2F4FD", "#C8CFF5", "#3346D3"), "dark": ("#151A2E", "#2C3672", "#7486F2")},
         "hf": {"light": ("#FFF8DD", "#F3D77A", None), "dark": ("#241F0E", "#5E4F1C", None)},
-        "plain": {"light": ("#F5F6F8", "#D5D8DE", "#16181D"), "dark": ("#161B22", "#363D48", "#E7EBF1")},
         "github": {"light": ("#EEF7F1", "#B5DCC1", "#1A7F37"), "dark": ("#0F2418", "#21543A", "#3FB950")}}
 
 
@@ -389,24 +389,45 @@ def placed(file, x, y, size, colour=None):
     return f'<g transform="translate({num(x + (size - vw * k) / 2)} {num(y + (size - vh * k) / 2)}) scale({k:.5f})"{fill}>{inner}</g>'
 
 
-def capsule(key, label, family, mark, primary, t):
-    """A destination capsule: the place's mark and name on its colour's light ground, one height and one type."""
-    h, size = 32, 13
+# Advance widths of a common sans (per 1000 em), so that a label's length is set, not left to the viewer's font
+ADVANCE = dict(zip("abcdefghijklmnopqrstuvwxyz", [556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833,
+                                                   556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500]))
+ADVANCE |= dict(zip("CDHMPR", [722, 722, 722, 833, 667, 722]))
+
+
+def label_text(x, y, s, size, fill, weight=500, mono=False):
+    """A label held to one length in every font: the letter spacing absorbs the difference between fonts."""
+    w = len(s) * size * .6 if mono else sum(ADVANCE[c] for c in s) * size / 1000 * 1.03
+    return (f'<text class="{"m" if mono else "s"}" x="{num(x)}" y="{num(y)}" textLength="{num(w)}" lengthAdjust="spacing" '
+            f'style="font-size:{num(size)}px;font-weight:{weight};fill:{fill}">{esc(s)}</text>'), w
+
+
+def capsule(key, label, family, mark, primary, t, host=None):
+    """A destination capsule: the place's mark and name on its colour's light ground. One height, one type and one
+    rhythm: 12 px, the 16 px mark, 8 px, the label held to its length, 14 px; host names the service in mono."""
+    h, size, pad, gap = 32, 13, 12, 8
     ground, border, colour = HUES[family]["light" if t is LIGHT else "dark"]
-    ink = t["ink"]
+    ink, soft = t["ink"], t["mid"]
     if primary:
-        ground, border, ink, colour = t["acc"], None, t["on_acc"], t["on_acc"]
-    tw = len(label) * size * .66  # generous: the widest common fallback fonts
-    w = round(10 + 16 + 7 + tw + 14)
+        ground, border, ink, colour, soft = t["acc"], None, t["on_acc"], t["on_acc"], t["on_acc"]
+    x = pad + 16 + gap
+    words, tw = label_text(x, 21, label, size, ink)
+    if host:
+        tag, hw = label_text(x + tw + 7, 21, host, 11.5, soft, 400, mono=True)
+        words += tag
+        tw += 7 + hw
+    w = round(x + tw + pad + 2)
     out = [rect(.5, .5, w - 1, h - 1, (h - 1) / 2, ground, border)]
     if mark == "bars":  # results: bars of a result, the last in the loop's colour
-        out += [rect(11.5 + i * 4.6, 22 - bh, 3.2, bh, 1, colour if i == 2 else ink) for i, bh in enumerate([6, 9, 12])]
+        out += [rect(pad + 1.5 + i * 4.6, 22 - bh, 3.2, bh, 1, colour if i == 2 else ink) for i, bh in enumerate([6, 9, 12])]
     elif mark.startswith("brand/"):
-        out.append(placed(f"{mark}-{'white' if t is LIGHT else 'ink'}.svg", 10, 8.5, 15))
+        out.append(placed(f"{mark}-{'white' if t is LIGHT else 'ink'}.svg", pad, 8.5, 15))
+    elif mark == "huggingface-logo":  # its artwork leaves a margin in its square: drawn 2 px larger to match
+        out.append(placed(f"brand/external/{mark}.svg", pad - 1, 7, 18))
     else:
-        out.append(placed(f"brand/external/{mark}.svg", 10, 8, 16, colour))
-    out.append(text(33 + tw / 2, 21, label, size, ink, 500, "middle"))
-    return svg(w + 6, h, label, label, t, "".join(out))  # 6 px of air after each capsule
+        out.append(placed(f"brand/external/{mark}.svg", pad, 8, 16, colour))
+    out.append(words)
+    return svg(w + 6, h, label, label + (f" ({host})" if host else ""), t, "".join(out))  # 6 px of air after each capsule
 
 
 def hero(t):
@@ -1255,7 +1276,7 @@ def figures():
             out[f"{name}-{variant}.svg"] = draw(theme)
     for i, (key, label, family, mark) in enumerate(PLACES):
         for variant, theme in [("light", LIGHT), ("dark", DARK)]:
-            out[f"capsule-{key}-{variant}.svg"] = capsule(key, label, family, mark, i == 0, theme)
+            out[f"capsule-{key}-{variant}.svg"] = capsule(key, label, family, mark, i == 0, theme, HOSTS.get(key))
     for key, (label, value) in badges().items():
         for variant, theme in [("light", LIGHT), ("dark", DARK)]:
             out[f"badge-{key}-{variant}.svg"] = badge(label, value, theme)
