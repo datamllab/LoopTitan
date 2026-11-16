@@ -2,7 +2,7 @@
 
 This document keeps the source record of the first protocol import. For the current public model and native training implementation, see [Training and data](training.md). For the actual validation status, see the [validation record](validation.md).
 
-The protocol is copied from [doem97/cvsm](https://github.com/doem97/cvsm/tree/b9cb290051f481b24c1abee332218efecfaaa02e), full commit `b9cb290051f481b24c1abee332218efecfaaa02e`. The root Apache-2.0 [LICENSE](../LICENSE) is kept. The adoption commit and later Git diffs identify the changed files.
+The protocol is copied from [doem97/cvsm](https://github.com/doem97/cvsm/tree/b9cb290051f481b24c1abee332218efecfaaa02e), full commit `b9cb290051f481b24c1abee332218efecfaaa02e`. CVSM and this repository come from the same author. The imported part is released with this repository under the root MIT [LICENSE](../LICENSE). The adoption commit and later Git diffs identify the changed files.
 
 This repository copies `AGENTS.md`, the four `.agents/skills/`, the Claude/Codex entry points, the GitHub forms/guard/merge/CI, `scripts/` and `tests/`. It does not copy the CVSM project website or its Pages workflow.
 

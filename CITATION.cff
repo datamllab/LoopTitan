@@ -7,5 +7,5 @@ authors:
 repository-code: "https://github.com/datamllab/LoopTitan"
 url: "https://github.com/datamllab/LoopTitan"
 version: "1.0.0rc1"
-license: Apache-2.0
+license: MIT
 abstract: "LoopTitan is an open-source PyTorch library for training and comparing looped Mixture-of-Experts language models. Nine published recipes share one explicit model, in which a few physical blocks run several times."
