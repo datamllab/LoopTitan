@@ -43,21 +43,35 @@ def test_the_check_reports_a_missing_configuration_and_a_wrong_budget():
     assert any(second["config"] in line and "budgets differ" in line for line in found)
 
 
-def test_every_rerun_is_a_note_under_its_optimizer():
-    table = results_table.TABLE.read_text()
-    sections = {name: table.split(f"## {name}\n")[1].split("\n## ")[0] for name in results_table.OPTIMIZERS.values()}
-    reruns = [(optimizer, run["rerun_at_other_lr"]) for optimizer, run in RUNS if "rerun_at_other_lr" in run]
+def sections(table: str) -> dict[str, str]:
+    return {optimizer: table.split(f"## {name}\n")[1].split("\n## ")[0]
+            for optimizer, name in results_table.OPTIMIZERS.items()}
+
+
+def test_every_rerun_is_a_numbered_note_marked_on_its_row():
+    reruns = [(optimizer, run) for optimizer, run in RUNS if "rerun_at_other_lr" in run]
     assert reruns
-    for optimizer, rerun in reruns:
-        assert rerun["lr"] != next(run["lr"] for o, run in RUNS if o == optimizer)
-        section = sections[results_table.OPTIMIZERS[optimizer]]
-        assert f"At the protocol learning rate the loss of this configuration fell slowly under {results_table.OPTIMIZERS[optimizer]}; " in section
-        assert f"a rerun at learning rate {results_table.lr(rerun['lr'])} gave test BPB {rerun['test_bpb']:.6f}" in section
-        assert f"issues/{rerun['issue']})" in section
+    for optimizer, run in reruns:
+        section = sections(results_table.render(DATA))[optimizer]
+        notes = section.split("\n\nNotes (")[1].splitlines()[2:]
+        number = notes.index(next(line for line in notes if results_table.rerun_note(run["rerun_at_other_lr"]) in line)) + 1
+        row = next(line for line in section.splitlines() if f"(../../{run['config']})" in line)
+        assert f"{run['test_bpb']:.6f} (note {number})" in row
 
 
-def test_the_check_reports_a_rerun_at_the_protocol_learning_rate():
+def test_the_check_reports_a_rerun_at_the_protocol_learning_rate_or_without_its_values():
     data = json.loads(json.dumps(DATA))
     run = data["groups"][1]["rows"][0]["runs"]["adamw"]
-    run["rerun_at_other_lr"] = {"lr": run["lr"], "test_bpb": 1.0, "validation_bpb": 1.0, "issue": 1}
-    assert any("rerun uses the protocol learning rate" in line for line in results_table.problems(data))
+    run["rerun_at_other_lr"] = {"lr": run["lr"], "test_bpb": 1.0, "validation_bpb": 1.0, "issue": 1, "note": "a note"}
+    found = results_table.problems(data)
+    assert any("rerun uses the protocol learning rate" in line for line in found)
+    assert any("rerun note leaves out" in line for line in found)
+
+
+def test_every_row_source_has_a_url_and_covers_its_configurations_own_source():
+    data = json.loads(json.dumps(DATA))
+    row = next(row for group in data["groups"] for row in group["rows"] if row["runs"]["adamw"]["config"].startswith("recipes/methods/"))
+    row["sources"] = ["recipes/p2_moe.json"]
+    found = results_table.problems(data)
+    assert any("recipes/p2_moe.json: its source field has no url" in line for line in found)
+    assert any(row["runs"]["adamw"]["config"] in line and "not among the row's sources" in line for line in found)

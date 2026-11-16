@@ -5,12 +5,15 @@ docs/results/phase1.json holds, for every design and optimizer, the frozen confi
 learning rate, the test and validation bits per byte copied from the results comment of the run
 issue it names, and the three budgets relative to recipes/phase1/m0-<optimizer>.json: the
 relative differences moeloop.comparison.compare_recipes reports with the P2 track's seq_len and
-accounting (eval/bench/tracks.json), rounded to 6 decimals. An entry whose loss fell slowly at the
-protocol learning rate keeps that value and adds rerun_at_other_lr (learning rate,
-test and validation BPB, issue), which becomes a numbered note under its optimizer's tables. This
-writes docs/results/phase1.md from the data. --check writes nothing and exits 1 if a configuration
-does not exist, a stored budget differs from the cost tool's, a group's budgets disagree with its
-matched flag, a rerun uses the protocol learning rate, or phase1.md is not what this writes.
+accounting (eval/bench/tracks.json), rounded to 6 decimals. A row's sources are recipe files whose
+``source`` field (method, version, url) the reference list prints. An entry that was rerun at
+another learning rate keeps its protocol value and adds rerun_at_other_lr (learning rate, test and
+validation BPB, issue, and the note's sentence), which becomes a numbered note under its
+optimizer's tables. This writes docs/results/phase1.md from the data. --check writes nothing and
+exits 1 if a configuration does not exist, a stored budget differs from the cost tool's, a group's
+budgets disagree with its matched flag, a source file has no url, a configuration's own paper
+source is not among its row's sources, a rerun uses the protocol learning rate or its note leaves
+out its values, or, once the data is consistent, phase1.md is not what this writes.
 """
 import argparse
 import json
@@ -34,7 +37,7 @@ NOTES = [
     "- Parameters, FLOPs, KV: unique non-embedding parameters, training FLOPs per token and logical KV cache "
     "relative to `recipes/phase1/m0-<optimizer>.json`, from `moeloop.comparison.compare_recipes` with the P2 "
     "track's accounting in `eval/bench/tracks.json`. Matched budgets are within 5% on all three.",
-    "- Source: the entry of the method map (see [Sources](#sources)) that the design follows.",
+    "- Source: the work the design follows, numbered in [Sources](#sources).",
     "- Run: the issue whose results comment holds the values. The design links to its frozen configuration.",
 ]
 HEADER = ["| Design | Source | Test | Δ test (mBPB) | Validation | Parameters | FLOPs | KV | LR | Run |",
@@ -67,14 +70,28 @@ def signed(value: float, digits: int) -> str:
     return f"{round(value, digits) + 0:+.{digits}f}"  # + 0 turns -0.0 into 0.0
 
 
+def source(path: str) -> dict:
+    return json.loads((ROOT / path).read_text())["source"]
+
+
+def reference(path: str) -> str:
+    """One source as the reference list prints it: method and version, linked to its url."""
+    entry = source(path)
+    return f"[{entry['method']} {entry['version']}]({entry['url']})"
+
+
+def rerun_note(rerun: dict) -> str:
+    return f"{rerun['note']} ({link(rerun['issue'])})."
+
+
 def render(data: dict) -> str:
     rows = [row for group in data["groups"] for row in group["rows"]]
-    sources = list(dict.fromkeys(row["source"] for row in rows if row["source"]))
+    sources = list(dict.fromkeys(reference(path) for row in rows for path in row["sources"]))
     lines = ["# Phase 1 results", "",
              "<!-- Written by scripts/results_table.py from phase1.json; edit the data, not this file. -->", "",
-             data["protocol"], "", *NOTES]
+             data["protocol"], "", data["not_shown"], "", *NOTES]
     for optimizer, name in OPTIMIZERS.items():
-        reference = next(row["runs"][optimizer]["test_bpb"] for row in rows
+        base = next(row["runs"][optimizer]["test_bpb"] for row in rows
                          if row["runs"][optimizer]["config"] == REFERENCE.format(optimizer))
         lines += ["", f"## {name}"]
         notes = []
@@ -84,19 +101,19 @@ def render(data: dict) -> str:
                 run = row["runs"][optimizer]
                 rerun = run.get("rerun_at_other_lr")
                 if rerun:
-                    notes.append(f"At the protocol learning rate the loss of this configuration fell slowly under {name}; "
-                                 f"a rerun at learning rate {lr(rerun['lr'])} gave test BPB {rerun['test_bpb']:.6f} "
-                                 f"and validation BPB {rerun['validation_bpb']:.6f} ({link(rerun['issue'])}).")
+                    notes.append(rerun_note(rerun))
+                marks = (sources.index(reference(path)) + 1 for path in row["sources"])
                 cells = [f"[{row['design']}](../../{run['config']})",
-                         f"[{sources.index(row['source']) + 1}](#sources)" if row["source"] else "",
-                         f"{run['test_bpb']:.6f}" + (f" (note {len(notes)})" if rerun else ""), signed(1000 * (run["test_bpb"] - reference), 2),
+                         ", ".join(f"[{mark}](#sources)" for mark in marks),
+                         f"{run['test_bpb']:.6f}" + (f" (note {len(notes)})" if rerun else ""), signed(1000 * (run["test_bpb"] - base), 2),
                          f"{run['validation_bpb']:.6f}",
                          *(signed(100 * run["budgets"][metric], 1) + "%" for metric in METRICS),
                          lr(run["lr"]), link(run["issue"])]
                 lines.append("| " + " | ".join(cells) + " |")
         if notes:
             lines += ["", f"Notes ({name}):", "", *(f"{i}. {note}" for i, note in enumerate(notes, 1))]
-    lines += ["", "## Sources", "", *(f"{i}. [{source}](../method-map.md)" for i, source in enumerate(sources, 1))]
+    lines += ["", "## Sources", "", *(f"{i}. {entry}" for i, entry in enumerate(sources, 1)), "",
+              "What each configuration keeps from its source and what it adapts: [method map](../method-map.md)."]
     return "\n".join(lines) + "\n"
 
 
@@ -105,16 +122,27 @@ def problems(data: dict) -> list[str]:
     found = []
     for group in data["groups"]:
         for row in group["rows"]:
+            for path in row["sources"]:
+                if "url" not in source(path):
+                    found.append(f"{path}: its source field has no url")
             for optimizer, run in row["runs"].items():
                 if not (ROOT / run["config"]).is_file():
                     found.append(f"{run['config']} does not exist")
                     continue
+                if "url" in source(run["config"]) and source(run["config"]) not in map(source, row["sources"]):
+                    found.append(f"{run['config']}: its source is not among the row's sources")
                 if run["budgets"] != budgets(run["config"], optimizer):
                     found.append(f"{run['config']}: stored budgets differ from the cost tool's")
-                if run.get("rerun_at_other_lr", {}).get("lr") == run["lr"]:
+                rerun = run.get("rerun_at_other_lr")
+                if rerun and rerun["lr"] == run["lr"]:
                     found.append(f"{run['config']}: the rerun uses the protocol learning rate")
+                if rerun and not all(value in rerun["note"] for value in (
+                        lr(rerun["lr"]), f"{rerun['test_bpb']:.6f}", f"{rerun['validation_bpb']:.6f}")):
+                    found.append(f"{run['config']}: the rerun note leaves out its learning rate or BPB")
                 if group["matched"] != all(abs(value) <= tolerance for value in run["budgets"].values()):
                     found.append(f"{run['config']}: budgets disagree with matched={group['matched']}")
+    if found:  # the table is compared once the data is consistent
+        return found
     if not TABLE.is_file() or TABLE.read_text() != render(data):
         found.append(f"{TABLE.relative_to(ROOT)} is not current: run python scripts/results_table.py")
     return found
