@@ -1,79 +1,80 @@
-# 方法到机制的映射
+# Map from methods to mechanisms
 
-发布路径采用下表九项，论文名只进入 recipe/source；通用 core 按实际状态更新命名。每项的 `source`、`preserved`、`adaptations` 可从 [`recipes.py`](../src/moeloop/recipes.py) 直接导出。它们共用公开文本、softmax top-k dropless MoE 和 AdamW（默认；Muon 可选，见[训练](training.md#修改研究机制)）；例外是两条稠密路径 `sandwich_spec(dense=True)` 与 `relaxed_spec(dense=True)`，它们的 FFN 全是稠密 SwiGLU，没有 MoE 和 aux；这些替换不建立原论文完整训练复现。`LoopedLM` 是模型类的公开名称，`RecursiveLM` 是同一个类对象的兼容别名，类在 `model.py` 中就定义为 `LoopedLM`，下表链接指向该文件。
+The release uses the ten paths in the table below. Paper names appear only in recipes and their `source`. The general core is named by its real state update. The `source`, `preserved` and `adaptations` of each path can be exported directly from [`recipes.py`](../src/moeloop/recipes.py). The paths share public text, softmax top-k dropless MoE and AdamW (the default; Muon is optional, see [Training](training.md)). The exceptions are the two dense paths, `sandwich_spec(dense=True)` and `relaxed_spec(dense=True)`: all their FFNs are dense SwiGLU, with no MoE and no aux. These replacements do not make a full training reproduction of the original papers. `LoopedLM` is the public name of the model class. `RecursiveLM` is a compatibility alias for the same class object. `model.py` defines the class as `LoopedLM`; the links in the table point to that file.
 
-| 方法与冻结原始来源 | 实际 forward / objective | 保留与明确适配 | 可核验证据 |
+| Method and frozen original source | Real forward / objective | Preserved and explicit adaptations | Verifiable evidence |
 |---|---|---|---|
-| [SMELT v3](https://arxiv.org/html/2609.01343v3) §3/4、附录A/B | `smelt_spec` → [`LoopedLM.forward` / `Cell.forward`](../src/moeloop/model.py)、[`objective`](../src/moeloop/training.py) | 中段两遍、core residual 1/2；公开数据/初始化/优化栈，P2 E88 为预算适配 | [P1](evidence/p1.json)、[V1四法资格](evidence/recipes-v1.json)；[P2配对](evidence/recipes-v3.json) |
-| [Meta Looped MoE v1](https://arxiv.org/html/2609.40316v1) C.1/C.2 | `meta_spec` → [`LoopedLM.forward`](../src/moeloop/model.py)、terminal CE | 独立 prelude/coda、共享 middle、full BPTT；共同 routing/dispatch/AdamW、独立 embedding/head | [V1资格](evidence/recipes-v1.json)、[`recipe回归`](../tests/model/test_recipes.py) |
-| [Foil v1](https://arxiv.org/html/2609.35751v1) §2.1/2.2 | `foil_spec` → [`Cell.forward`](../src/moeloop/model.py) | `(E,D,L)→(2E,D/2,2L)`、逐 visit attention；共同训练底座 | [V1资格](evidence/recipes-v1.json)、[`tests/reference`](../tests/reference) |
-| [Tying v1](https://arxiv.org/html/2606.16825v1) §3/附录B | `expert_tying_spec` → layer-order [`LoopedLM.forward`](../src/moeloop/model.py)、[`titan.py`](../src/moeloop/titan.py) expert LR | 连续 experts 共享、其他组件独立、expert LR `/sqrt(g)`；recipe 默认 AdamW（原文 Muon），`optimizer.name` 可改为 Muon | [V1资格](evidence/recipes-v1.json)、[`tests/training`](../tests/training) |
-| [Huginn v2](https://arxiv.org/html/2502.05171v2) §3/4.1 | `huginn_spec` → [`initial_latent` / `sampled_depth`](../src/moeloop/latent.py)、[`LoopedLM.forward`](../src/moeloop/model.py) | live anchor、随机 latent、microbatch深度、末段梯度；稀疏pre-norm替换原dense布局；zero-init固定深度评测 | [V2资格](evidence/recipes-v2.json)、[`tests/model`](../tests/model)；HF无cache |
-| [LOOM v1](https://arxiv.org/html/2610.01153v1) | `loom_spec` → [`MemoryCell.forward`](../src/moeloop/model.py)、[`ema_update`](../src/moeloop/memory.py) | 双EMA、先写后读、逐轮router、重注入；full BPTT选定路径，无段间optimizer step | [V2及LOOM×attention资格](evidence/recipes-v2.json)、[`tests/model`](../tests/model)；HF无cache |
-| [Ouro v5](https://arxiv.org/html/2510.25741v5) | `ouro_spec` → [`expected_lm_loss`](../src/moeloop/halting.py)、[`objective`](../src/moeloop/training.py) | Stage I逐token expected CE减entropy、gate/head/backbone联合训练；terminal CE评测，未交付Stage II/early exit | [V2资格](evidence/recipes-v2.json)、[`tests/hf`](../tests/hf) |
-| [Looped Models Done Right, Part I](https://arxiv.org/html/2610.23036v1) §2.1/3.1/3.4.2/4.1/附录A | `sandwich_spec` → [`InputAdapter`](../src/moeloop/model.py)、[`LoopedLM.forward`](../src/moeloop/model.py) | prelude/core/coda、每遍 core 前 `diag_decay` 注入、`z_0 = e`、full BPTT、terminal CE；MoE 路径取发布代码的 input-initialized 变体，`dense=True` 为 §3.4.2 稠密路径 | [`tests/model/test_sandwich_recipes.py`](../tests/model/test_sandwich_recipes.py)；暂无 GPU 运行证据 |
-| [Relaxed Recursive Transformers v3](https://arxiv.org/html/2410.20672v3) §2.2/2.3/3.5/附录C | `relaxed_spec` → [`LoRA` / `Cell.forward`](../src/moeloop/model.py)、terminal CE | CYCLE 共享 block、每层每轮一份 LoRA（`W'x + BAx`，无 alpha）、`B = 0` 零初始化、full BPTT；MoE 路径只放松 attention（路由专家不加 LoRA），`dense=True` 为论文的全线性层路径；从随机权重训练而非 uptraining | [`tests/model/test_relaxed.py`](../tests/model/test_relaxed.py)；暂无 GPU 运行证据 |
+| [SMELT v3](https://arxiv.org/html/2609.01343v3) §3/4, Appendix A/B | `smelt_spec` → [`LoopedLM.forward` / `Cell.forward`](../src/moeloop/model.py), [`objective`](../src/moeloop/training.py) | The middle part runs twice, core residual 1/2; public data/initialization/optimizer stack; P2 E88 is a budget adaptation | [P1](evidence/p1.json), [V1 four-method qualification](evidence/recipes-v1.json); [P2 pair](evidence/recipes-v3.json) |
+| [Meta Looped MoE v1](https://arxiv.org/html/2609.40316v1) C.1/C.2 | `meta_spec` → [`LoopedLM.forward`](../src/moeloop/model.py), terminal CE | Independent prefix/suffix, shared middle, full BPTT; common routing/dispatch/AdamW, independent embedding/head | [V1 qualification](evidence/recipes-v1.json), [recipe regression tests](../tests/model/test_recipes.py) |
+| [Foil v1](https://arxiv.org/html/2609.35751v1) §2.1/2.2 | `foil_spec` → [`Cell.forward`](../src/moeloop/model.py) | `(E,D,L)→(2E,D/2,2L)`, per-visit attention; common training stack | [V1 qualification](evidence/recipes-v1.json), [`tests/reference`](../tests/reference) |
+| [Tying v1](https://arxiv.org/html/2606.16825v1) §3/Appendix B | `expert_tying_spec` → layer-order [`LoopedLM.forward`](../src/moeloop/model.py), expert LR in [`titan.py`](../src/moeloop/titan.py) | Consecutive layers share experts, other components are independent, expert LR `/sqrt(g)`; the recipe defaults to AdamW (the paper uses Muon), and `optimizer.name` can change to Muon | [V1 qualification](evidence/recipes-v1.json), [`tests/training`](../tests/training) |
+| [Huginn v2](https://arxiv.org/html/2502.05171v2) §3/4.1 | `huginn_spec` → [`initial_latent` / `sampled_depth`](../src/moeloop/latent.py), [`LoopedLM.forward`](../src/moeloop/model.py) | Live anchor, random latent, per-microbatch depth, tail gradient; sparse pre-norm replaces the original dense layout; zero-init fixed-depth evaluation | [V2 qualification](evidence/recipes-v2.json), [`tests/model`](../tests/model); HF with no cache |
+| [LOOM v1](https://arxiv.org/html/2610.01153v1) | `loom_spec` → [`MemoryCell.forward`](../src/moeloop/model.py), [`ema_update`](../src/moeloop/memory.py) | Two EMAs, write before read, per-visit router, re-injection; full BPTT selected path, no optimizer step between segments | [V2 and LOOM×attention qualification](evidence/recipes-v2.json), [`tests/model`](../tests/model); HF with no cache |
+| [Ouro v5](https://arxiv.org/html/2510.25741v5) | `ouro_spec` → [`expected_lm_loss`](../src/moeloop/halting.py), [`objective`](../src/moeloop/training.py) | Stage I per-token expected CE minus entropy, joint training of gate/head/backbone; terminal CE evaluation; Stage II and early exit are not delivered | [V2 qualification](evidence/recipes-v2.json), [`tests/hf`](../tests/hf) |
+| [Looped Models Done Right, Part I](https://arxiv.org/html/2610.23036v1) §2.1/3.1/3.4.2/4.1/Appendix A | `sandwich_spec` → [`InputAdapter`](../src/moeloop/model.py), [`LoopedLM.forward`](../src/moeloop/model.py) | prefix/core/suffix, `diag_decay` injection before each core visit, `z_0 = e`, full BPTT, terminal CE; the MoE path takes the input-initialized variant of the released code; `dense=True` is the dense path of §3.4.2 | [`tests/model/test_sandwich_recipes.py`](../tests/model/test_sandwich_recipes.py); GPU runs with AdamW and Muon: run issue #232 |
+| [Relaxed Recursive Transformers v3](https://arxiv.org/html/2410.20672v3) §2.2/2.3/3.5/Appendix C | `relaxed_spec` → [`LoRA` / `Cell.forward`](../src/moeloop/model.py), terminal CE | CYCLE-shared block, one LoRA per layer and visit (`W'x + BAx`, no alpha), zero initialization with `B = 0`, full BPTT; the MoE path relaxes only attention (routed experts get no LoRA); `dense=True` is the paper's path with LoRA on all linear layers; training from random weights instead of uptraining | [`tests/model/test_relaxed.py`](../tests/model/test_relaxed.py); GPU runs with AdamW and Muon: run issue #232 |
+| [LatentLoop v1](https://arxiv.org/html/2610.19975v1) §2.1/3.1, Figure 2, Table 5 | `latentloop_residual_spec` → [`Cell.forward`](../src/moeloop/model.py) (`visit_residual_scales`), terminal CE | SMELT's middle-half loop with every core owner shared; core residuals 0.25 at the first visit and 1 at the second, full BPTT; the fixed pair of §3.1, not the paper's final pooled method (§3.2–3.4) | [`tests/model/test_visit_residual_scales.py`](../tests/model/test_visit_residual_scales.py); GPU runs with AdamW and Muon: run issue #254 |
 
-数值/梯度、原生训练/恢复与 HF 证明各有不同边界，见[验证矩阵](validation.md)和[参考baseline](baselines.md)。P1/P2只比较普通MoE/SMELT，C只比较固定expert pool的attention/router owner；前七条的工程资格不等于七条效果结论，sandwich 与 relaxed 尚无工程资格。P1/P2各两臂已完成相同20.486B labels终点与完整downstream；C四臂已完成有界共同终点。ARC方向混合、C参数增量及单seed限制见[验证记录](validation.md#v3第二尺度组合与交付)；不按结果宣布最终recipe。公开证据引用其原始source snapshot，不为统一发布commit重新训练。
+Numeric/gradient proofs, native training/resume proofs and HF proofs each have different limits; see the [validation matrix](validation.md) and the [reference baselines](baselines.md). P1/P2 compare only ordinary MoE and SMELT. C compares only the attention/router owners on a fixed expert pool. The engineering qualification of the first seven paths is not a quality conclusion about these seven. Sandwich, relaxed and LatentLoop residual have no engineering qualification record; run issues #232 and #254 trained them on GPU, exported them to HF and evaluated them. Each P1/P2 pair of arms reached the same 20.486B-label endpoint and completed the full downstream evaluation. The four C arms reached a bounded common endpoint. [Validation](validation.md) gives the mixed ARC direction, the C parameter increments and the single-seed limit. No final recipe is declared from the results. Public evidence cites its original source snapshot; there is no retraining for one common release commit.
 
-逐轮行为用 [`moeloop.diagnostics`](../src/moeloop/diagnostics.py) 读（logit lens、残差更新、路由重叠、有效深度）；跨方法比较的冻结协议是 Looped MoE Bench，见[成本与比较](comparison.md#looped-moe-bench)。
+Read the per-visit behaviour with [`moeloop.diagnostics`](../src/moeloop/diagnostics.py) (logit lens, residual updates, routing overlap, effective depth). The frozen protocol for comparison across methods is Looped MoE Bench; see [Cost and comparison](comparison.md#looped-moe-bench).
 
-## 相邻方法的调研入口
+## Survey of related methods
 
-下表47项包含基线、相邻范式和边界例，仅记录文献阅读/原代码审阅深度，不是47项实现或训练资格。九项发布路径的实际运行证据以上表为准，其余条目不自动进入支持集合。
+The 47 entries below include baselines, related paradigms and boundary cases. They record only the depth of the literature reading and the source-code review. They are not 47 implementations or training qualifications. The table above is the reference for the real run evidence of the ten release paths. The other entries do not join the supported set automatically.
 
-每项工作同时关联多个机制轴：状态/布局、调用顺序、组件共享、条件选择、训练目标/梯度、推理缓存。下表提供入口。
+Each work relates to several mechanism axes at once: state/layout, call order, component sharing, conditional selection, training objective/gradients and the inference cache. The table below is an entry point.
 
-| 方法/工作 | 抽取的核心机制 | 实际证据深度 | 详细记录 |
+| Method/work | Core mechanism extracted | Depth of evidence | Detailed record |
 |---|---|---|---|
-| [ACT](https://arxiv.org/abs/1603.08983) | 加法累计停机质量、余量与加权输出 | 论文方法 | loop 轨静态审阅 |
-| [Universal Transformer](https://arxiv.org/abs/1807.03819) | 共享深度变换、time signal、ACT变体 | 论文+官方核心代码 | loop 轨静态审阅 |
-| [ALBERT](https://arxiv.org/abs/1909.11942) | 分组/组件级参数共享 | 论文+官方核心代码 | loop 轨静态审阅 |
-| [PonderNet](https://arxiv.org/abs/2107.05407) | hazard退出分布、expected loss、prior KL | 论文方法 | loop 轨静态审阅 |
-| [Huginn](https://arxiv.org/abs/2502.05171) | prelude/core/coda、anchor注入、随机初态、suffix梯度 | 论文+官方核心代码 | loop 轨静态审阅 |
-| [Ouro / LoopLM](https://arxiv.org/abs/2510.25741) | full-loop、hazard目标、分阶段gate训练 | 论文+官方HF代码；训练源码未确认 | loop 轨静态审阅 |
-| [HRM](https://arxiv.org/abs/2506.21734) | H/L双状态、独立bank、双时钟、carry | 论文+官方核心代码 | loop 轨静态审阅 |
-| [TRM](https://arxiv.org/abs/2510.04871) | answer/latent双状态、共享bank、末周期梯度 | 论文+官方核心代码 | loop 轨静态审阅 |
-| [LoopFormer](https://arxiv.org/abs/2602.11451) | t/dt条件调制、完整与shortcut轨迹一致性 | 论文+官方核心代码 | loop 轨静态审阅 |
-| [T-LoopFormer](https://arxiv.org/abs/2609.15160) | token深度预算、稀疏轨迹、带孔cache | 论文+官方核心代码 | loop 轨静态审阅 |
-| [xLLM-Loop Part II](https://arxiv.org/abs/2610.06833) | 全局深度prior、注入、TBPTT、terminal-KV | 论文+官方核心代码 | loop 轨静态审阅 |
-| [RingFormer](https://arxiv.org/abs/2502.13181) | 共享base加depth-specific低秩投影 | 论文方法；代码未审 | loop 轨静态审阅 |
-| [Latent Recurrent Transformer](https://arxiv.org/abs/2605.26797) | token-time memory；depth recurrence的边界例 | 论文方法 | loop 轨静态审阅 |
-| [Universal Transformers Need Memory](https://arxiv.org/abs/2604.21999) | memory/register tokens、ACT | 论文方法；puzzle设定 | loop 轨静态审阅 |
-| [RecurTrace](https://arxiv.org/abs/2609.03379) | 同token位置的历史loop状态窗口 | 论文方法 | loop 轨静态审阅 |
-| [One Model to Loop Them All / ELR](https://arxiv.org/abs/2610.12582) | gated delta update、预算调制、route/cache复用 | 论文方法；未审代码 | loop 轨静态审阅 |
-| [Coconut](https://arxiv.org/abs/2412.06769) | 新latent token位置、hidden回灌、KV carry | 论文+官方核心代码 | loop 轨静态审阅 |
-| [PonderLM](https://arxiv.org/abs/2505.20674) | 词表概率加权embedding回灌 | 论文方法 | loop 轨静态审阅 |
-| [PonderLM-2](https://arxiv.org/abs/2509.23184) | 交错latent slots与Jacobi refinement | 论文方法 | loop 轨静态审阅 |
-| [Foil](https://arxiv.org/abs/2609.35751) | 减物理层/扩大专家bank/增visits、独立attention | 论文+官方核心代码 | moe 轨静态审阅 |
-| [LOOM](https://arxiv.org/abs/2610.01153) | per-loop router、残差/注入、段间优化 | 论文+官方核心代码 | moe 轨静态审阅 |
-| [Tying the Loop](https://arxiv.org/abs/2606.16825) | 相邻逻辑层共享专家参数，其他组件独立 | 论文+官方核心代码 | moe 轨静态审阅 |
-| [SMELT](https://arxiv.org/abs/2609.01343) | 中段循环与宽度/专家/GQA/残差配方 | 论文方法；代码未审 | moe 轨静态审阅 |
-| [LoopMoE](https://arxiv.org/abs/2606.04438) | iteration+state条件归一化与容量配方 | 论文方法；官方代码未定位 | moe 轨静态审阅 |
-| [LatentLoop](https://arxiv.org/abs/2610.19975) | 压缩与完整token的不对称两遍计算 | 论文+官方核心代码 | moe 轨静态审阅 |
-| [Sparse Layers are Critical](https://arxiv.org/abs/2605.09165) | 稀疏router的跨loop路径多样性 | 论文方法；代码未审 | moe 轨静态审阅 |
-| [MoEUT](https://arxiv.org/abs/2405.16039) | SigmaMoE+SwitchHead、selector-only norm | 论文+官方核心代码 | moe 轨静态审阅 |
-| [Chain-of-Experts](https://arxiv.org/abs/2506.18945) | attention一次、FFN专家链、多轮router | 论文+官方核心代码 | moe 轨静态审阅 |
-| [Mixture-of-Recursions](https://arxiv.org/abs/2507.10524) | token/recursion-choice、attention域与cache | 论文+官方核心代码 | moe 轨静态审阅 |
-| [DeepSeekMoE](https://arxiv.org/abs/2401.06066) | fine-grained与always-on shared experts | 摘要；相关V3算子代码审计 | moe 轨静态审阅 |
-| [DeepSeek-V3](https://arxiv.org/abs/2412.19437) | selection bias、group限制、原分数combine | 官方inference核心代码 | moe 轨静态审阅 |
-| [Qwen3 MoE](https://arxiv.org/abs/2505.09388) | 普通token-choice top-k基线 | 官方Transformers代码；论文元信息 | moe 轨静态审阅 |
-| [OLMoE](https://github.com/allenai/OLMoE) | 普通细粒度MoE与可配置prob renorm | 官方Transformers核心代码 | moe 轨静态审阅 |
-| [Expert-Choice Routing](https://arxiv.org/abs/2202.09368) | expert维度固定容量选择token | 论文方法；代码未审 | moe 轨静态审阅 |
-| [Loop the Loopies](https://arxiv.org/abs/2607.16051) | layer-loop与实测吞吐配方 | 论文方法；代码未审 | moe 轨静态审阅 |
-| [Closing the Loop](https://arxiv.org/abs/2610.00673) | warmup/exit entropy/data阶段与norm消融 | 论文方法/消融；代码未确认 | root 轨静态审阅 |
-| [Loop-μP](https://arxiv.org/abs/2606.18524v3) | loop与unique-depth分别参数化 | 最新版论文方法/实验范围；代码未审 | root 轨静态审阅 |
-| [Parcae](https://arxiv.org/abs/2604.12946) | 受约束对角注入、prelude norm、per-sequence采样 | 论文+官方核心代码 | root 轨静态审阅 |
-| [STARS](https://arxiv.org/abs/2605.26733) | Jacobian相关正则与随机深度 | 论文+官方核心代码 | root 轨静态审阅 |
-| [Readout Blind Spot](https://arxiv.org/abs/2606.24898) | 读出可见性、状态尺度、loss位置 | 论文+官方核心代码 | root 轨静态审阅 |
-| [Growth / Boundary Operators](https://arxiv.org/abs/2609.19107) | 边界norm+anchor、共享/独立growth | 论文+官方核心代码 | root 轨静态审阅 |
-| [What Limits Recursive Reasoning](https://arxiv.org/abs/2609.39967) | 梯度位置、bounded/gated update、物理batch | 论文方法/算法任务消融 | root 轨静态审阅 |
-| [MixerLoop](https://arxiv.org/abs/2608.18230) | 只重复mixer、保留一次FFN | 论文方法；代码未审 | root 轨静态审阅 |
-| [Scaling Laws for Looped MoE](https://arxiv.org/abs/2609.40316) | recurrence/sparsity与预算的分离 | 论文部分章节；非实现审计 | root 轨静态审阅 |
-| [LoopRPT](https://arxiv.org/abs/2603.19714v2) | EMA教师、hard-token、噪声rollout与多目标 | 最新版论文方法/消融；代码未审 | root 轨静态审阅 |
-| [Deep Equilibrium Models](https://arxiv.org/abs/1909.01377) | root solve与implicit differentiation | 论文方法/定理；代码未审 | root 轨静态审阅 |
-| [Mixture-of-Depths](https://arxiv.org/abs/2404.02258) | token轴容量选择；与MoR连接 | 论文基础机制；深层代码证据来自MoR | root 轨静态审阅 |
+| [ACT](https://arxiv.org/abs/1603.08983) | Additive accumulated halting mass, remainder and weighted output | Paper method | Static review, loop track |
+| [Universal Transformer](https://arxiv.org/abs/1807.03819) | Shared depth transform, time signal, ACT variant | Paper + official core code | Static review, loop track |
+| [ALBERT](https://arxiv.org/abs/1909.11942) | Group-level and component-level parameter sharing | Paper + official core code | Static review, loop track |
+| [PonderNet](https://arxiv.org/abs/2107.05407) | Hazard exit distribution, expected loss, prior KL | Paper method | Static review, loop track |
+| [Huginn](https://arxiv.org/abs/2502.05171) | prefix/core/suffix, anchor injection, random initial state, tail gradient | Paper + official core code | Static review, loop track |
+| [Ouro / LoopLM](https://arxiv.org/abs/2510.25741) | Full loop, hazard objective, staged gate training | Paper + official HF code; training source not confirmed | Static review, loop track |
+| [HRM](https://arxiv.org/abs/2506.21734) | Two states H/L, separate banks, two clocks, carry | Paper + official core code | Static review, loop track |
+| [TRM](https://arxiv.org/abs/2510.04871) | Two states answer/latent, shared bank, gradient in the last cycle | Paper + official core code | Static review, loop track |
+| [LoopFormer](https://arxiv.org/abs/2602.11451) | t/dt conditional modulation, consistency of full and shortcut trajectories | Paper + official core code | Static review, loop track |
+| [T-LoopFormer](https://arxiv.org/abs/2609.15160) | Per-token depth budget, sparse trajectories, cache with holes | Paper + official core code | Static review, loop track |
+| [xLLM-Loop Part II](https://arxiv.org/abs/2610.06833) | Global depth prior, injection, TBPTT, terminal KV | Paper + official core code | Static review, loop track |
+| [RingFormer](https://arxiv.org/abs/2502.13181) | Shared base plus depth-specific low-rank projections | Paper method; code not reviewed | Static review, loop track |
+| [Latent Recurrent Transformer](https://arxiv.org/abs/2605.26797) | Token-time memory; a boundary case of depth recurrence | Paper method | Static review, loop track |
+| [Universal Transformers Need Memory](https://arxiv.org/abs/2604.21999) | Memory/register tokens, ACT | Paper method; puzzle setting | Static review, loop track |
+| [RecurTrace](https://arxiv.org/abs/2609.03379) | Window of past loop states at the same token position | Paper method | Static review, loop track |
+| [One Model to Loop Them All / ELR](https://arxiv.org/abs/2610.12582) | Gated delta update, budget modulation, route/cache reuse | Paper method; code not reviewed | Static review, loop track |
+| [Coconut](https://arxiv.org/abs/2412.06769) | New latent token positions, hidden-state feedback, KV carry | Paper + official core code | Static review, loop track |
+| [PonderLM](https://arxiv.org/abs/2505.20674) | Feedback of embeddings weighted by vocabulary probabilities | Paper method | Static review, loop track |
+| [PonderLM-2](https://arxiv.org/abs/2509.23184) | Interleaved latent slots and Jacobi refinement | Paper method | Static review, loop track |
+| [Foil](https://arxiv.org/abs/2609.35751) | Fewer physical layers, larger expert bank, more visits, separate attention | Paper + official core code | Static review, moe track |
+| [LOOM](https://arxiv.org/abs/2610.01153) | Per-loop router, residual/injection, optimization between segments | Paper + official core code | Static review, moe track |
+| [Tying the Loop](https://arxiv.org/abs/2606.16825) | Adjacent logical layers share expert parameters; other components are separate | Paper + official core code | Static review, moe track |
+| [SMELT](https://arxiv.org/abs/2609.01343) | Middle loop and a width/expert/GQA/residual recipe | Paper method; code not reviewed | Static review, moe track |
+| [LoopMoE](https://arxiv.org/abs/2606.04438) | Normalization conditioned on iteration and state, and a capacity recipe | Paper method; official code not located | Static review, moe track |
+| [LatentLoop](https://arxiv.org/abs/2610.19975) | Asymmetric two-pass compute on compressed and full tokens | Paper + official core code | Static review, moe track |
+| [Sparse Layers are Critical](https://arxiv.org/abs/2605.09165) | Diversity of sparse-router paths across loops | Paper method; code not reviewed | Static review, moe track |
+| [MoEUT](https://arxiv.org/abs/2405.16039) | SigmaMoE+SwitchHead, selector-only norm | Paper + official core code | Static review, moe track |
+| [Chain-of-Experts](https://arxiv.org/abs/2506.18945) | Attention once, FFN expert chain, router at each round | Paper + official core code | Static review, moe track |
+| [Mixture-of-Recursions](https://arxiv.org/abs/2507.10524) | Token/recursion choice, attention scope and cache | Paper + official core code | Static review, moe track |
+| [DeepSeekMoE](https://arxiv.org/abs/2401.06066) | Fine-grained and always-on shared experts | Abstract; audit of the related V3 operator code | Static review, moe track |
+| [DeepSeek-V3](https://arxiv.org/abs/2412.19437) | Selection bias, group limit, combine with the raw scores | Official inference core code | Static review, moe track |
+| [Qwen3 MoE](https://arxiv.org/abs/2505.09388) | Plain token-choice top-k baseline | Official Transformers code; paper metadata | Static review, moe track |
+| [OLMoE](https://github.com/allenai/OLMoE) | Plain fine-grained MoE and configurable probability renormalization | Official Transformers core code | Static review, moe track |
+| [Expert-Choice Routing](https://arxiv.org/abs/2202.09368) | Experts select tokens with a fixed capacity | Paper method; code not reviewed | Static review, moe track |
+| [Loop the Loopies](https://arxiv.org/abs/2607.16051) | Layer loop and a recipe from measured throughput | Paper method; code not reviewed | Static review, moe track |
+| [Closing the Loop](https://arxiv.org/abs/2610.00673) | Warmup/exit entropy/data stages and norm ablations | Paper method/ablations; code not confirmed | Static review, root track |
+| [Loop-μP](https://arxiv.org/abs/2606.18524v3) | Separate parameterization of loop and unique depth | Latest paper version, method/experiment scope; code not reviewed | Static review, root track |
+| [Parcae](https://arxiv.org/abs/2604.12946) | Constrained diagonal injection, prefix norm, per-sequence sampling | Paper + official core code | Static review, root track |
+| [STARS](https://arxiv.org/abs/2605.26733) | Jacobian-related regularization and random depth | Paper + official core code | Static review, root track |
+| [Readout Blind Spot](https://arxiv.org/abs/2606.24898) | Readout visibility, state scale, loss position | Paper + official core code | Static review, root track |
+| [Growth / Boundary Operators](https://arxiv.org/abs/2609.19107) | Boundary norm + anchor, shared/separate growth | Paper + official core code | Static review, root track |
+| [What Limits Recursive Reasoning](https://arxiv.org/abs/2609.39967) | Gradient position, bounded/gated update, physical batch | Paper method/ablations on algorithmic tasks | Static review, root track |
+| [MixerLoop](https://arxiv.org/abs/2608.18230) | Repeats only the mixer; the FFN runs once | Paper method; code not reviewed | Static review, root track |
+| [Scaling Laws for Looped MoE](https://arxiv.org/abs/2609.40316) | Separation of recurrence/sparsity from the budget | Some paper sections; not an implementation audit | Static review, root track |
+| [LoopRPT](https://arxiv.org/abs/2603.19714v2) | EMA teacher, hard tokens, noisy rollouts and multiple objectives | Latest paper version, method/ablations; code not reviewed | Static review, root track |
+| [Deep Equilibrium Models](https://arxiv.org/abs/1909.01377) | Root solve and implicit differentiation | Paper method/theorems; code not reviewed | Static review, root track |
+| [Mixture-of-Depths](https://arxiv.org/abs/2404.02258) | Capacity selection on the token axis; link to MoR | Paper base mechanism; the deeper code evidence comes from MoR | Static review, root track |
 
-Runtime另行核查 TorchTitan pinned/current、Transformers、flame，并复核 Foil/LOOM/xLLM 的训练与交付路径，见 [TorchTitan](https://github.com/pytorch/torchtitan) 与各项目的公开实现。
+The runtime review separately checked TorchTitan (pinned and current), Transformers and flame. It also re-checked the training and delivery paths of Foil, LOOM and xLLM; see [TorchTitan](https://github.com/pytorch/torchtitan) and the public implementation of each project.
 
-效果证据按原论文任务、规模、预算和消融范围保留；只读摘要或未找到代码的条目不会被升级为已验证机制。
+Quality evidence stays within the tasks, scale, budget and ablation scope of each original paper. An entry with only an abstract read, or with no code found, does not become a verified mechanism.

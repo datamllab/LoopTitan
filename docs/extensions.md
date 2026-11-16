@@ -1,8 +1,8 @@
-# 写一个不同的状态更新
+# Write a different state update
 
-改 depth、共享 attention 或 router 等已有机制时，直接组合 `ModelConfig` 与 `TrainingRecipe`。改变块内算子顺序时，写一段明确的新 forward。[FFN-chain 示例](../recipes/ffn_chain.py)复用现有 Cell 的物理参数，不给 core 增加论文开关或通用执行器。
+To change an existing mechanism, such as the depth or shared attention or routers, compose `ModelConfig` and `TrainingRecipe` directly (see [Add a configuration](#add-a-configuration)). To change the order of the operators inside a block, write an explicit new forward. The [FFN-chain example](../recipes/ffn_chain.py) reuses the physical parameters of an existing cell. It adds no paper switch and no general executor to the core.
 
-该例固定一种语义：attention 一次、FFN norm 一次，之后多次共享 router/expert 更新，并保留 inner 与 outer residual：
+The example fixes one semantics: attention once, the FFN norm once, then several updates with a shared router and shared experts. It keeps an inner and an outer residual:
 
 ```text
 a = x + scale * Attention(AttentionNorm(x))
@@ -12,9 +12,9 @@ repeat K times:
 y = a + z
 ```
 
-即使 K=1，它也不是普通 Cell：outer residual 加的是整个 chain 的结果，其中包含归一化后的初态。这些残差与 norm 的位置属于方法定义，应直接写在 forward 中。其结构参考 [CoE 的固定源码](https://github.com/ZihanWang314/coe/blob/d2af562aab3348f72d5d17132df439a629b9666d/config/models/coe_deepseekv2/modeling_coe.py#L1271-L1309)；此例只选共享 router/bank 和 inner+outer residual，不声称复现论文的路由、独立 gates、数据或训练细节。
+Even with K=1, this is not a plain cell. The outer residual adds the result of the whole chain, and that result includes the normalized initial state. The positions of these residuals and norms are part of the method definition, so the forward states them directly. The structure follows [the pinned CoE source](https://github.com/ZihanWang314/coe/blob/d2af562aab3348f72d5d17132df439a629b9666d/config/models/coe_deepseekv2/modeling_coe.py#L1271-L1309). This example selects only the shared router/bank and the inner+outer residual. It does not claim to reproduce the paper's routing, separate gates, data or training details.
 
-从 Git checkout 运行下面的最小例子。`LoopedLM`（`RecursiveLM` 是它的兼容别名）在这里提供已初始化的参数 owners，新的更新函数显式调用这些参数：
+Run the minimal example below from a Git checkout. Here `LoopedLM` (`RecursiveLM` is its compatibility alias) supplies the initialized parameter owners. The new update function calls these parameters explicitly:
 
 ```python
 import torch
@@ -30,32 +30,104 @@ hidden, balance_sum, z_sum = forward_ffn_chain(
 logits = model.lm_head(model.final_norm(hidden))
 ```
 
-`balance_sum`、`z_sum` 累加三个 FFN calls，若使用逐调用平均，应显式除以 3。`attention_mask` 接受已准备好的 causal/document mask；`router_mask` 独立标记有效输入。该例采用完整反传。
+`balance_sum` and `z_sum` sum over the three FFN calls. For a per-call mean, divide by 3 explicitly. `attention_mask` takes a prepared causal/document mask. `router_mask` marks the valid inputs separately. The example uses full BPTT.
 
-这只是 reference forward 的扩展示例。直接调用 `model(ids)` 仍执行原有整块 recurrence，导出现有 `LoopedLM` 也只保存原有模型语义。要把新方法作为可训练/可交付模型，需要给自己的模型定义序列化身份，核对新的逻辑 attention/cache 次数，再明确接入原生 runtime 与 HF；当前示例没有取得这些资格。不要通过 monkey patch 训练后沿用旧 config 导出。
+This is only an extension example of the reference forward. A direct call `model(ids)` still runs the original whole-block recurrence. An export of the existing `LoopedLM` also saves only the original model semantics. To make the new method a trainable and deliverable model, define a serialized identity for your own model, check the new logical attention/cache counts, and then integrate it explicitly with the native runtime and HF. The current example has none of these qualifications. Do not train through a monkey patch and then export with the old config.
 
-检查覆盖实际 attention/norm/router/expert 调用次数、全部参数梯度，以及零更新时的残差反例：`python -m pytest -q tests/model/test_extension.py`。
+The checks cover the real attention/norm/router/expert call counts, the gradients of all parameters, and a residual counterexample with a zero update: `python -m pytest -q tests/model/test_extension.py`.
 
-一致性测试套件 [`moeloop.testing.check_recipe(spec)`](../src/moeloop/testing.py) 检查的是 `LoopedLM(spec.model)` 本身：参数 owner、共享梯度、成本模型的调用数、cache 与 HF 往返。它不会运行这里自写的 forward；自写的更新要有自己的上述检查，细节见[开发指南](development.md#一致性测试与诊断)。
+The conformance suite [`moeloop.testing.check_recipe(spec)`](../src/moeloop/testing.py) checks `LoopedLM(spec.model)` itself: parameter owners, shared gradients, the call counts of the cost model, the cache, the HF round trip and the identity of a spec rebuilt from JSON. It does not run a forward that you write here. A self-written update needs its own checks, as above; [Development](development.md) gives the details.
 
-## 替换 attention 与逐轮 LoRA
+## Replace attention, and per-visit LoRA
 
-`LoopedLM(config, attention_factory=...)` 可以换掉每个 Cell 的 attention 模块；原生训练就用它在同一批参数上装入 FlexAttention。Cell 以 `attention(x, positions=..., attention_mask=..., cache=..., slot=...)` 调用它，只有开启 attention LoRA（`lora_attention_rank > 0`）时才另外传 `lora=`。
+`LoopedLM(config, attention_factory=...)` replaces the attention module of each cell. Native training uses it to put FlexAttention on the same parameters. A cell calls the module as `attention(x, positions=..., attention_mask=..., cache=..., slot=...)`. The cell also passes `lora=`, but only when attention LoRA is on (`lora_attention_rank > 0`).
 
-- 不开 attention LoRA 时，第三方 `attention_factory` 返回的模块无需改动。
-- 要支持 attention LoRA，`forward` 需接受 `lora`：当轮的 `nn.ModuleDict`，键为 `q_proj`、`k_proj`、`v_proj`、`out_proj`。把 `lora.q_proj(x)`、`lora.k_proj(x)`、`lora.v_proj(x)` 分别加到对应投影的输出上；`out_proj` 的增量作用于合并后的头输出 `h`，即把 `lora.out_proj(h)` 加到 `out_proj(h)` 上。内置的 [`Attention`](../src/moeloop/model.py) 就是这样写的。`forward` 不接受 `lora` 时，开启 attention LoRA 会直接报 `TypeError`。
-- FFN 的 LoRA（`lora_ffn_rank > 0`）由 Cell 自己加在 dense 或 always-on FFN 的 `w1`、`w3`、`w2` 上，对 `expert_factory` 和 `attention_factory` 都没有要求；路由专家不加 LoRA。
+- With attention LoRA off, the module from a third-party `attention_factory` needs no change.
+- To support attention LoRA, `forward` must accept `lora`: the `nn.ModuleDict` of the current visit, with the keys `q_proj`, `k_proj`, `v_proj` and `out_proj`. Add `lora.q_proj(x)`, `lora.k_proj(x)` and `lora.v_proj(x)` to the outputs of the matching projections. The `out_proj` increment acts on the merged head output `h`: add `lora.out_proj(h)` to `out_proj(h)`. The built-in [`Attention`](../src/moeloop/model.py) does exactly this. If `forward` does not accept `lora`, attention LoRA raises `TypeError` when it is on.
+- The cell itself adds the FFN LoRA (`lora_ffn_rank > 0`) on `w1`, `w3` and `w2` of the dense or always-on FFN. This puts no requirement on `expert_factory` or `attention_factory`. Routed experts get no LoRA.
 
-`ModelConfig` 的 `lora_attention_rank`、`lora_ffn_rank` 默认为 0，只作用于 core：prefix/suffix 解析后两者都为 0。它们与 EMA 记忆单元（`state_update="ema"`）互斥，`lora_ffn_rank` 要求 core 有 dense 或 always-on FFN；和其他逐轮 owner 一样，要求固定深度与完整反向传播。每份 LoRA 默认零初始化（`A` 正态、`B = 0`），初始模型与共享权重模型逐位一致。要把一个全尺寸模型转换成 relaxed 模型，用 `LoRA.svd_init` 取论文公式 4 的截断 SVD 初始化，使 `W' + B A` 成为该层该轮权重 `W_l` 的最优秩 r 近似：
+`lora_attention_rank` and `lora_ffn_rank` of `ModelConfig` default to 0 and act only on the core: in the resolved prefix and suffix, both are 0. They exclude the EMA memory cell (`state_update="ema"`). `lora_ffn_rank` needs a dense or always-on FFN in the core. Like other per-visit owners, they need fixed depth and full BPTT. Each LoRA starts at zero by default (normal `A`, `B = 0`), so the initial model is bit-identical to the shared-weight model. To convert a full-size model into a relaxed model, use `LoRA.svd_init` for the truncated-SVD initialization of eq. 4 of the paper. It makes `W' + B A` the best rank-r approximation of the weight `W_l` of that layer at that visit:
 
 ```python
 import torch
 from moeloop.model import LoRA
 
-shared, full = torch.randn(64, 32), torch.randn(64, 32)  # W' 与 W_l，形状 [out, in]
+shared, full = torch.randn(64, 32), torch.randn(64, 32)  # W' and W_l, shape [out, in]
 lora = LoRA(32, 64, rank=8)
 lora.svd_init(full - shared)
-approx = shared + lora.B @ lora.A  # W_l 的最优秩 8 近似
+approx = shared + lora.B @ lora.A  # best rank-8 approximation of W_l
 ```
 
-这一调用约定的检查是 [`tests/model/test_relaxed.py`](../tests/model/test_relaxed.py) 中的 `NoLoRAAttention`：不开 attention LoRA 时结果与内置 attention 逐位相同，开启时报 `TypeError`。recipe 层面的用法见[配方](recipes.md)中的 `relaxed_spec`。
+`NoLoRAAttention` in [`tests/model/test_relaxed.py`](../tests/model/test_relaxed.py) checks this calling contract. With attention LoRA off, the result is bit-identical to the built-in attention. With attention LoRA on, it raises `TypeError`. For use at the recipe level, see `relaxed_spec` in [Recipes](recipes.md).
+
+## Add a configuration
+
+A new configuration is a new recipe: a `RecipeSpec` with the fields that you change. It uses the existing forward. The four steps below run on a CPU from the root of a Git checkout. They start no training.
+
+**1. Build it.** Load a reference recipe and change its model fields with `dataclasses.replace`. This example adds a per-visit router to the Phase 1 SMELT arm `phase1/m3` and writes the result to the current directory:
+
+```python
+import json
+from dataclasses import replace
+from pathlib import Path
+from moeloop.recipe_spec import RecipeSpec
+
+reference = RecipeSpec.from_dict(json.loads(Path("recipes/phase1/m3-adamw.json").read_text()))
+variant = replace(reference, name="m3-router-per-visit-adamw",
+                  model=replace(reference.model, router_per_visit=True))
+Path("m3-router-per-visit-adamw.json").write_text(json.dumps(variant.to_dict(), indent=2) + "\n")
+```
+
+`replace` copies `source`, `preserved` and `adaptations` from the reference. Write them again for the new configuration before you publish it.
+
+**2. Cost it against the reference.**
+
+```sh
+python scripts/compare_recipes.py diff recipes/phase1/m3-adamw.json m3-router-per-visit-adamw.json
+python scripts/compare_recipes.py compare recipes/phase1/m3-adamw.json m3-router-per-visit-adamw.json --seq-len 4096
+```
+
+`diff` prints each changed field with its `reference` and `candidate` values. Here these are `model.router_per_visit` and the derived `model.visit_capacity`. `compare` prints one JSON document. Its `matched` section holds the three budgets: `unique_non_embedding_parameters`, `training_flops_per_token` and `logical_kv_bytes`. Each budget has both values, the relative difference and the relative tolerance (default 0.05; change it with `--tolerance`). For this example, the unique non-embedding parameters are 1315329312 against 1314771744 (relative difference 0.00042). The training FLOPs per token and the KV bytes are equal. `costs` holds the full breakdown of each arm, and `recipe_differences` repeats the output of `diff`. Without `--attention-pairs-per-sequence`, the attention cost uses dense S² arithmetic. To use the document convention, give the measured mean number of within-document causal attention pairs per packed sequence.
+
+**3. Run the conformance check.** `check_recipe` builds `LoopedLM(spec.model)` at the geometry of the spec. Run it on a small instance of the same change:
+
+```python
+from dataclasses import replace
+from moeloop.recipes import smelt_spec
+from moeloop.testing import check_recipe
+
+small = smelt_spec(vocab_size=128, dim=32, hidden_dim=64, num_heads=4,
+                   num_kv_heads=2, num_experts=4, max_seq_len=64)
+small = replace(small, name="smelt-router-per-visit",
+                model=replace(small.model, router_per_visit=True))
+report = check_recipe(small)
+print({name: result["status"] for name, result in report["checks"].items()})
+# {'ownership': 'pass', 'shared_gradients': 'pass', 'cost_calls': 'pass', 'cache': 'pass', 'hf_roundtrip': 'pass', 'identity': 'pass'}
+```
+
+If a check fails, `check_recipe` raises `ConformanceError`, and its `report` holds the result of every check.
+
+**4. See the lineage.**
+
+```sh
+python scripts/lineage.py
+```
+
+The command prints the tree of the published recipes. The root is the ordinary MoE `phase1/m0`. Each node lists the `ModelConfig` fields that it changes against its parent. In this tree, the reference `phase1/m3` is a child of `phase1/m0`. Against `phase1/m3`, the new configuration changes one field, `router_per_visit` (step 2). `--json PATH` also writes the nodes, the parents and the changed fields with their old and new values. The tree holds only the published recipes under `recipes/`, so the new configuration does not appear in it.
+
+### What a new forward pass gets today
+
+Every step above applies to a configuration, because it uses the existing forward. A new forward pass, such as the FFN chain above, is different.
+
+A new forward pass gets:
+
+- the parameter owners of `LoopedLM` and their initialization;
+- the existing modules (attention, routers, experts, norms), which it calls explicitly;
+- its own tests, such as `tests/model/test_extension.py`.
+
+A new forward pass does not get:
+
+- `model(ids)`: the call still runs the original recurrence;
+- the cost model: `estimate_cost` and `scripts/compare_recipes.py` count the calls of the original forward from the configuration;
+- the conformance check: `check_recipe` checks only `LoopedLM(spec.model)`;
+- native TorchTitan training and HF export: both run or save the original forward.
