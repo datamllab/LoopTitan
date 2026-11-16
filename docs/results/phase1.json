@@ -1,0 +1,191 @@
+{
+  "protocol": "Protocol: every row is trained on the same data (5.0B tokens of the P2 track's DCLM manifest) with the same schedule (4,769 updates of 1,048,576 tokens, warmup-stable-decay) and seed 42; each optimizer uses one learning rate (AdamW 1.2e-3, Muon 1.7e-3), chosen on the ordinary MoE and the looped MoE ([#180](https://github.com/datamllab/LoopTitan/issues/180)).",
+  "groups": [
+    {
+      "title": "Matched budgets: from the ordinary MoE to the looped MoE, one change per row",
+      "matched": true,
+      "rows": [
+        {
+          "design": "ordinary MoE: 12 layers, 64 experts each, top-8",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/phase1/m0-adamw.json", "lr": 1.2e-3, "test_bpb": 0.999533036509, "validation_bpb": 1.001293235707, "issue": 180, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.0, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/phase1/m0-muon.json", "lr": 1.7e-3, "test_bpb": 0.974376387577, "validation_bpb": 0.976141255042, "issue": 180, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.0, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "finer experts: 72 per layer at width 384, top-9",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/shape/g-adamw.json", "lr": 1.2e-3, "test_bpb": 0.995308896885, "validation_bpb": 0.997201590606, "issue": 218, "budgets": {"unique_non_embedding_parameters": 9.3e-05, "training_flops_per_token": 0.000235, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/shape/g-muon.json", "lr": 1.7e-3, "test_bpb": 0.973517236523, "validation_bpb": 0.975192893735, "issue": 218, "budgets": {"unique_non_embedding_parameters": 9.3e-05, "training_flops_per_token": 0.000235, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "deeper and narrower: 18 layers at width 1056, 58 experts each",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/shape/u-adamw.json", "lr": 1.2e-3, "test_bpb": 0.992618892702, "validation_bpb": 0.994387816242, "issue": 218, "budgets": {"unique_non_embedding_parameters": -0.002745, "training_flops_per_token": 0.023291, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/shape/u-muon.json", "lr": 1.7e-3, "test_bpb": 0.970165183317, "validation_bpb": 0.971958702235, "issue": 218, "budgets": {"unique_non_embedding_parameters": -0.002745, "training_flops_per_token": 0.023291, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "18 layers: 88 experts in the outer 6, 44 in the middle 12",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/shape/r-adamw.json", "lr": 1.2e-3, "test_bpb": 0.993624425968, "validation_bpb": 0.995441655728, "issue": 218, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/shape/r-muon.json", "lr": 1.7e-3, "test_bpb": 0.971013475153, "validation_bpb": 0.972742042504, "issue": 218, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "18 layers, 88/44/88 experts, middle residual ×0.5 (untied twin)",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/phase1/m4-adamw.json", "lr": 1.2e-3, "test_bpb": 0.990645370887, "validation_bpb": 0.992399533907, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/phase1/m4-muon.json", "lr": 1.7e-3, "test_bpb": 0.971042933634, "validation_bpb": 0.972988429190, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.023315, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "loop the middle 6 of 12 layers twice, residual ×0.5, share experts only",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/phase1/m7-adamw.json", "lr": 1.2e-3, "test_bpb": 0.994194004900, "validation_bpb": 0.996015140994, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008761, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/phase1/m7-muon.json", "lr": 1.7e-3, "test_bpb": 0.971189137661, "validation_bpb": 0.972990268040, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008761, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "loop the middle 6 of 12 layers twice, residual ×0.5, share experts and router",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/phase1/m5-adamw.json", "lr": 1.2e-3, "test_bpb": 0.990328911102, "validation_bpb": 0.992225344322, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/phase1/m5-muon.json", "lr": 1.7e-3, "test_bpb": 0.969497620041, "validation_bpb": 0.971184134669, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.008338, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "loop the middle 6 of 12 layers twice, residual ×0.5",
+          "source": "SMELT v3",
+          "runs": {
+            "adamw": {"config": "recipes/phase1/m3-adamw.json", "lr": 1.2e-3, "test_bpb": 0.990543902055, "validation_bpb": 0.992211368459, "issue": 180, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/phase1/m3-muon.json", "lr": 1.7e-3, "test_bpb": 0.970676475726, "validation_bpb": 0.972424873017, "issue": 180, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
+          }
+        }
+      ]
+    },
+    {
+      "title": "Matched budgets: configurations in `recipes/methods/`",
+      "matched": true,
+      "rows": [
+        {
+          "design": "loop the middle 4 of 10 layers 3 times, residual ×1/3",
+          "source": "SMELT v3",
+          "runs": {
+            "adamw": {"config": "recipes/methods/smelt-v3-adamw.json", "lr": 1.2e-3, "test_bpb": 0.992698288947, "validation_bpb": 0.994244511671, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.001052, "training_flops_per_token": 0.025494, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/methods/smelt-v3-muon.json", "lr": 1.7e-3, "test_bpb": 0.970857639780, "validation_bpb": 0.972628215126, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.001052, "training_flops_per_token": 0.025494, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "loop the middle 3 of 9 layers 4 times, residual ×1/4",
+          "source": "SMELT v3",
+          "runs": {
+            "adamw": {"config": "recipes/methods/smelt-v4-adamw.json", "lr": 1.2e-3, "test_bpb": 0.992454155119, "validation_bpb": 0.994376711440, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.000141, "training_flops_per_token": 0.026583, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/methods/smelt-v4-muon.json", "lr": 1.7e-3, "test_bpb": 0.972644299885, "validation_bpb": 0.974199881808, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.000141, "training_flops_per_token": 0.026583, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "loop the middle 6 of 12 layers twice, residual ×0.25 then ×1",
+          "source": "LatentLoop",
+          "runs": {
+            "adamw": {"config": "recipes/methods/latentloop-residual-adamw.json", "lr": 1.2e-3, "test_bpb": 0.9920193187228835, "validation_bpb": 0.9938531270793741, "issue": 254, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}},
+            "muon": {"config": "recipes/methods/latentloop-residual-muon.json", "lr": 1.7e-3, "test_bpb": 0.9702825551133963, "validation_bpb": 0.9721782564847266, "issue": 254, "budgets": {"unique_non_embedding_parameters": -0.002668, "training_flops_per_token": 0.02438, "logical_kv_bytes": 0.03125}}
+          }
+        },
+        {
+          "design": "loop the middle 2 of 6 layers 4 times",
+          "source": "Meta Looped MoE v1",
+          "runs": {
+            "adamw": {"config": "recipes/methods/meta-adamw.json", "lr": 1.2e-3, "test_bpb": 1.002253935769, "validation_bpb": 1.003939984562, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.001305, "training_flops_per_token": 0.001937, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/meta-muon.json", "lr": 1.7e-3, "test_bpb": 0.978252203264, "validation_bpb": 0.980126420437, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.001305, "training_flops_per_token": 0.001937, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "loop the middle 4 of 8 layers twice, attention per visit",
+          "source": "Foil v1",
+          "runs": {
+            "adamw": {"config": "recipes/methods/foil-adamw.json", "lr": 1.2e-3, "test_bpb": 0.997245718435, "validation_bpb": 0.999034473894, "issue": 232, "budgets": {"unique_non_embedding_parameters": -8e-06, "training_flops_per_token": 0.001252, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/foil-muon.json", "lr": 1.7e-3, "test_bpb": 0.973549889042, "validation_bpb": 0.975301242136, "issue": 232, "budgets": {"unique_non_embedding_parameters": -8e-06, "training_flops_per_token": 0.001252, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "12 layers, every 4 consecutive layers share one expert bank",
+          "source": "Tying v1",
+          "runs": {
+            "adamw": {"config": "recipes/methods/expert-tying-adamw.json", "lr": 1.2e-3, "test_bpb": 1.003948820124, "validation_bpb": 1.005800463430, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002237, "training_flops_per_token": 0.005634, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/expert-tying-muon.json", "lr": 1.7e-3, "test_bpb": 0.982450633096, "validation_bpb": 0.984286700538, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002237, "training_flops_per_token": 0.005634, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "loop the middle 2 of 4 layers a random number of times (mean 4), input re-injected",
+          "source": "Huginn v2",
+          "runs": {
+            "adamw": {"config": "recipes/methods/huginn-adamw.json", "lr": 1.2e-3, "test_bpb": 1.435139237564, "validation_bpb": 1.438454788998, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}},
+            "muon": {"config": "recipes/methods/huginn-muon.json", "lr": 1.7e-3, "test_bpb": 0.985059801320, "validation_bpb": 0.986724804487, "issue": 232, "budgets": {"unique_non_embedding_parameters": 8e-06, "training_flops_per_token": -0.000953, "logical_kv_bytes": 0.041667}}
+          }
+        },
+        {
+          "design": "loop the middle 1 of 5 layers 8 times, decaying input injection, top-2",
+          "source": "Looped Models Done Right, Part I",
+          "runs": {
+            "adamw": {"config": "recipes/methods/sandwich-adamw.json", "lr": 1.2e-3, "test_bpb": 1.015433481894, "validation_bpb": 1.017309326632, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.003364, "training_flops_per_token": 0.024306, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/sandwich-muon.json", "lr": 1.7e-3, "test_bpb": 0.990708580887, "validation_bpb": 0.992556873982, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.003364, "training_flops_per_token": 0.024306, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "loop all 4 layers 3 times, router per visit, EMA memories",
+          "source": "LOOM v1",
+          "runs": {
+            "adamw": {"config": "recipes/methods/loom-adamw.json", "lr": 1.2e-3, "test_bpb": 1.007496905303, "validation_bpb": 1.009360833202, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000214, "training_flops_per_token": 0.003873, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/loom-muon.json", "lr": 1.7e-3, "test_bpb": 0.991848118810, "validation_bpb": 0.993527533120, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000214, "training_flops_per_token": 0.003873, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "loop all 4 layers 3 times at width 640, learned exit",
+          "source": "Ouro v5",
+          "runs": {
+            "adamw": {"config": "recipes/methods/ouro-adamw.json", "lr": 1.2e-3, "test_bpb": 1.033282560795, "validation_bpb": 1.035037467598, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000606, "training_flops_per_token": -0.000229, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/ouro-muon.json", "lr": 1.7e-3, "test_bpb": 1.013632448644, "validation_bpb": 1.015111272543, "issue": 232, "budgets": {"unique_non_embedding_parameters": -0.000606, "training_flops_per_token": -0.000229, "logical_kv_bytes": 0.0}}
+          }
+        },
+        {
+          "design": "loop all 6 layers twice, per-visit LoRA on attention",
+          "source": "Relaxed Recursive Transformers v3",
+          "runs": {
+            "adamw": {"config": "recipes/methods/relaxed-adamw.json", "lr": 1.2e-3, "test_bpb": 0.997343294033, "validation_bpb": 0.999244143457, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002697, "training_flops_per_token": 0.031016, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/methods/relaxed-muon.json", "lr": 1.7e-3, "test_bpb": 0.978307147104, "validation_bpb": 0.980032718508, "issue": 232, "budgets": {"unique_non_embedding_parameters": 0.002697, "training_flops_per_token": 0.031016, "logical_kv_bytes": 0.0}}
+          }
+        }
+      ]
+    },
+    {
+      "title": "Outside the matched budgets",
+      "matched": false,
+      "rows": [
+        {
+          "design": "ordinary MoE, middle 6 of 12 layers looped twice, residual ×0.5",
+          "source": "SMELT v3",
+          "runs": {
+            "adamw": {"config": "recipes/methods/m0-loop-adamw.json", "lr": 1.2e-3, "test_bpb": 0.984730236518028, "validation_bpb": 0.9864235507986127, "issue": 247, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.314562, "logical_kv_bytes": 0.5}},
+            "muon": {"config": "recipes/methods/m0-loop-muon.json", "lr": 1.7e-3, "test_bpb": 0.9621342043802388, "validation_bpb": 0.9640687712678565, "issue": 247, "budgets": {"unique_non_embedding_parameters": 0.0, "training_flops_per_token": 0.314562, "logical_kv_bytes": 0.5}}
+          }
+        },
+        {
+          "design": "ordinary MoE with twice the experts: 128 per layer",
+          "source": null,
+          "runs": {
+            "adamw": {"config": "recipes/phase1/m0-2e-adamw.json", "lr": 1.2e-3, "test_bpb": 0.985240512760, "validation_bpb": 0.986998166867, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.967165, "training_flops_per_token": 0.001878, "logical_kv_bytes": 0.0}},
+            "muon": {"config": "recipes/phase1/m0-2e-muon.json", "lr": 1.7e-3, "test_bpb": 0.964524735252, "validation_bpb": 0.966378721501, "issue": 200, "budgets": {"unique_non_embedding_parameters": 0.967165, "training_flops_per_token": 0.001878, "logical_kv_bytes": 0.0}}
+          }
+        }
+      ]
+    }
+  ]
+}
