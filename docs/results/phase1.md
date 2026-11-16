@@ -50,7 +50,7 @@ Protocol: every row is trained on the same data (5.0B tokens of the P2 track's D
 
 Notes (AdamW):
 
-1. At the protocol learning rate this configuration did not train under AdamW; a rerun at learning rate 3e-4 gave test BPB 1.049098 and validation BPB 1.051026 ([#243](https://github.com/datamllab/LoopTitan/issues/243)).
+1. At the protocol learning rate the loss of this configuration fell slowly under AdamW; a rerun at learning rate 3e-4 gave test BPB 1.049098 and validation BPB 1.051026 ([#243](https://github.com/datamllab/LoopTitan/issues/243)).
 
 ## Muon
 

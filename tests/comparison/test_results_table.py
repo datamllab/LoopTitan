@@ -51,6 +51,7 @@ def test_every_rerun_is_a_note_under_its_optimizer():
     for optimizer, rerun in reruns:
         assert rerun["lr"] != next(run["lr"] for o, run in RUNS if o == optimizer)
         section = sections[results_table.OPTIMIZERS[optimizer]]
+        assert f"At the protocol learning rate the loss of this configuration fell slowly under {results_table.OPTIMIZERS[optimizer]}; " in section
         assert f"a rerun at learning rate {results_table.lr(rerun['lr'])} gave test BPB {rerun['test_bpb']:.6f}" in section
         assert f"issues/{rerun['issue']})" in section
 

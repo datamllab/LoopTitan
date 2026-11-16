@@ -5,8 +5,8 @@ docs/results/phase1.json holds, for every design and optimizer, the frozen confi
 learning rate, the test and validation bits per byte copied from the results comment of the run
 issue it names, and the three budgets relative to recipes/phase1/m0-<optimizer>.json: the
 relative differences moeloop.comparison.compare_recipes reports with the P2 track's seq_len and
-accounting (eval/bench/tracks.json), rounded to 6 decimals. An entry whose configuration did not
-train at the protocol learning rate keeps that value and adds rerun_at_other_lr (learning rate,
+accounting (eval/bench/tracks.json), rounded to 6 decimals. An entry whose loss fell slowly at the
+protocol learning rate keeps that value and adds rerun_at_other_lr (learning rate,
 test and validation BPB, issue), which becomes a numbered note under its optimizer's tables. This
 writes docs/results/phase1.md from the data. --check writes nothing and exits 1 if a configuration
 does not exist, a stored budget differs from the cost tool's, a group's budgets disagree with its
@@ -84,7 +84,7 @@ def render(data: dict) -> str:
                 run = row["runs"][optimizer]
                 rerun = run.get("rerun_at_other_lr")
                 if rerun:
-                    notes.append(f"At the protocol learning rate this configuration did not train under {name}; "
+                    notes.append(f"At the protocol learning rate the loss of this configuration fell slowly under {name}; "
                                  f"a rerun at learning rate {lr(rerun['lr'])} gave test BPB {rerun['test_bpb']:.6f} "
                                  f"and validation BPB {rerun['validation_bpb']:.6f} ({link(rerun['issue'])}).")
                 cells = [f"[{row['design']}](../../{run['config']})",
