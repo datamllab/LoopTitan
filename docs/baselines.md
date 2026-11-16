@@ -1,42 +1,42 @@
-# 独立 baseline 核对
+# Independent baseline check
 
-使用 **Transformers 官方 `Qwen3MoeForCausalLM`** 作为可执行参考。它的 attention、RoPE、QK norm、router、experts、decoder、CE 与 KV cache 均直接执行上游代码；我们只映射参数并安排官方 decoder 的逻辑调用顺序。[官方模型说明](https://huggingface.co/docs/transformers/model_doc/qwen3_moe)、[固定版本源码](https://github.com/huggingface/transformers/blob/v5.20.2/src/transformers/models/qwen3_moe/modeling_qwen3_moe.py)。
+The executable reference is the **official Transformers `Qwen3MoeForCausalLM`**. Its attention, RoPE, QK norm, router, experts, decoder, CE and KV cache all run the upstream code directly. We only map the parameters and arrange the logical call order of the official decoder. See the [official model documentation](https://huggingface.co/docs/transformers/model_doc/qwen3_moe) and the [source at a fixed version](https://github.com/huggingface/transformers/blob/v5.20.2/src/transformers/models/qwen3_moe/modeling_qwen3_moe.py).
 
-这是发现模型实现大问题的数值检查。我们不据此宣称复现某篇论文的训练结果、获得预训练质量或完成 FLOP/吞吐对比。相同配置名也不意味着与论文 parameter/compute matched。
+This is a numerical check that finds large problems in the model implementation. We do not use it to claim a reproduction of the training results of a paper, pretraining quality, or a completed FLOP or throughput comparison. The same configuration name also does not mean that the configuration is parameter-matched or compute-matched to a paper.
 
-在已安装项目 HF extra 的环境中执行：
+Run these commands in an environment that has the project's HF extra installed:
 
 ```bash
 python scripts/compare_baselines.py --output outputs/baselines/qwen3-cpu.json
 python -m pytest -q tests/reference
 ```
 
-脚本不下载模型或数据。默认 CPU、FP32、单计算线程，6 个 tiny 配置各执行 4 步 AdamW；计算本身约 1 秒，另有 Python/依赖启动时间。在 GPU 上可用同一脚本：
+The script does not download models or data. By default it uses the CPU, FP32 and one compute thread, and it runs 4 AdamW steps for each of 6 tiny configurations. The computation itself takes about 1 second, plus the start-up time of Python and the dependencies. The same script also runs on a GPU:
 
 ```bash
 python scripts/compare_baselines.py --device cuda --output outputs/baselines/qwen3-cuda.json
 ```
 
-GPU 命令仍是 FP32 独立 reference 核对；原生 BF16 grouped/Flex 的数值、FSDP 通信与 continuation 分别记录在算子对照和[训练资格](validation.md)中。
+The GPU command is still the FP32 independent reference check. The numerics of native BF16 grouped/Flex, FSDP communication and continuation are recorded separately, in the kernel comparison and in the [training qualification](validation.md).
 
-检查覆盖以下真实机制组合。所有配置都有 GQA、QK norm、split-half RoPE、pre-norm 残差、SwiGLU 与归一化的 top-k softmax 路由：
+The check covers the real mechanism combinations below. All configurations have GQA, QK norm, split-half RoPE, pre-norm residuals, SwiGLU and normalized top-k softmax routing:
 
-| 配置 | 官方参考的逻辑执行 | 物理参数共享 |
+| Configuration | Logical execution in the official reference | Physical parameter sharing |
 |---|---|---|
-| `ordinary_moe` | prefix、A、B、suffix，各一次 | 各层独立 |
-| `shared_stack` | A、B、A、B、A、B | 同一个 A/B 的全部参数共享 |
-| `shared_layer` | A、A、A、B、B、B | 同一个 A/B 的全部参数共享 |
-| `partial_attention` | A、B 循环三轮 | attention 每轮独立；router/norm/expert 共享 |
-| `partial_router` | A、B 循环三轮 | router 每轮独立；attention/norm/expert 共享 |
-| `expert_tying` | 每个 cell 连续三轮 | attention/router/norm 每轮独立；expert 共享 |
+| `ordinary_moe` | prefix, A, B, suffix, once each | Each layer is independent |
+| `shared_stack` | A, B, A, B, A, B | All parameters of the same A/B are shared |
+| `shared_layer` | A, A, A, B, B, B | All parameters of the same A/B are shared |
+| `partial_attention` | A, B looped for three visits | attention is separate per visit; router/norm/expert are shared |
+| `partial_router` | A, B looped for three visits | router is separate per visit; attention/norm/expert are shared |
+| `expert_tying` | Each cell for three visits in a row | attention/router/norm are separate per visit; expert is shared |
 
-每个配置都核对完整 logits、shifted next-token CE、**全部物理参数的梯度**、4 次 AdamW 更新后的参数与 CE 下降。还将同一序列拆成 `3+2+2` 列执行缓存推理，对照官方 `DynamicCache` 的输出及完整前缀输出；共享 attention 参数仍对应独立的逻辑缓存槽。负对照会将 `ABABAB` 改成 `AAABBB` 并确认输出确实改变，防止测试对调用顺序失去敏感性。
+For each configuration, the check compares the full logits, the shifted next-token CE, **the gradients of all physical parameters**, and the parameters and the CE decrease after 4 AdamW updates. It also splits one sequence into `3+2+2` columns for cached inference. It compares this output with the output of the official `DynamicCache` and with the full-prefix output. Shared attention parameters still map to separate logical cache slots. A negative control changes `ABABAB` to `AAABBB` and confirms that the output really changes. This keeps the test sensitive to the call order.
 
-参数映射覆盖每一个物理 owner。我们的 `w1_EFD`/`w3_EFD` 映射到官方 packed `gate_up_proj` 的前/后半，`w2_EDF` 映射到 `down_proj`；`out_proj` 对应 `o_proj`。参考中的共享 `nn.Parameter` 由 AdamW 去重更新。每个逻辑 attention 使用不同 `layer_idx`，其 Linear/Norm 参数对象按实际共享关系复用。参考前向不调用 `moeloop` 的算子或 `forward`。
+The parameter mapping covers every physical owner. Our `w1_EFD`/`w3_EFD` map to the first and second halves of the official packed `gate_up_proj`, and `w2_EDF` maps to `down_proj`. `out_proj` maps to `o_proj`. AdamW updates each shared `nn.Parameter` in the reference once (deduplicated). Each logical attention uses a different `layer_idx`. Its Linear/Norm parameter objects are reused as the actual sharing specifies. The reference forward does not call the operators or the `forward` of `moeloop`.
 
-CPU 实测环境为 Python 3.12.3、torch 2.14.0+cpu、Transformers 5.20.2。下面是 4 步更新期间的最大绝对误差；缓存列取更新后缓存推理对官方输出的最大误差。脚本会输出完整 JSON，包括依赖版本、官方源文件 SHA256、配置、优化器、容差和每步 loss。
+The CPU measurement environment is Python 3.12.3, torch 2.14.0+cpu and Transformers 5.20.2. The table below gives the maximum absolute errors during the 4 updates. The cache column is the maximum error of cached inference after the updates against the official output. The script prints the complete JSON, with the dependency versions, the SHA256 of the official source file, the configuration, the optimizer, the tolerances and the loss at each step.
 
-| 配置 | logits | CE | 全部梯度 | 更新参数 | 缓存 logits | CE 首步 → 末步 |
+| Configuration | logits | CE | All gradients | Updated parameters | Cached logits | CE first step → last step |
 |---|---:|---:|---:|---:|---:|---:|
 | ordinary_moe | 5.96e-6 | 4.77e-7 | 2.17e-6 | 4.82e-5 | 5.84e-6 | 3.8242 → 2.9064 |
 | shared_stack | 8.05e-7 | 4.77e-7 | 9.17e-7 | 1.17e-6 | 6.86e-7 | 3.9669 → 3.1369 |
@@ -45,23 +45,23 @@ CPU 实测环境为 Python 3.12.3、torch 2.14.0+cpu、Transformers 5.20.2。下
 | partial_router | 3.58e-7 | 0 | 2.54e-7 | 4.21e-7 | 4.77e-7 | 3.7068 → 3.0580 |
 | expert_tying | 1.20e-6 | 4.77e-7 | 5.63e-7 | 1.90e-5 | 1.64e-6 | 3.9282 → 2.7669 |
 
-我们使用 SDPA，参考使用官方 eager attention；浮点归约顺序不同。AdamW 的 `eps=1e-8` 会放大接近零的梯度差异，因此更新参数的绝对容差为 `1e-4`；logits 使用更紧的 `atol=3e-5, rtol=3e-4`，CE 为 `3e-6/3e-5`，梯度为 `3e-6/5e-4`。所有误差都实际计算并受断言约束，JSON 保存实际误差而非仅写“通过”。这些短序列的 loss 下降仅证明两套实现有一致的短程更新行为。
+We use SDPA, and the reference uses the official eager attention. The floating-point reduction order is different. The AdamW `eps=1e-8` amplifies differences in gradients near zero. Thus the absolute tolerance for updated parameters is `1e-4`. Logits use the tighter `atol=3e-5, rtol=3e-4`, CE uses `3e-6/3e-5` and gradients use `3e-6/5e-4`. All errors are actually computed and bound by assertions. The JSON keeps the actual errors, not only "pass". The loss decrease on these short sequences proves only that the two implementations have the same short-range update behaviour.
 
-同一脚本也在 H200、Torch 2.14.0+cu130、Transformers 5.19.0 上实际执行了六配置各 **2 次**更新。CUDA 最大 logits 误差为 `2.44e-6`、CE `2.38e-7`、梯度 `5.15e-7`、更新参数 `5.05e-5`、cached logits `6.06e-6`，沿用原容差通过。两次运行的完整参数、依赖、源文件 hash、每步 CE 与误差分别保存在 [CPU JSON](evidence/qwen3-cpu.json) 和 [CUDA JSON](evidence/qwen3-cuda.json)。CUDA baseline 仍是 plain core 对官方模型；native grouped experts/FlexAttention 的资格单列，不能混为同一个检查。
+The same script also ran **2** updates for each of the six configurations on an H200 with Torch 2.14.0+cu130 and Transformers 5.19.0. The maximum CUDA errors are `2.44e-6` for logits, `2.38e-7` for CE, `5.15e-7` for gradients, `5.05e-5` for updated parameters and `6.06e-6` for cached logits. They pass with the same tolerances. The [CPU JSON](evidence/qwen3-cpu.json) and the [CUDA JSON](evidence/qwen3-cuda.json) keep the complete parameters, dependencies, source file hashes, CE per step and errors of the two runs. The CUDA baseline is still the plain core against the official model. The qualification of native grouped experts/FlexAttention is separate. Do not mix the two into one check.
 
-在已分配的 CUDA GPU 上，用[公开原生算子脚本](../scripts/compare_native.py)核对同一份 BF16 参数的 grouped experts/FlexAttention 与 plain expert loop/SDPA：
+On an allocated CUDA GPU, the [public native kernel script](../scripts/compare_native.py) compares grouped experts/FlexAttention with the plain expert loop/SDPA on the same BF16 parameters:
 
 ```bash
 python scripts/compare_native.py --output outputs/baselines/native-kernel.json
 ```
 
-它固定 seed、输入与两种配置，覆盖 shared 和带 input injection/prefix/suffix 的尾段反传，包含 document/padding mask、CE 与 balance/z 辅助梯度。实际 H200 检查共 80 个物理参数张量，forward/辅助标量完全一致；逐有效 token、逐逻辑调用的 top-k expert 集合也精确一致，允许 top-k 顺序不同。梯度同时满足 3% 向量误差和 `2 * eps_bf16 * reference_peak + 1e-6` 的最大坐标差约束。[精确路由重测](evidence/native-kernel-routing-qualified.json)覆盖 4/8 次调用；旧 schema-1 仅比较汇总路由计数，不能单独支撑逐 token 精确结论。该验收基于有限输入与 BF16 精度，不能推定普遍误差保证。首轮逐元素 gate 的失败、策略审阅、首轮失败后声明上述约束及重跑的完整记录见[验证记录](validation.md)。
+The script fixes the seed, the input and two configurations. It covers the shared configuration, and tail backpropagation with input injection, prefix and suffix. It includes document/padding masks, CE and the gradients of the balance/z auxiliary losses. The actual H200 check has 80 physical parameter tensors in total. The forward and the auxiliary scalars are identical. The top-k expert set per valid token and per logical call is also exactly identical. The top-k order can differ. Gradients meet both a 3% vector error bound and a maximum coordinate difference bound of `2 * eps_bf16 * reference_peak + 1e-6`. The [exact routing re-test](evidence/native-kernel-routing-qualified.json) covers 4 and 8 calls. The old schema-1 compares only aggregate routing counts. Alone, it cannot support an exact per-token conclusion. This acceptance rests on finite inputs and BF16 precision. It does not imply a general error guarantee. The [validation record](validation.md) has the complete record: the failure of the first element-wise gate, the policy review, the declaration of the bounds above after the first failure, and the re-run.
 
-匹配范围有几个明确限制：
+The matching scope has some explicit limits:
 
-- Qwen3-MoE 必须启用 QK norm；我们的其他配置仍可使用 `qk_norm=False`。
-- 显式设置 `norm_topk_prob=True`，关闭 dropout、sliding window、attention bias 和词表权重 tying。
-- 辅助目标均关闭。不同实现跨层聚合 load balance 的语义可能不同，不能把它混入主 CE 核对而假装等价；本项目的逐调用辅助目标另有直接语义测试。
-- 此项比较使用完整反传、固定深度、无 input injection、无 always-on shared expert。状态注入、尾段反传、padding/document 边界、数据恢复等分别由相应语义与集成检查覆盖。
+- Qwen3-MoE requires QK norm. Our other configurations can still use `qk_norm=False`.
+- `norm_topk_prob=True` is set explicitly. Dropout, sliding window, attention bias and vocabulary weight tying are off.
+- All auxiliary objectives are off. Different implementations can aggregate the load balance across layers with different semantics. Thus it is not mixed into the main CE check as if the semantics were equivalent. The per-call auxiliary objectives of this project have their own direct semantic tests.
+- This comparison uses full backpropagation, fixed depth, no input injection and no always-on shared expert. State injection, tail backpropagation, padding/document boundaries, data resume and similar items are covered by their own semantic and integration checks.
 
-我们也阅读了 [xLLM-Loop 的固定源码](https://github.com/ifm-ai/xllm-loop/blob/755c7b3a91081fe0f83500eabd53bd2490b8b745/xllm/models/looped.py)。其中 `build_loop_execution_schedule` 明确采用 prefix + loop span 重复 + suffix，与我们的 stack 语义相符；其单状态 recurrent update 和 no-grad prefix/live gradient suffix 为训练动态提供了额外源码参照。**目前没有执行 xLLM 的完整模型或训练，也没有将这项阅读列为数值通过项。** 实际执行的独立 baseline 是上面的可重复官方 Qwen3-MoE 检查；正式比较特定 loop 方法需冻结对应上游版本、数据、预算和需要匹配的具体机制。
+We also read the [fixed source of xLLM-Loop](https://github.com/ifm-ai/xllm-loop/blob/755c7b3a91081fe0f83500eabd53bd2490b8b745/xllm/models/looped.py). Its `build_loop_execution_schedule` explicitly uses prefix + repeated loop span + suffix, which agrees with our stack semantics. Its single-state recurrent update and its no-grad prefix / live-gradient suffix give an additional source reference for training dynamics. **We have not run the complete xLLM model or its training, and this reading is not listed as a numerical pass.** The independent baseline that actually runs is the reproducible official Qwen3-MoE check above. A formal comparison with a specific loop method needs a frozen upstream version, data, budget and the specific mechanisms that must match.
