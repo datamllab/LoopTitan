@@ -99,7 +99,7 @@ def test_card_has_required_sections_and_evidence_numbers(plan):
     # Provenance and scope.
     assert "`" + "a" * 40 + "` (clean)" in card and sha(b"looped") in card
     assert f"`model.safetensors`: `{sha(b'looped' * 100)}`" in card
-    assert "trust_remote_code=True" in card and "'acme/fixture-smelt'" in card
+    assert card.count("from_pretrained(") == card.count("trust_remote_code=True") == 2 and "'acme/fixture-smelt'" in card
     assert "Single seed" in card and "seed 42" in card
     # The plan gives an absolute recipe path; the public card shows the file name only.
     assert "- Recipe file `p1_smelt.json`: SHA-256 `" in card and str(ROOT) not in card and str(plan.parent) not in card
@@ -412,7 +412,8 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
             "1.7e-3, the value tuned once per optimizer on the ordinary MoE; the same grid on this model selects the "
             "same value ([#180](https://github.com/datamllab/LoopTitan/issues/180)).") in card
     assert RESULTS["protocol"] not in card and "every row" not in card and card.lower().count("chain-end") == 1
-    assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card and "trust_remote_code=True" in card
+    assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card
+    assert card.count("from_pretrained(") == card.count("trust_remote_code=True") == 2  # else the tokenizer line asks y/N
     for link in ("https://github.com/datamllab/LoopTitan/blob/main/recipes/phase1/m3-muon.json",
                  "https://github.com/datamllab/LoopTitan/blob/main/docs/results/phase1.md",
                  "https://github.com/datamllab/LoopTitan/tree/main/docs", "https://github.com/datamllab/LoopTitan/issues/180",

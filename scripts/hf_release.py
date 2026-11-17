@@ -324,7 +324,7 @@ def render_card(role, model, repos, facts, source, base):
               "The model runs repository Python code: read it first, or pin `revision=`.", "", "```python",
               "from transformers import AutoModelForCausalLM, AutoTokenizer", "",
               f"model = AutoModelForCausalLM.from_pretrained({repos[role]!r}, trust_remote_code=True)",
-              f"tokenizer = AutoTokenizer.from_pretrained({repos[role]!r})", "```", "", "## Scope", "",
+              f"tokenizer = AutoTokenizer.from_pretrained({repos[role]!r}, trust_remote_code=True)", "```", "", "## Scope", "",
               f"- Single seed: one training run (seed {run['seed']}) per model. Differences against the paired model "
               f"are descriptive, not a significance estimate.",
               f"- Cost: matching is analytical. Measured native GPU hours were {looped['gpu_hours']:.2f} (looped) and "
@@ -388,7 +388,7 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"[results page]({repo}/blob/main/{page}). Configuration: [`{model['config']}`]({repo}/blob/main/{model['config']}); "
               f"run record: [#{run['issue']}]({repo}/issues/{run['issue']}).", "",
               "## Use", "", "```python", "import torch", "from transformers import AutoModelForCausalLM, AutoTokenizer", "",
-              f"repo = {json.dumps(repo_id)}", "tokenizer = AutoTokenizer.from_pretrained(repo)",
+              f"repo = {json.dumps(repo_id)}", "tokenizer = AutoTokenizer.from_pretrained(repo, trust_remote_code=True)",
               "model = AutoModelForCausalLM.from_pretrained(repo, trust_remote_code=True).eval()",
               "ids = torch.tensor([[tokenizer.bos_token_id] + tokenizer.encode(\"The model\", add_special_tokens=False)])",
               "out = model.generate(ids, attention_mask=torch.ones_like(ids), max_new_tokens=32, do_sample=False)",
