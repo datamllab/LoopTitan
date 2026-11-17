@@ -115,7 +115,7 @@
       "repo": "looptitan-p1-twin-adamw",
       "title": "Untied twin of the loop",
       "short": "Untied twin",
-      "note": "The loop's untied twin: the same shape, separate weights for each visit.",
+      "note": "The loop's untied twin: its middle 12 layers each own their weights, with 44 experts each where the loop's 6 shared layers have 88.",
       "config": "recipes/phase1/m4-adamw.json",
       "export_dir": "",
       "evaluation": {
@@ -128,7 +128,7 @@
       "repo": "looptitan-p1-twin-muon",
       "title": "Untied twin of the loop",
       "short": "Untied twin",
-      "note": "The loop's untied twin: the same shape, separate weights for each visit.",
+      "note": "The loop's untied twin: its middle 12 layers each own their weights, with 44 experts each where the loop's 6 shared layers have 88.",
       "config": "recipes/phase1/m4-muon.json",
       "export_dir": "",
       "evaluation": {

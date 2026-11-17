@@ -321,22 +321,23 @@ def glyph(node, x, cy, t, k=1.0, label=True):
 
 # ---------------------------------------------------------------- figures
 
-def banner(t):
-    """The lockup as the homepage's header carries it, and the homepage's display line under it."""
-    narrow = t is AUTO
+def banner(t, narrow=None):
+    """The lockup as the homepage's header carries it, and the homepage's display line under it. The narrow
+    drawing is the AUTO variant, or (for Hugging Face) a narrow drawing in one theme."""
+    narrow = t is AUTO if narrow is None else narrow
     w, h = (360, 232) if narrow else (880, 272)
     cx = w / 2
     lh = 40 if narrow else 52  # the mark's height in pixels: the medium master (22 to 95 px)
     _, lw = lockup("medium-indigo", 0, 0, lh)
     top = 20 if narrow else 24
     css = ""
-    if narrow:  # both colourings of the lockup; the reader's scheme shows one
+    if t is AUTO:  # both colourings of the lockup; the reader's scheme shows one
         light, _ = lockup("medium-indigo", cx - lw / 2, top, lh)
         dark, _ = lockup("medium-dark", cx - lw / 2, top, lh)
         out = [f'<g class="lk">{light}</g><g class="lk-d">{dark}</g>']
         css = ".lk-d{display:none}@media (prefers-color-scheme: dark){.lk{display:none}.lk-d{display:inline}}"
     else:
-        out = [lockup("medium-indigo" if t is LIGHT else "medium-dark", cx - lw / 2, top, lh)[0]]
+        out = [lockup("medium-indigo" if t is LIGHT else "medium-dark", cx - lw / 2, top, lh)[0]]  # one theme
     # one soft light behind the whole group: a single ellipse, brightest at its centre
     gy, grx, gry = (h / 2, 176, 112) if narrow else (h / 2, 380, 128)
     out.insert(0, '<defs><radialGradient id="glow" cx="50%" cy="50%" r="50%">' + "".join(

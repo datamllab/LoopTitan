@@ -552,6 +552,63 @@ def test_cards_update_sends_only_the_card_and_removes_only_the_superseded_figure
     assert "repository does not exist" in capsys.readouterr().err
 
 
+def test_organisation_card_references_only_generated_images():
+    releases = hf_release.load_plan(EXAMPLE, NAMESPACE, cards_only=True)
+    card = hf_release.org_card(EXAMPLE, NAMESPACE, releases)
+    named = set(re.findall(r'src="(assets/[^"]+)"', card["card"]))
+    assert named and named == set(card["assets"])
+    assert "https://github.com/datamllab/LoopTitan/blob/main/docs/results/phase1.md" in card["card"]
+    assert 'class="not-prose dark:hidden"' in card["card"]  # the capsule rows are exempt from the prose link rule
+
+
+def test_cards_need_no_export_files_even_when_the_plan_names_them(single_plan, monkeypatch):
+    for model in json.loads(single_plan.read_text())["models"]:
+        for file in (single_plan.parent / model["export_dir"]).rglob("*"):
+            if file.is_file():
+                file.unlink()
+    api, _ = mock_client(monkeypatch)
+    api.repo_exists.return_value, api.file_exists.return_value = True, False
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    assert hf_release.main([str(single_plan), "--namespace", NAMESPACE, "--cards"]) == 0
+    assert api.create_commit.call_count == 2
+
+
+def test_collection_and_organisation_card_through_main(monkeypatch):
+    api, _ = mock_client(monkeypatch)
+    repos = [f"acme/{model['repo']}" for model in json.loads(EXAMPLE.read_text())["models"]]
+    api.create_collection.return_value.slug = "acme/looptitan-phase-1-0123"
+    api.add_collection_item.return_value.items = [MagicMock(item_id=repo, item_object_id=f"id-{repo}") for repo in repos]
+    api.repo_exists.return_value = True
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--collection"]) == 0
+    plan = json.loads(EXAMPLE.read_text())["collection"]
+    api.update_collection_metadata.assert_called_once_with("acme/looptitan-phase-1-0123", title=plan["title"],
+                                                           description=plan["description"])
+    notes = [call.kwargs["note"] for call in api.update_collection_item.call_args_list]
+    assert len(notes) == 16 and all(notes) and all(len(note) <= 500 for note in notes)
+    api.create_repo.assert_not_called()
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--org-card"]) == 0
+    call = api.create_commit.call_args
+    assert call.kwargs["repo_id"] == "acme/README" and call.kwargs["repo_type"] == "space"
+    names = [name for name, _ in call.kwargs["operations"]]
+    assert names[0] == "README.md" and "assets/banner-dark-narrow.svg" in names
+
+
+def test_collection_and_organisation_card_errors_are_stated(plan, tmp_path, monkeypatch, capsys):
+    mock_client(monkeypatch)
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    for mode in ("--collection", "--org-card", "--cards"):
+        assert hf_release.main([str(plan), "--namespace", NAMESPACE, mode]) == 1
+        assert "need a plan of single models" in capsys.readouterr().err
+    document = json.loads(EXAMPLE.read_text())
+    del document["collection"]
+    document = document | {key: str(EXAMPLE.parent / document[key]) for key in ("results", "dataset", "org_card")}
+    bare = tmp_path / "bare.json"
+    bare.write_text(json.dumps(document))
+    assert hf_release.main([str(bare), "--namespace", NAMESPACE, "--collection"]) == 1
+    assert "the plan has no collection" in capsys.readouterr().err
+
+
 def test_collection_notes_and_organisation_card(capsys, monkeypatch):
     assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE]) == 0
     out = capsys.readouterr().out

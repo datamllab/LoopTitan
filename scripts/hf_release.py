@@ -146,7 +146,7 @@ def load_plan(path, namespace, cards_only=False):
     base, plan = path.parent, read_json(path)
     if "models" in plan:
         return single_releases(plan, base, namespace, cards_only)
-    require(not cards_only, "--cards needs a plan of single models")
+    require(not cards_only, "--cards, --collection and --org-card need a plan of single models")
     require(plan.get("pairs"), "plan has no pairs")
     releases = []
     for pair in plan["pairs"]:
@@ -183,6 +183,7 @@ def family_of(plan, runs, matched):
 def single_releases(plan, base, namespace, cards_only=False):
     """One release per model of the plan, in plan order, bound to its run of the results file. With cards_only,
     only the card and its figures: the export (weights, evaluation files) is neither needed nor checked."""
+    require(plan.get("collection"), "the plan has no collection (its title names the release on each card)")
     results = read_json(base / plan["results"])
     page = (base / plan["results"]).resolve().relative_to(ROOT).with_suffix(".md").as_posix()
     runs = {run["config"]: (row, optimizer, run) for group in results["groups"] for row in group["rows"]
@@ -452,7 +453,8 @@ def capsule_row(repo, page):
             img = (f'<img class="not-prose inline-block" src="assets/capsule-{key}-{theme}.svg" height="32" '
                    f'alt="{label}">')
             parts.append(f'<a href="{link.format(repo=repo, page=page)}">{img}</a>' if link else img)
-        rows.append(f'<p align="center" class="{cls}">' + "".join(parts) + "</p>")
+        # not-prose: Hugging Face's prose makes a link around a single image a block (one capsule per line)
+        rows.append(f'<p align="center" class="not-prose {cls}">' + "".join(parts) + "</p>")
     return "\n".join(rows)
 
 
@@ -505,7 +507,8 @@ def banner(config_path, config, optimizer, t, narrow=False):
 def standing_text(model, family):
     rows = [f"{design['short']}: " + ", ".join(f"{OPTIMIZERS[opt]} {r['delta']:+.1f}" for opt, r in design["runs"].items())
             for design in family]
-    return "Test mBPB of each Phase 1 design against the ordinary MoE, by optimizer: " + "; ".join(rows) + "."
+    return (f"Test mBPB of the {len(family)} designs of this release against the ordinary MoE, by optimizer: " +
+            "; ".join(rows) + ".")
 
 
 def standing(model, family, t, narrow=False):
@@ -691,12 +694,13 @@ def org_card(plan_path, namespace, releases):
         rows.append(f"| {design['title']} | {cells[0]} | {cells[1]} |")
     require("<!-- models -->" in text, f"{plan['org_card']}: the line <!-- models --> is missing")
     repo = yaml.safe_load(CITATION.read_text())["repository-code"]
-    page = "docs/results/phase1.md"
+    page = (Path(plan_path).resolve().parent / plan["results"]).resolve().relative_to(ROOT).with_suffix(".md").as_posix()
     text = (text.replace("<!-- models -->", "\n".join(rows)).replace("<!-- banner -->", themed("banner", "LoopTitan", 880))
             .replace("<!-- capsules -->", capsule_row(repo, page)))
     assets = {}
     for theme, t in THEMES.items():
         assets[f"assets/banner-{theme}.svg"] = figures.banner(t)
+        assets[f"assets/banner-{theme}-narrow.svg"] = figures.banner(t, narrow=True)
         for i, (key, label, colour, mark, _) in enumerate(HF_PLACES):
             assets[f"assets/capsule-{key}-{theme}.svg"] = figures.capsule(key, label, colour, mark, i == 0, t,
                                                                             figures.HOSTS.get(key))
