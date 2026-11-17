@@ -453,8 +453,10 @@ def capsule_row(repo, page):
             img = (f'<img class="not-prose inline-block" src="assets/capsule-{key}-{theme}.svg" height="32" '
                    f'alt="{label}">')
             parts.append(f'<a href="{link.format(repo=repo, page=page)}">{img}</a>' if link else img)
-        # not-prose: Hugging Face's prose makes a link around a single image a block (one capsule per line)
-        rows.append(f'<p align="center" class="not-prose {cls}">' + "".join(parts) + "</p>")
+        # not-prose: Hugging Face's prose makes a link around a single image a block (one capsule per line). It also
+        # drops the paragraph's margins, so the row sets its own: the prose paragraph's 1.25em widened to 1.5em, near
+        # the 1.7rem under the title, so that banner, row and title stand at even distances
+        rows.append(f'<p align="center" class="not-prose {cls}" style="margin:1.5em 0">' + "".join(parts) + "</p>")
     return "\n".join(rows)
 
 
