@@ -22,7 +22,9 @@ def test_every_page_in_the_navigation_exists():
 
 
 def test_every_document_is_in_the_navigation():
-    documents = {str(p.relative_to(ROOT)) for p in (ROOT / "docs").rglob("*.md") if SITE not in p.parents}
+    # docs/assets/ holds notes beside the asset files and docs/release/ the texts uploaded to Hugging Face: not pages
+    inputs = (SITE, ROOT / "docs" / "assets", ROOT / "docs" / "release")
+    documents = {str(p.relative_to(ROOT)) for p in (ROOT / "docs").rglob("*.md") if not any(d in p.parents for d in inputs)}
     assert documents - set(nav_sources()) == set()
 
 

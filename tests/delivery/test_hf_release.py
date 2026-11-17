@@ -1,6 +1,7 @@
 """HF paired release: card numbers, dry-run listing, and the upload gates (mocked HfApi only)."""
 import hashlib
 import json
+import re
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -98,7 +99,7 @@ def test_card_has_required_sections_and_evidence_numbers(plan):
     # Provenance and scope.
     assert "`" + "a" * 40 + "` (clean)" in card and sha(b"looped") in card
     assert f"`model.safetensors`: `{sha(b'looped' * 100)}`" in card
-    assert "trust_remote_code=True" in card and "'acme/fixture-smelt'" in card
+    assert card.count("from_pretrained(") == card.count("trust_remote_code=True") == 2 and "'acme/fixture-smelt'" in card
     assert "Single seed" in card and "seed 42" in card
     # The plan gives an absolute recipe path; the public card shows the file name only.
     assert "- Recipe file `p1_smelt.json`: SHA-256 `" in card and str(ROOT) not in card and str(plan.parent) not in card
@@ -203,7 +204,8 @@ def test_upload_rechecks_hashes_after_the_plan_was_loaded(plan, monkeypatch):
 def mock_client(monkeypatch):
     api = MagicMock()
     add = lambda path_in_repo, path_or_fileobj: (path_in_repo, path_or_fileobj)
-    client = MagicMock(return_value=(api, add))
+    delete = lambda path_in_repo: ("delete", path_in_repo)
+    client = MagicMock(return_value=(api, add, delete))
     monkeypatch.setattr(hf_release, "hf_client", client)
     return api, client
 
@@ -354,6 +356,7 @@ def single_plan(tmp_path):
     """The example plan with two models filled in from made-up exports whose evaluation files hold the recorded BPB."""
     plan = json.loads(EXAMPLE.read_text())
     plan["results"], plan["dataset"] = str(ROOT / "docs/results/phase1.json"), str(ROOT / "docs/evidence/p1-dclm-source.json")
+    plan["org_card"] = str(ROOT / "docs/release/naturalscale-org-card.md")
     models = {model["config"]: model for model in plan["models"]}
     plan["models"] = [models["recipes/phase1/m3-muon.json"], models["recipes/phase1/m0-muon.json"]]
     for model in plan["models"]:
@@ -384,8 +387,8 @@ def test_example_plan_names_the_sixteen_models_and_binds_each_to_one_run():
 def test_example_dry_run_renders_every_card_and_the_collection(capsys):
     assert hf_release.main([str(EXAMPLE), "--namespace", "example"]) == 0
     out = capsys.readouterr().out
-    assert out.count("--- README.md ---") == 16 and out.count("not filled in: export_dir, files and evaluation") == 16
-    assert "== collection example: LoopTitan Phase 1" in out
+    assert out.count("--- README.md ---") == 17 and out.count("not filled in: export_dir, files and evaluation") == 16
+    assert "== collection example: LoopTitan Phase 1" in out and "== organisation card example/README" in out
     assert "  1. example/looptitan-p1-moe12-adamw\n" in out and "  16. example/looptitan-p1-moe12-2e-muon\n" in out
 
 
@@ -396,25 +399,28 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
     assert '- "looped-moe"' in card and '- "muon"' in card and '- "mlfoundations/dclm-baseline-1.0-parquet"' in card
     assert f"    - name: Test BPB\n      type: bpb\n      value: {run['test_bpb']:.6f}" in card
     assert f"    - name: Validation BPB\n      type: bpb\n      value: {run['validation_bpb']:.6f}" in card
-    assert "![12 layers stored, 18 run](banner.svg)" in card
-    assert "\n# Looped MoE: the middle 6 layers run twice\n\nMuon · LoopTitan Phase 1\n\nChain-end loop: 12 layers at width 1056" in card
+    assert '<img class="not-prose dark:hidden" src="assets/banner-light.svg" width="720" alt="12 layers stored, 18 run">' in card
+    assert ("\n# Looped MoE: the middle 6 layers run twice\n\n**Muon** · LoopTitan Phase 1 · design 1 of 2, each trained with "
+            "AdamW and with Muon\n\nChain-end loop: 12 layers at width 1056") in card
     assert f"| 0.970676 | 0.972425 | {1000 * (run['test_bpb'] - reference['test_bpb']):+.2f} mBPB |" in card
     assert "| -3.70 mBPB |" in card and "Matched budgets: all three within 5% of the ordinary MoE (Muon)." in card
-    assert ("![Budgets against the ordinary MoE (Muon): unique non-embedding parameters -0.27%, training FLOPs per "
-            "token +2.44%, KV cache +3.12%; tolerance ±5%](budgets.svg)") in card
+    assert ('src="assets/budgets-light.svg" width="720" alt="Budgets against the ordinary MoE (Muon): unique non-embedding '
+            'parameters -0.27%, training FLOPs per token +2.44%, KV cache +3.12%; tolerance ±5%"') in card
     assert ("5.0B tokens of [mlfoundations/dclm-baseline-1.0-parquet](https://huggingface.co/datasets/mlfoundations/"
             "dclm-baseline-1.0-parquet) at revision `817d6752765f6a41261085171dd546b104f60626` (CC-BY-4.0): 4,769 updates "
             "of 1,048,576 tokens in sequences of 4,096, warmup-stable-decay schedule, seed 42. Muon at learning rate "
             "1.7e-3, the value tuned once per optimizer on the ordinary MoE; the same grid on this model selects the "
             "same value ([#180](https://github.com/datamllab/LoopTitan/issues/180)).") in card
     assert RESULTS["protocol"] not in card and "every row" not in card and card.lower().count("chain-end") == 1
-    assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card and "trust_remote_code=True" in card
+    assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card
+    assert card.count("from_pretrained(") == card.count("trust_remote_code=True") == 2  # else the tokenizer line asks y/N
     for link in ("https://github.com/datamllab/LoopTitan/blob/main/recipes/phase1/m3-muon.json",
                  "https://github.com/datamllab/LoopTitan/blob/main/docs/results/phase1.md",
                  "https://github.com/datamllab/LoopTitan/tree/main/docs", "https://github.com/datamllab/LoopTitan/issues/180",
                  "https://github.com/datamllab/LoopTitan/blob/main/LICENSE"):
         assert link in card
-    assert f"## Citation\n\n```bibtex\n{figures.bibtex(yaml.safe_load((ROOT / 'CITATION.cff').read_text()))}\n```\n" in card
+    assert f"\n```bibtex\n{figures.bibtex(yaml.safe_load((ROOT / 'CITATION.cff').read_text()))}\n```\n" in card
+    assert "## Citation\n\nIf you use this model or its results, please cite LoopTitan; this applies to people and to agents" in card
     assert str(single_plan.parent) not in card and str(ROOT) not in card
 
 
@@ -429,7 +435,7 @@ def test_card_cites_the_preferred_citation_of_citation_cff_and_only_that(single_
     assert figures.bibtex(cff) == PAPER
     monkeypatch.setattr(hf_release, "CITATION", fixture)
     card = hf_release.load_plan(single_plan, NAMESPACE)[0]["card"]
-    assert f"## Citation\n\n```bibtex\n{PAPER}\n```\n" in card and "@software" not in card
+    assert f"\n```bibtex\n{PAPER}\n```\n" in card and "@software" not in card
     journal = cff["preferred-citation"] | {"journal": "Journal of Tests", "identifiers": [], "doi": "10.0000/test"}
     assert figures.bibtex(cff | {"preferred-citation": journal}) == (
         "@article{looptitan2026,\n  title = {{A Paper Title With Capitals}},\n  author = {{The LoopTitan authors}},\n"
@@ -442,9 +448,9 @@ def test_unmatched_row_says_so():
     plan["models"] = [model for model in plan["models"] if model["repo"] == "looptitan-p1-moe12-2e-adamw"]
     plan["results"], plan["dataset"] = str(ROOT / "docs/results/phase1.json"), str(ROOT / "docs/evidence/p1-dclm-source.json")
     card = hf_release.single_releases(plan, EXAMPLE.parent, NAMESPACE)[0]["card"]
-    assert "# Ordinary MoE with twice the experts, outside matched budgets\n\nAdamW · LoopTitan Phase 1" in card
+    assert "# Ordinary MoE with twice the experts, outside matched budgets\n\n**AdamW** · LoopTitan Phase 1" in card
     assert ("Outside matched budgets: more than 5% from the ordinary MoE (AdamW) in unique non-embedding "
-            "parameters (+96.7%).") in card and '- "moe"' in card and "![12 layers](banner.svg)" in card
+            "parameters (+96.7%).") in card and '- "moe"' in card and 'alt="12 layers">' in card
 
 
 @pytest.mark.parametrize("repo, sentence", [
@@ -461,12 +467,12 @@ def test_learning_rate_sentence_states_where_the_value_was_tuned(repo, sentence)
     assert sentence in card and card.count("learning rate") == 1
 
 
-@pytest.mark.parametrize("name", ["README.md", "banner.svg", "budgets.svg"])
+@pytest.mark.parametrize("name", ["README.md", "assets/banner-light.svg"])
 def test_single_plan_refuses_a_file_with_a_generated_name(single_plan, name):
     document = json.loads(single_plan.read_text())
     document["models"][0]["files"][name] = "0" * 64
     single_plan.write_text(json.dumps(document))
-    with pytest.raises(ValueError, match="README.md, banner.svg, budgets.svg are generated"):
+    with pytest.raises(ValueError, match="README.md, assets/ are generated"):
         hf_release.load_plan(single_plan, NAMESPACE)
 
 
@@ -476,23 +482,150 @@ def test_budgets_figure_uses_the_readme_band_and_marks_values_outside_it():
         return hf_release.budgets(config, f"recipes/phase1/m0-{optimizer}.json", run, optimizer)
     inside, outside = draw("recipes/phase1/m3-muon.json", "muon"), draw("recipes/methods/m0-loop-adamw.json", "adamw")
     square = 'width="10" height="10" rx="2" style="fill:#16181D"'
-    assert "within ±5%" in inside and square not in inside and inside.count('r="5.5"') == 3
-    assert "outside ±5%" in outside and outside.count(square) == 2 and outside.count('r="5.5"') == 1
+    assert "3 of 3 within ±5%" in inside and square not in inside and inside.count('r="5.5"') == 3
+    assert "1 of 3 within ±5%" in outside and outside.count(square) == 2 and outside.count('r="5.5"') == 1
     assert "+31.46%" in outside and "+50.00%" in outside and "tolerance ±5%" in outside
 
 
 def test_banner_draws_layers_and_the_loop_from_the_configuration():
-    def draw(config):
-        return hf_release.banner(config, json.loads((ROOT / config).read_text())["model"])
+    def draw(config, theme="light", narrow=False):
+        return hf_release.banner(config, json.loads((ROOT / config).read_text())["model"], "muon",
+                                 hf_release.THEMES[theme], narrow)
     looped, plain = draw("recipes/phase1/m3-muon.json"), draw("recipes/phase1/m0-muon.json")
     acc, bar = (f"fill:{figures.LIGHT[key]}\"/>" for key in ("acc", "bar"))
     assert looped.count(acc) == 6 and looped.count(bar) == 6 and "×2</text>" in looped
-    assert "12 layers stored, 18 run</text>" in looped and "#3346D3" not in plain
-    assert plain.count(bar) == 12 and "12 layers</text>" in plain
+    assert '<title id="title">12 layers stored, 18 run</title>' in looped and ">18</text>" in looped
+    assert plain.count(acc) == 0 and plain.count(bar) == 12 and '<title id="title">12 layers</title>' in plain
     assert figures.glyph("phase1/m3", 0, 0, figures.LIGHT, k=2)[0] in looped  # the README's drawing, light variant
-    mark = (ROOT / "docs" / "assets" / "brand" / "looptitan-lockup-medium-ink.svg").read_text()
-    mark = mark[mark.index(">") + 1:mark.rindex("</svg>")]
-    assert mark in looped and mark in plain  # the lockup, placed as it is
+    for theme, name in (("light", "medium-indigo"), ("dark", "medium-dark")):
+        mark = (ROOT / "docs" / "assets" / "brand" / f"looptitan-lockup-{name}.svg").read_text()
+        mark = mark[mark.index(">") + 1:mark.rindex("</svg>")]
+        for narrow in (False, True):
+            assert mark in draw("recipes/phase1/m0-muon.json", theme, narrow)  # the lockup, placed as it is
+
+
+def test_every_figure_of_the_card_is_generated_in_both_themes(single_plan):
+    release = hf_release.load_plan(single_plan, NAMESPACE)[0]
+    named = set(re.findall(r'src="(assets/[^"]+)"', release["card"]))
+    assert named == set(release["assets"])
+    assert {name.rsplit("-", 1)[0].replace("-light", "").replace("-dark", "") for name in named} >= {
+        "assets/banner", "assets/standing", "assets/budgets", "assets/capsule-homepage"}
+    assert all(name.replace("-light", "-dark") in named for name in named if "-light" in name)
+
+
+def test_capsules_link_only_to_places_that_exist(single_plan):
+    card = hf_release.load_plan(single_plan, NAMESPACE)[0]["card"]
+    found = re.findall(r'(?:<a href="([^"]+)">)?<img class="not-prose inline-block" src="assets/capsule-(\w+)-(light|dark)\.svg"', card)
+    links = {(key, theme): href for href, key, theme in found}
+    assert sorted(links) == sorted((key, theme) for key in ("homepage", "code", "docs", "models", "paper", "results")
+                                   for theme in ("light", "dark"))
+    for theme in ("light", "dark"):
+        assert not links["homepage", theme] and not links["models", theme] and not links["paper", theme]
+        assert links["code", theme] == "https://github.com/datamllab/LoopTitan"
+        assert links["results", theme] == "https://github.com/datamllab/LoopTitan/blob/main/docs/results/phase1.md"
+
+
+def test_standing_shows_every_design_and_marks_this_model():
+    plan = json.loads(EXAMPLE.read_text())
+    release = hf_release.single_releases(plan, EXAMPLE.parent, NAMESPACE)[11]  # the loop, Muon
+    standing = release["assets"]["assets/standing-light.svg"].decode()
+    for model in plan["models"][::2]:
+        assert f">{model['short']}</text>" in standing
+    assert "The loop: AdamW -9.0, Muon -3.7" in standing and ">−3.7</text>" in standing
+    assert "**0.9707**" in release["card"] and "(https://huggingface.co/acme/looptitan-p1-loop6x2-adamw)" in release["card"]
+
+
+def test_cards_update_sends_only_the_card_and_removes_only_the_superseded_figures(monkeypatch, capsys):
+    api, client = mock_client(monkeypatch)
+    api.repo_exists.return_value = True
+    api.file_exists.side_effect = lambda repo_id, name, repo_type: name == "banner.svg"
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--cards"]) == 0  # no export is filled in
+    api.create_repo.assert_not_called()
+    api.update_repo_settings.assert_not_called()
+    assert api.create_commit.call_count == 16
+    operations = api.create_commit.call_args_list[0].kwargs["operations"]
+    names = [name for name, _ in operations]
+    assert names[0] == "README.md" and ("delete", "banner.svg") in operations and ("delete", "budgets.svg") not in operations
+    assert all(name in ("README.md", "delete") or name.startswith("assets/") for name in names)
+    api.repo_exists.return_value = False
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--cards"]) == 1
+    assert "repository does not exist" in capsys.readouterr().err
+
+
+def test_organisation_card_references_only_generated_images():
+    releases = hf_release.load_plan(EXAMPLE, NAMESPACE, cards_only=True)
+    card = hf_release.org_card(EXAMPLE, NAMESPACE, releases)
+    named = set(re.findall(r'src="(assets/[^"]+)"', card["card"]))
+    assert named and named == set(card["assets"])
+    assert "https://github.com/datamllab/LoopTitan/blob/main/docs/results/phase1.md" in card["card"]
+    assert 'class="not-prose dark:hidden"' in card["card"]  # the capsule rows are exempt from the prose link rule
+
+
+def test_cards_need_no_export_files_even_when_the_plan_names_them(single_plan, monkeypatch):
+    for model in json.loads(single_plan.read_text())["models"]:
+        for file in (single_plan.parent / model["export_dir"]).rglob("*"):
+            if file.is_file():
+                file.unlink()
+    api, _ = mock_client(monkeypatch)
+    api.repo_exists.return_value, api.file_exists.return_value = True, False
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    assert hf_release.main([str(single_plan), "--namespace", NAMESPACE, "--cards"]) == 0
+    assert api.create_commit.call_count == 2
+
+
+def test_collection_and_organisation_card_through_main(monkeypatch):
+    api, _ = mock_client(monkeypatch)
+    repos = [f"acme/{model['repo']}" for model in json.loads(EXAMPLE.read_text())["models"]]
+    api.create_collection.return_value.slug = "acme/looptitan-phase-1-0123"
+    api.add_collection_item.return_value.items = [MagicMock(item_id=repo, item_object_id=f"id-{repo}") for repo in repos]
+    api.repo_exists.return_value = True
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--collection"]) == 0
+    plan = json.loads(EXAMPLE.read_text())["collection"]
+    api.update_collection_metadata.assert_called_once_with("acme/looptitan-phase-1-0123", title=plan["title"],
+                                                           description=plan["description"])
+    notes = [call.kwargs["note"] for call in api.update_collection_item.call_args_list]
+    assert len(notes) == 16 and all(notes) and all(len(note) <= 500 for note in notes)
+    api.create_repo.assert_not_called()
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--org-card"]) == 0
+    call = api.create_commit.call_args
+    assert call.kwargs["repo_id"] == "acme/README" and call.kwargs["repo_type"] == "space"
+    names = [name for name, _ in call.kwargs["operations"]]
+    assert names[0] == "README.md" and "assets/banner-dark-narrow.svg" in names
+
+
+def test_collection_and_organisation_card_errors_are_stated(plan, tmp_path, monkeypatch, capsys):
+    mock_client(monkeypatch)
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    for mode in ("--collection", "--org-card", "--cards"):
+        assert hf_release.main([str(plan), "--namespace", NAMESPACE, mode]) == 1
+        assert "need a plan of single models" in capsys.readouterr().err
+    document = json.loads(EXAMPLE.read_text())
+    del document["collection"]
+    document = document | {key: str(EXAMPLE.parent / document[key]) for key in ("results", "dataset", "org_card")}
+    bare = tmp_path / "bare.json"
+    bare.write_text(json.dumps(document))
+    assert hf_release.main([str(bare), "--namespace", NAMESPACE, "--collection"]) == 1
+    assert "the plan has no collection" in capsys.readouterr().err
+
+
+def test_collection_notes_and_organisation_card(capsys, monkeypatch):
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE]) == 0
+    out = capsys.readouterr().out
+    assert "     note: The reference: an ordinary MoE of 12 layers with 64 experts each. Test BPB 0.9995.\n" in out
+    assert ("     note: The looped MoE: the middle 6 layers run twice with one set of weights. Test BPB 0.9707, -3.7 mBPB "
+            "against the ordinary MoE with the same optimizer; budgets matched within 5%.") in out
+    card = out.split("== organisation card acme/README")[1]
+    assert "<!-- banner -->" not in card and "<!-- models -->" not in card and "<!-- capsules -->" not in card
+    assert "| Untied twin of the loop | [looptitan-p1-twin-adamw](https://huggingface.co/acme/looptitan-p1-twin-adamw) |" in card
+    assert "  generated assets/banner-dark.svg (" in card
+    api, _ = mock_client(monkeypatch)
+    api.repo_exists.return_value = False
+    monkeypatch.setenv("HF_TOKEN", "fixture-token")
+    assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE, "--org-card"]) == 1
+    api.create_repo.assert_not_called()
+    api.create_commit.assert_not_called()
 
 
 def test_evaluation_bpb_must_reproduce_the_results(single_plan):
@@ -525,7 +658,7 @@ def test_single_dry_run_lists_files_and_generated_banner(single_plan, capsys):
     assert hf_release.main([str(single_plan), "--namespace", NAMESPACE]) == 0
     out = capsys.readouterr().out
     assert "== acme/looptitan-p1-loop6x2-muon (recipes/phase1/m3-muon.json)" in out
-    assert "  eval/test.json\n" in out and out.count("  generated banner.svg (") == 2
+    assert "  eval/test.json\n" in out and out.count("  generated assets/banner-light.svg (") == 3  # two models and the organisation card
     assert "== collection acme: LoopTitan Phase 1\n" in out and "  2. acme/looptitan-p1-moe12-muon" in out
 
 
@@ -539,12 +672,14 @@ def test_single_upload_commits_card_banner_and_files_then_the_collection(single_
     releases = hf_release.load_plan(single_plan, NAMESPACE)
     assert [call.kwargs["repo_id"] for call in api.create_commit.call_args_list] == repos
     first = dict(api.create_commit.call_args_list[0].kwargs["operations"])
-    assert set(first) == {"README.md", "banner.svg", "budgets.svg", "config.json", "model.safetensors", "eval/validation.json", "eval/test.json"}
-    assert first["README.md"] == releases[0]["card"].encode() and first["banner.svg"] == releases[0]["assets"]["banner.svg"]
+    assert set(first) == {"README.md", *releases[0]["assets"], "config.json", "model.safetensors", "eval/validation.json", "eval/test.json"}
+    assert first["README.md"] == releases[0]["card"].encode()
+    assert first["assets/banner-light.svg"] == releases[0]["assets"]["assets/banner-light.svg"]
     plan = json.loads(EXAMPLE.read_text())["collection"]
     api.create_collection.assert_called_once_with(title=plan["title"], namespace=NAMESPACE, description=plan["description"],
                                                   private=True, exists_ok=True)
     assert [call.kwargs["item_id"] for call in api.add_collection_item.call_args_list] == repos
+    assert [call.kwargs["note"] for call in api.add_collection_item.call_args_list] == [release["note"] for release in releases]
     assert [(call.args[1], call.kwargs["position"]) for call in api.update_collection_item.call_args_list] == \
         [(f"id-{repo}", position) for position, repo in enumerate(repos)]
 
