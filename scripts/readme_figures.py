@@ -56,7 +56,7 @@ DARK = dict(ink="#E7EBF1", mid="#9BA3AF", softt="#848B97", soft="#5E6672", hair=
 AUTO = {key: f"var(--{key})" for key in LIGHT}  # the narrow variant: colours chosen inside the file
 
 # The one-change chain of Phase 1, in README order: (step name, detail from the model fields, recipe node)
-CHAIN = [("Ordinary MoE", "{num_experts} experts", "phase1/m0"),
+CHAIN = [("Standard MoE", "{num_experts} experts", "phase1/m0"),
          ("Finer experts", "{num_experts}, top-{top_k}", "shape/g"),
          ("Deeper, narrower", "{layers} layers", "shape/u"),
          ("Expert layout", "{prefix_experts} · {core_experts} · {suffix_experts}", "shape/r"),
@@ -78,7 +78,7 @@ MECHANISMS = [("Where the loop sits, how often", ["prefix_cells · num_cells", "
               ("Depth: fixed, sampled, learned", ["depth_rule · grad_visits", "exit_distribution"]),
               ("Low-rank delta per visit", ["lora_attention_rank", "lora_ffn_rank"]),
               ("Experts tied across layers", ['order="layer"'])]
-CASES = {"ordinary_moe": "Ordinary MoE", "shared_stack": "Shared stack", "shared_layer": "Shared layer",
+CASES = {"ordinary_moe": "Standard MoE", "shared_stack": "Shared stack", "shared_layer": "Shared layer",
          "partial_attention": "Attention per visit", "partial_router": "Router per visit",
          "expert_tying": "Expert tying"}
 QUANTITIES = [("logits", "Logits", "logits_and_cached_logits"), ("loss", "Loss", "loss"),
@@ -595,7 +595,7 @@ def pillars(t):
     tiles = [(pillar_designs(t), str(len(lineage.lineage())), "configurations, one model",
               f"{len(MECHANISMS)} mechanisms, each a field"),
              (pillar_budgets(t, matched), f"{b_in} of {b_n}", f"budgets within ±{pct(b_tol)}",
-              "The loop against the ordinary MoE"),
+              "The loop against the standard MoE"),
              (pillar_checks(t, rows), f"{inside} of {n}", "within tolerance", "Against Transformers Qwen3-MoE")]
     cw, ch, gap = (360, 228, 28) if narrow else (272, 228, 32)
     w = cw if narrow else 3 * cw + 2 * gap
@@ -610,7 +610,7 @@ def pillars(t):
         out.append(text(x, y + 194, head, 14, t["ink"], 500))
         out.append(text(x, y + 215, sub, 13, t["mid"]))
     desc = (f"Three tiles. {tiles[0][1]} {tiles[0][2]}: {tiles[0][3]}. {tiles[1][1]} {tiles[1][2]}: parameters, "
-            f"training FLOPs and KV cache of the loop against the ordinary MoE. {tiles[2][1]} {tiles[2][2]}: six "
+            f"training FLOPs and KV cache of the loop against the standard MoE. {tiles[2][1]} {tiles[2][2]}: six "
             "configurations, five quantities, against Transformers Qwen3-MoE.")
     return svg(w, h, "LoopTitan at a glance", desc, t, "".join(out))
 
@@ -849,7 +849,7 @@ def lineage_fig(t):
             out.append(text(160, y + 17, chain_detail(fmt, node), 12, t["mid"], 400, mono=True))
             y += 60
         y += 6
-        for title, rows in [("From the ordinary MoE", left_rows), ("From the loop", right_rows)]:
+        for title, rows in [("From the standard MoE", left_rows), ("From the loop", right_rows)]:
             out.append(line(1, y - 18.5, w - 1, y - 18.5, t["line"], 1))
             out.append(text(20, y + 6, title, 13, t["ink"], 600))
             y += 40
@@ -884,7 +884,7 @@ def lineage_fig(t):
         out.append(rect(spine - 2, 188, 4, 12, 1, t["ink"]))
         out.append(path(f"M{num(spine)} 200V{num(rows_y[-1] - 10)}Q{num(spine)} {num(rows_y[-1])} {num(spine + 10)} {num(rows_y[-1])}",
                         t["hair"], 1))
-        out.append(text(spine + 18, 236, "Published designs from the ordinary MoE", 12, t["mid"], 600))
+        out.append(text(spine + 18, 236, "Published designs from the standard MoE", 12, t["mid"], 600))
         prev = {}
         for (node, depth), y in zip(left_rows, rows_y):
             x0 = spine + 28 + depth * 30
@@ -911,7 +911,7 @@ def lineage_fig(t):
         out.append(legend(t, 28, h - 22)[0])
     out[0] = card(0, 0, w, h, t)
     desc = ("The one-change chain of Phase 1: " + ", ".join(name for name, _, _ in CHAIN) +
-            ". Published designs drawn as children of the ordinary MoE or of the loop, as scripts/lineage.py declares: " +
+            ". Published designs drawn as children of the standard MoE or of the loop, as scripts/lineage.py declares: " +
             "; ".join(DESIGNS[n] for n, _ in left_rows + right_rows) + ".")
     return svg(w, int(h), "Lineage of the configurations", desc, t, "".join(out))
 
@@ -1104,7 +1104,7 @@ def results_fig(t):
     deltas = chain_deltas()
     run = recipe(CHAIN[0][2])["run"]
     tokens = f"{run['successful_updates'] * run['global_batch_positions'] / 1e9:.1f}B"
-    labels = ["Ordinary MoE"] + [f"+ {name}" for name, _, _ in CHAIN[1:]] + ["All five steps"]
+    labels = ["Standard MoE"] + [f"+ {name}" for name, _, _ in CHAIN[1:]] + ["All five steps"]
     n = len(labels)
     loop_row = len(CHAIN) - 1
     optimizers = [("adamw", "AdamW", t["bar"]), ("muon", "Muon", t["grey"])]
@@ -1126,7 +1126,7 @@ def results_fig(t):
     if narrow:
         w, pitch = 360, 34
         y = 34
-        out.append(text(20, y, "Test mBPB against the ordinary MoE", 14, t["ink"], 600))
+        out.append(text(20, y, "Test mBPB against the standard MoE", 14, t["ink"], 600))
         y += 16
         for opt, name, colour in optimizers:
             top = y + 52
@@ -1141,7 +1141,7 @@ def results_fig(t):
     else:
         w, pitch, top = 880, 38, 112
         h = top + (n - 1) * pitch + 86
-        out.append(text(28, 42, "Test mBPB against the ordinary MoE, one change at a time", 14, t["ink"], 600))
+        out.append(text(28, 42, "Test mBPB against the standard MoE, one change at a time", 14, t["ink"], 600))
         out.append(text(w - 28, 42, "← lower is better", 12, t["mid"], 400, "end"))
         out.append(band(14, w - 28, top, pitch, loop_row))
         out += row_labels(28, top, pitch, 13)
@@ -1152,7 +1152,7 @@ def results_fig(t):
         out.append(text(28, h - 18, f"Test bits per byte after {tokens} tokens; every step at equal parameters, FLOPs "
                                     "and KV cache.", 12, t["mid"]))
     out[0] = card(0, 0, w, h, t)
-    desc = ("A waterfall of the one-change chain under AdamW and Muon, test mBPB against the ordinary MoE: " +
+    desc = ("A waterfall of the one-change chain under AdamW and Muon, test mBPB against the standard MoE: " +
             "; ".join(f"{name}: AdamW {deltas['adamw'][i]:+.1f}, Muon {deltas['muon'][i]:+.1f}"
                       for i, (name, _, _) in enumerate(CHAIN)) + ".")
     return svg(w, int(h), "Phase 1: one change at a time", desc, t, "".join(out))

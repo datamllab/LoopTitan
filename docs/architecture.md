@@ -8,7 +8,7 @@ This document describes the limits of the current model, recipes, training and d
 
 A researcher reads one short recipe and sees how the model loops, which parameters it shares and how gradients flow. After a change to one mechanism, the same path does data and training, DP/FSDP scale-up, resume after an interruption, evaluation and model export.
 
-#6 delivered the engineering qualification of four methods and a full pretraining comparison of ordinary MoE and SMELT. #7 added a random initial state, two memories and per-token expected CE. The four added paths completed 512 updates on real text, two-rank FSDP, full resume and standalone HF export. The full v2 stage acceptance passed. [Validation](validation.md) gives the exact configurations and scope. Claims about method quality and scaling need the matching experiments.
+#6 delivered the engineering qualification of four methods and a full pretraining comparison of standard MoE and SMELT. #7 added a random initial state, two memories and per-token expected CE. The four added paths completed 512 updates on real text, two-rank FSDP, full resume and standalone HF export. The full v2 stage acceptance passed. [Validation](validation.md) gives the exact configurations and scope. Claims about method quality and scaling need the matching experiments.
 
 The core reading path is fixed:
 
@@ -75,7 +75,7 @@ This limit of expression is intentional. The first version gives no parameter li
 
 | Recipe | Construction and execution difference | Selected semantics |
 |---|---|---|
-| Ordinary dense / MoE | `num_visits=1` | Non-looped baseline; resource matching is a separate step |
+| Dense / standard MoE | `num_visits=1` | Non-looped baseline; resource matching is a separate step |
 | SMELT | The middle half of the physical layers runs twice | Both core residuals are multiplied by 1/2; the outer cells use 1 |
 | Meta middle loop | Independent prefix/suffix, shared core stack | Fixed depth, full BPTT, terminal CE |
 | Foil | core `(E,D,L)→(2E,D/2,2L)` | Base and Foil both have per-visit attention; router, norms and experts are shared within a bank |
@@ -91,7 +91,7 @@ This limit of expression is intentional. The first version gives no parameter li
 
 A structural recipe is not a fair control by itself. `num_visits=1` says only that the execution does not loop. It does not prove that the parameter count or the compute is matched. A specific comparison writes in a plain configuration the number of physical cells and banks, the number of calls, the bank and FFN widths and the training budget. This does not create a new platform for experiment comparison.
 
-The P1 ordinary MoE has 10 independent cells, d672, expert hidden544, E64/top8, heads7/KV1. SMELT has 10 physical cells (2 prefix, 5 core that run twice, 3 suffix), d576, E96/top8, heads9/KV1, and 15 logical calls in total. The trained SMELT hidden440 comes from document-packing statistics of the complete 20.486B-label training prefix. The final data, evaluation, source code and pairing are frozen. Each arm completed 19,537 updates. The exact [recipe JSON](recipes.md#p1-ordinary-moe--smelt) and the [P1 evidence](evidence/p1.json) keep the source and results of this run. Both arms share the 151669-token vocabulary and 4096ctx. "100M active" means the single-traversal active body of the ordinary baseline, about 98.5M. With the independent embedding and head, the total model is about 916.5M. [Cost and comparison](comparison.md) describes the shape selection and the document-mask budget.
+The P1 standard MoE has 10 independent cells, d672, expert hidden544, E64/top8, heads7/KV1. SMELT has 10 physical cells (2 prefix, 5 core that run twice, 3 suffix), d576, E96/top8, heads9/KV1, and 15 logical calls in total. The trained SMELT hidden440 comes from document-packing statistics of the complete 20.486B-label training prefix. The final data, evaluation, source code and pairing are frozen. Each arm completed 19,537 updates. The exact [recipe JSON](recipes.md#p1-standard-moe--smelt) and the [P1 evidence](evidence/p1.json) keep the source and results of this run. Both arms share the 151669-token vocabulary and 4096ctx. "100M active" means the single-traversal active body of the standard MoE baseline, about 98.5M. With the independent embedding and head, the total model is about 916.5M. [Cost and comparison](comparison.md) describes the shape selection and the document-mask budget.
 
 A new mechanism enters in one of three ways:
 
@@ -146,7 +146,7 @@ To limit the run combinations of the first version, the supported set is:
 
 | Training structure | First-version support target |
 |---|---|
-| Ordinary dense/MoE, fully shared stack loop | Fixed depth, full BPTT |
+| Dense/standard MoE, fully shared stack loop | Fixed depth, full BPTT |
 | Fully shared stack loop | Optional update-level depth sampling, tail gradient |
 | Per-visit attention/router/norm, or per-visit LoRA | Fixed depth, full BPTT |
 | Layer loop / consecutive expert tying | Fixed depth, full BPTT |

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the 0.5B size-study specs to recipes/p05/: python scripts/p05_specs.py [--check]
 
-The size study (#223) compares M0, an ordinary MoE, with M3, SMELT, at about 0.5B active
+The size study (#223) compares M0, a standard MoE, with M3, SMELT, at about 0.5B active
 parameters under AdamW and Muon. Each arm scales a frozen P2 recipe (ARMS), so the P2
 initialization, aux coefficient, norms and objective carry over unchanged. U (Muon only, #255)
 is the shape control for pre-registration 4: M3's 24 logical layers unrolled into 24 unshared

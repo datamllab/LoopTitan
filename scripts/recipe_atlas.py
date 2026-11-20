@@ -28,7 +28,7 @@ if the grid has any, with its three relative differences to the reference.
 with the reference by ``compare_recipes`` like every grid point. ``--table FILE --check`` writes
 nothing and exits 1 if FILE differs from a fresh run.
 
-Recipes: the ordinary MoE and dense controls and the nine named recipes (``sandwich`` and
+Recipes: the standard MoE and dense controls and the nine named recipes (``sandwich`` and
 ``relaxed`` on their MoE path only, with prelude, coda and LoRA rank at the constructor defaults).
 """
 

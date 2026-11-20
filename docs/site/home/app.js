@@ -869,7 +869,7 @@
 		};
 	}
 
-	/* ---------------------------------------------------------------- gauges: budget against the ordinary MoE */
+	/* ---------------------------------------------------------------- gauges: budget against the standard MoE */
 	/* one tolerance band with the design's three dots: the budget state, read at a glance */
 	function bandSvg(host) {
 		const svg = s('svg', { viewBox: '0 0 72 12', preserveAspectRatio: 'none' }, host);
@@ -1597,14 +1597,14 @@
 	}
 
 	/* the cost of one token, layer by layer: one cell per layer run, its width that layer's share of the training FLOPs.
-	   The strip ends where the configuration's FLOPs end, against the ordinary MoE's (100 %) and its ±5 % band. */
+	   The strip ends where the configuration's FLOPs end, against the standard MoE's (100 %) and its ±5 % band. */
 	function runStrip(host) {
-		const W = 300, H = 30, X0 = 4, U = 190; // U = the ordinary MoE's FLOPs per token
+		const W = 300, H = 30, X0 = 4, U = 190; // U = the standard MoE's FLOPs per token
 		const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, class: 'runs' }, host);
 		s('rect', { class: 'runs__band', x: X0 + U * 0.95, y: 2, width: U * 0.1, height: 16, rx: 2 }, svg);
 		s('line', { class: 'runs__ref', x1: X0 + U, x2: X0 + U, y1: 0, y2: 20 }, svg);
 		const lab = s('text', { class: 'runs__t', x: X0 + U, y: H - 1, 'text-anchor': 'middle' }, svg);
-		lab.textContent = 'ordinary MoE';
+		lab.textContent = 'standard MoE';
 		const end = s('text', { class: 'runs__v', x: 0, y: 14 }, svg);
 		const cells = Array.from({ length: 24 }, () => s('rect', { class: 'runs__c', x: 0, y: 4, width: 1, height: 12 }, svg));
 		const st = cells.map(() => ({ x: new Spring(X0), w: new Spring(0), o: new Spring(0), k: 0 }));
@@ -1983,7 +1983,7 @@
 	const lrS = (v) => minus(v.toExponential(1).replace(/\.0e/, 'e'));
 	function study() {
 		document.querySelector('[data-scale]').textContent = window.V.scale;
-		const protocol = `Test mBPB against the ordinary MoE trained with the same optimizer; lower is better. Each step adds one decision at matched parameters, FLOPs and KV cache. ${window.TYPED.data}, ${window.TYPED.tokenizer}, ${window.V.context}, seed ${TR.seed}. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW ${lrS(TR.lr_adamw)}, Muon ${lrS(TR.lr_muon)}). The looped MoE at the end of the chain selects the same value. Every other configuration inherits it.`;
+		const protocol = `Test mBPB against the standard MoE trained with the same optimizer; lower is better. Each step adds one decision at matched parameters, FLOPs and KV cache. ${window.TYPED.data}, ${window.TYPED.tokenizer}, ${window.V.context}, seed ${TR.seed}. Learning rate: tuned once per optimizer on the standard MoE (AdamW ${lrS(TR.lr_adamw)}, Muon ${lrS(TR.lr_muon)}). The looped MoE at the end of the chain selects the same value. Every other configuration inherits it.`;
 		document.querySelector('[data-protocol]').textContent = protocol;
 		const box = document.querySelector('[data-fall]');
 		const CH = T.chain;
@@ -1995,7 +1995,7 @@
 		const finds = [...document.querySelectorAll('.finds li')];
 		let anim = [], hold = { el: null }, svgEl = null, built = false;
 		const STEP = MO.t2 + MO.stagger, HOLD = MO.t4;
-		const FR = [{ n: 'Ordinary MoE', c: 'phase1/m0', base: true }, ...steps, { n: 'Looped MoE, all five', c: 'phase1/m3', total: true, a: 'M0', b: 'M3' }];
+		const FR = [{ n: 'Standard MoE', c: 'phase1/m0', base: true }, ...steps, { n: 'Looped MoE, all five', c: 'phase1/m3', total: true, a: 'M0', b: 'M3' }];
 		const loopI = FR.findIndex((r) => r.loop);
 		// when each row starts: one step after another, a held beat on the loop, then the total
 		const rowT = (i) => i * STEP + (i > loopI ? HOLD : 0);
@@ -2014,7 +2014,7 @@
 			const LO = -10, HI = 2;
 			const P0 = LW + GW + 22, P1 = W - (small ? 34 : 44);
 			const x = (v) => P0 + ((P1 - P0) * (v - LO)) / (HI - LO);
-			const svg = (svgEl = s('svg', { viewBox: `0 0 ${W} ${H}`, height: H * k, role: 'img', 'aria-label': 'The looped recipe’s gain over the ordinary MoE, built one decision at a time, under AdamW and Muon. The loop step itself is close to zero.' }, box));
+			const svg = (svgEl = s('svg', { viewBox: `0 0 ${W} ${H}`, height: H * k, role: 'img', 'aria-label': 'The looped recipe’s gain over the standard MoE, built one decision at a time, under AdamW and Muon. The loop step itself is close to zero.' }, box));
 			anim = [];
 			const bars = [], labs = [];
 			let mark2 = null;
@@ -2102,7 +2102,7 @@
 				t.textContent = v < 0 ? `−${-v}` : String(v);
 			}
 			const at = s('text', { x: P1, y: yAx + 40, 'text-anchor': 'end', 'font-size': 12, fill: 'var(--mid)' }, svg);
-			at.textContent = 'better · test mBPB against the ordinary MoE';
+			at.textContent = 'better · test mBPB against the standard MoE';
 			const aw = at.getComputedTextLength() || 260;
 			const ax0 = P1 - aw - 8, ay = yAx + 36;
 			s('path', { d: `M${ax0} ${ay}H${ax0 - 16}M${ax0 - 12} ${ay - 3.5}L${ax0 - 16} ${ay}L${ax0 - 12} ${ay + 3.5}`, fill: 'none', stroke: 'var(--mid)', 'stroke-width': 1.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
@@ -2193,7 +2193,7 @@
 			}
 		});
 		const notes = document.querySelector('[data-pub-notes]');
-		h('p', '', notes, `Protocol: ${window.TYPED.data}, ${window.TYPED.tokenizer}, ${window.V.context}, ${window.V.scaleLong}, ${window.V.tokens}, seed ${TR.seed}. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW ${lrS(TR.lr_adamw)}, Muon ${lrS(TR.lr_muon)}). The looped MoE at the end of the chain selects the same value. Every other configuration inherits it. Test BPB on the complete held-out split; mBPB against the ordinary MoE with the same optimizer.`);
+		h('p', '', notes, `Protocol: ${window.TYPED.data}, ${window.TYPED.tokenizer}, ${window.V.context}, ${window.V.scaleLong}, ${window.V.tokens}, seed ${TR.seed}. Learning rate: tuned once per optimizer on the standard MoE (AdamW ${lrS(TR.lr_adamw)}, Muon ${lrS(TR.lr_muon)}). The looped MoE at the end of the chain selects the same value. Every other configuration inherits it. Test BPB on the complete held-out split; mBPB against the standard MoE with the same optimizer.`);
 		const m = h('p', '', notes, 'Each configuration follows the shape of its source at matched budgets; what is kept and what is adapted is listed per design in the ');
 		const a = h('a', 'ev ev--doc', m, 'method map');
 		a.href = BLOB + 'docs/method-map.md';

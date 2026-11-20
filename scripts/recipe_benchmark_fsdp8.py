@@ -123,7 +123,7 @@ def main():
         else:
             math_report = raw
     config = p1_moe_spec().model
-    assert config.to_dict() == math_report["model_config"], "math evidence must cover the ordinary P1 geometry"
+    assert config.to_dict() == math_report["model_config"], "math evidence must cover the P1 standard MoE geometry"
     rank, local_rank = int(os.environ["RANK"]), int(os.environ["LOCAL_RANK"])
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)

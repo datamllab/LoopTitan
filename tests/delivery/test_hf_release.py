@@ -111,7 +111,7 @@ def test_cards_are_paired_and_share_residuals(plan):
     assert "[acme/fixture-moe](https://huggingface.co/acme/fixture-moe)" in looped
     assert "[acme/fixture-smelt](https://huggingface.co/acme/fixture-smelt)" in control
     assert "| `unique_non_embedding_parameters` | 1,000,000 | 1,034,000 | +3.40% | 5.00% |" in control
-    assert '- "moe-control"' in control and "none (ordinary MoE control)" in control
+    assert '- "moe-control"' in control and "none (standard MoE control)" in control
     assert "measured native GPU hours 12.50" in control
 
 
@@ -252,7 +252,7 @@ def test_card_paper_line_follows_the_role(plan):
     del document["pairs"][0]["looped"]["paper"]
     plan.write_text(json.dumps(document))
     assert "- Paper: none recorded" in release(plan, "looped")["card"]
-    assert "- Paper: none (ordinary MoE control)" in release(plan, "control")["card"]
+    assert "- Paper: none (standard MoE control)" in release(plan, "control")["card"]
 
 
 def test_swapped_recipe_or_dclm_file_is_refused(plan):
@@ -403,13 +403,13 @@ def test_single_card_states_the_run_from_the_results_file(single_plan):
     assert ("\n# Looped MoE: the middle 6 layers run twice\n\n**Muon** · LoopTitan Phase 1 · design 1 of 2, each trained with "
             "AdamW and with Muon\n\nChain-end loop: 12 layers at width 1056") in card
     assert f"| 0.970676 | 0.972425 | {1000 * (run['test_bpb'] - reference['test_bpb']):+.2f} mBPB |" in card
-    assert "| -3.70 mBPB |" in card and "Matched budgets: all three within 5% of the ordinary MoE (Muon)." in card
-    assert ('src="assets/budgets-light.svg" width="720" alt="Budgets against the ordinary MoE (Muon): unique non-embedding '
+    assert "| -3.70 mBPB |" in card and "Matched budgets: all three within 5% of the standard MoE (Muon)." in card
+    assert ('src="assets/budgets-light.svg" width="720" alt="Budgets against the standard MoE (Muon): unique non-embedding '
             'parameters -0.27%, training FLOPs per token +2.44%, KV cache +3.12%; tolerance ±5%"') in card
     assert ("5.0B tokens of [mlfoundations/dclm-baseline-1.0-parquet](https://huggingface.co/datasets/mlfoundations/"
             "dclm-baseline-1.0-parquet) at revision `817d6752765f6a41261085171dd546b104f60626` (CC-BY-4.0): 4,769 updates "
             "of 1,048,576 tokens in sequences of 4,096, warmup-stable-decay schedule, seed 42. Muon at learning rate "
-            "1.7e-3, the value tuned once per optimizer on the ordinary MoE; the same grid on this model selects the "
+            "1.7e-3, the value tuned once per optimizer on the standard MoE; the same grid on this model selects the "
             "same value ([#180](https://github.com/datamllab/LoopTitan/issues/180)).") in card
     assert RESULTS["protocol"] not in card and "every row" not in card and card.lower().count("chain-end") == 1
     assert 'repo = "acme/looptitan-p1-loop6x2-muon"' in card
@@ -448,18 +448,18 @@ def test_unmatched_row_says_so():
     plan["models"] = [model for model in plan["models"] if model["repo"] == "looptitan-p1-moe12-2e-adamw"]
     plan["results"], plan["dataset"] = str(ROOT / "docs/results/phase1.json"), str(ROOT / "docs/evidence/p1-dclm-source.json")
     card = hf_release.single_releases(plan, EXAMPLE.parent, NAMESPACE)[0]["card"]
-    assert "# Ordinary MoE with twice the experts, outside matched budgets\n\n**AdamW** · LoopTitan Phase 1" in card
-    assert ("Outside matched budgets: more than 5% from the ordinary MoE (AdamW) in unique non-embedding "
+    assert "# Standard MoE with twice the experts, outside matched budgets\n\n**AdamW** · LoopTitan Phase 1" in card
+    assert ("Outside matched budgets: more than 5% from the standard MoE (AdamW) in unique non-embedding "
             "parameters (+96.7%).") in card and '- "moe"' in card and 'alt="12 layers">' in card
 
 
 @pytest.mark.parametrize("repo, sentence", [
     ("looptitan-p1-moe12-muon", "Muon at learning rate 1.7e-3, tuned on this model, once per optimizer ([#180]"),
-    ("looptitan-p1-loop6x2-adamw", "AdamW at learning rate 1.2e-3, the value tuned once per optimizer on the ordinary MoE; "
+    ("looptitan-p1-loop6x2-adamw", "AdamW at learning rate 1.2e-3, the value tuned once per optimizer on the standard MoE; "
                                    "the same grid on this model selects the same value ([#180]"),
-    ("looptitan-p1-twin-muon", "Muon at learning rate 1.7e-3, inherited from the ordinary MoE, where it was tuned once "
+    ("looptitan-p1-twin-muon", "Muon at learning rate 1.7e-3, inherited from the standard MoE, where it was tuned once "
                                "per optimizer ([#180]"),
-    ("looptitan-p1-moe12-2e-adamw", "AdamW at learning rate 1.2e-3, inherited from the ordinary MoE")])
+    ("looptitan-p1-moe12-2e-adamw", "AdamW at learning rate 1.2e-3, inherited from the standard MoE")])
 def test_learning_rate_sentence_states_where_the_value_was_tuned(repo, sentence):
     plan = json.loads(EXAMPLE.read_text())
     plan["models"] = [model for model in plan["models"] if model["repo"] == repo]
@@ -613,9 +613,9 @@ def test_collection_and_organisation_card_errors_are_stated(plan, tmp_path, monk
 def test_collection_notes_and_organisation_card(capsys, monkeypatch):
     assert hf_release.main([str(EXAMPLE), "--namespace", NAMESPACE]) == 0
     out = capsys.readouterr().out
-    assert "     note: The reference: an ordinary MoE of 12 layers with 64 experts each. Test BPB 0.9995.\n" in out
+    assert "     note: The reference: a standard MoE of 12 layers with 64 experts each. Test BPB 0.9995.\n" in out
     assert ("     note: The looped MoE: the middle 6 layers run twice with one set of weights. Test BPB 0.9707, -3.7 mBPB "
-            "against the ordinary MoE with the same optimizer; budgets matched within 5%.") in out
+            "against the standard MoE with the same optimizer; budgets matched within 5%.") in out
     card = out.split("== organisation card acme/README")[1]
     assert "<!-- banner -->" not in card and "<!-- models -->" not in card and "<!-- capsules -->" not in card
     assert "| Untied twin of the loop | [looptitan-p1-twin-adamw](https://huggingface.co/acme/looptitan-p1-twin-adamw) |" in card

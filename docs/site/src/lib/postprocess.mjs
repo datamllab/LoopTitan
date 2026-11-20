@@ -6,11 +6,11 @@
 
 const MINUS = (s) => s.replace(/(^|[\s(>])-(?=\d)/g, '$1−');
 const SHORT = {
-	'Δ test (mBPB)': ['Δ mBPB', 'Test BPB minus the ordinary MoE’s with the same optimizer, in mBPB (0.001 BPB)'],
+	'Δ test (mBPB)': ['Δ mBPB', 'Test BPB minus the standard MoE’s with the same optimizer, in mBPB (0.001 BPB)'],
 	Validation: ['Val.', 'Validation BPB'],
-	Parameters: ['Params', 'Unique non-embedding parameters against the ordinary MoE'],
-	FLOPs: ['FLOPs', 'Training FLOPs per token against the ordinary MoE'],
-	KV: ['KV', 'Logical KV cache against the ordinary MoE'],
+	Parameters: ['Params', 'Unique non-embedding parameters against the standard MoE'],
+	FLOPs: ['FLOPs', 'Training FLOPs per token against the standard MoE'],
+	KV: ['KV', 'Logical KV cache against the standard MoE'],
 	LR: ['LR', 'Learning rate'],
 	Source: ['Src', 'Published designs it follows, numbered in Sources'],
 	Test: ['Test', 'Test BPB on the complete held-out split'],

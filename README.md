@@ -127,7 +127,7 @@ print(cost["parameters"]["unique_non_embedding"],
   </picture>
 </p>
 
-A looped MoE is an ordinary MoE with a few decisions changed. Each decision is a field of [`ModelConfig`](src/moeloop/config.py) or of the training recipe.
+A looped MoE is a standard MoE with a few decisions changed. Each decision is a field of [`ModelConfig`](src/moeloop/config.py) or of the training recipe.
 
 <details>
 <summary>Fields and references</summary>
@@ -152,7 +152,7 @@ A reference number marks a published design that uses the mechanism and is imple
   <picture>
     <source media="(max-width: 640px)" srcset="docs/assets/lineage-narrow.svg">
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/lineage-dark.svg">
-    <img src="docs/assets/lineage-light.svg" alt="The one-change chain of Phase 1, from the ordinary MoE to the loop, and the published designs drawn as children of the ordinary MoE or of the loop." width="880">
+    <img src="docs/assets/lineage-light.svg" alt="The one-change chain of Phase 1, from the standard MoE to the loop, and the published designs drawn as children of the standard MoE or of the loop." width="880">
   </picture>
 </p>
 
@@ -218,7 +218,7 @@ The command trains the Phase 1 loop with Muon, exports the final checkpoint to `
 
 ### Phase 1: where the gain of a looped MoE comes from
 
-The study walks one change at a time from an ordinary MoE to a looped MoE, at equal budgets, under two optimizers.
+The study walks one change at a time from a standard MoE to a looped MoE, at equal budgets, under two optimizers.
 
 <p align="center">
   <picture>
@@ -233,7 +233,7 @@ The study walks one change at a time from an ordinary MoE to a looped MoE, at eq
 
 | Step | Configuration | AdamW | Δ | Muon | Δ |
 |:---|:---|---:|---:|---:|---:|
-| 0 | [Ordinary MoE](recipes/phase1/m0-adamw.json): 12 layers of 64 experts | 0.9995 | | 0.9744 | |
+| 0 | [Standard MoE](recipes/phase1/m0-adamw.json): 12 layers of 64 experts | 0.9995 | | 0.9744 | |
 | 1 | [Finer experts](recipes/shape/g-adamw.json): 72 smaller experts, top-9 | 0.9953 | −4.2 | 0.9735 | −0.9 |
 | 2 | [Deeper and narrower](recipes/shape/u-adamw.json): 18 layers at width 1056 | 0.9926 | −6.9 | 0.9702 | −4.2 |
 | 3 | [Expert layout](recipes/shape/r-adamw.json): 88 experts in the 6 outer layers, 44 in the 12 middle | 0.9936 | −5.9 | 0.9710 | −3.4 |
@@ -242,7 +242,7 @@ The study walks one change at a time from an ordinary MoE to a looped MoE, at eq
 
 </details>
 
-Test bits per byte (BPB) after 5.0B tokens of DCLM (4,769 updates of 1,048,576 tokens, seed 42); lower is better. Δ is the difference to step 0 with the same optimizer, in mBPB; a negative Δ is a gain. Parameters, training FLOPs and KV cache of every step are within 5% of step 0. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3); the loop of step 5 selects the same value under the same grid; every other configuration inherits it.
+Test bits per byte (BPB) after 5.0B tokens of DCLM (4,769 updates of 1,048,576 tokens, seed 42); lower is better. Δ is the difference to step 0 with the same optimizer, in mBPB; a negative Δ is a gain. Parameters, training FLOPs and KV cache of every step are within 5% of step 0. Learning rate: tuned once per optimizer on the standard MoE (AdamW 1.2e-3, Muon 1.7e-3); the loop of step 5 selects the same value under the same grid; every other configuration inherits it.
 
 1. **The loop itself adds almost nothing.** At equal budgets the loop is level with its untied twin (step 5 against step 4); most of the gain comes from shape.
 2. **More than half of the gain disappears under Muon.** The whole chain gains 9.0 mBPB under AdamW and 3.7 under Muon.

@@ -43,7 +43,7 @@ window.CONTENT = {
 	en: {
 		/* Each configuration is named by what it does, never by a paper or method name. */
 		design: {
-			'phase1/m0': (c) => `Ordinary MoE: ${layersOf(c)} layers, ${experts(c)} experts`,
+			'phase1/m0': (c) => `Standard MoE: ${layersOf(c)} layers, ${experts(c)} experts`,
 			'phase1/m3': (c) => `Loop the middle ${c.core} layers ${times(c.visits)}, residual ${res(c)}`,
 			'phase1/m4': (c) => `Unrolled twin: ${c.core} middle layers, run once`,
 			'phase1/m7': 'Middle loop sharing only the experts',
@@ -63,16 +63,16 @@ window.CONTENT = {
 			'shape/m0i': 'Middle output initialisation scaled only',
 			'shape/d24': (c) => `Deeper and narrower: ${layersOf(c)} layers`,
 			'shape/d36': (c) => `Deeper and narrower: ${layersOf(c)} layers`,
-			'p05/m0': (c) => `Ordinary MoE, ${layersOf(c)} layers`,
+			'p05/m0': (c) => `Standard MoE, ${layersOf(c)} layers`,
 			'p05/m3': (c) => `Loop the middle ${c.core} of ${layersOf(c)} layers ${times(c.visits)}`,
 			'p05/u': (c) => `The loop unrolled into ${layersOf(c)} layers`,
 			'untie/u0': 'Middle loop untied: each visit owns its layers',
-			'p1/m0': (c) => `Ordinary MoE, ${layersOf(c)} layers`,
+			'p1/m0': (c) => `Standard MoE, ${layersOf(c)} layers`,
 			'p1/m3': (c) => `Loop the middle ${c.core} of ${layersOf(c)} layers ${times(c.visits)}`,
 			'methods/smelt-v3': (c) => `Loop the middle ${c.core} layers ${times(c.visits)}, residual ${res(c)}`,
 			'methods/smelt-v4': (c) => `Loop the middle ${c.core} layers ${times(c.visits)}, residual ${res(c)}`,
 			'methods/latentloop-residual': 'Middle loop with a residual scale per visit',
-			'methods/m0-loop': (c) => `Ordinary MoE, middle ${c.core} layers run ${times(c.visits)}`,
+			'methods/m0-loop': (c) => `Standard MoE, middle ${c.core} layers run ${times(c.visits)}`,
 			'methods/meta': 'Shared middle stack between its own prelude and coda',
 			'methods/foil': (c) => `Flattened core: ${ratio(experts(c), c.regions.prefix.experts)} the experts, attention per visit`,
 			'methods/expert-tying': (c) => `One expert bank for ${c.visits} consecutive layers`,
@@ -83,13 +83,13 @@ window.CONTENT = {
 			'methods/relaxed': 'Whole stack in a cycle, low-rank delta per visit'
 		},
 		short: {
-			'phase1/m0': 'Ordinary MoE', 'phase1/m3': (c) => `Middle loop ×${c.visits}`, 'phase1/m4': 'Unrolled twin', 'phase1/m7': 'Share experts only',
+			'phase1/m0': 'Standard MoE', 'phase1/m3': (c) => `Middle loop ×${c.visits}`, 'phase1/m4': 'Unrolled twin', 'phase1/m7': 'Share experts only',
 			'phase1/m5': 'Share experts and router', 'phase1/m1': (c) => `Bank per ${c.visits} layers`, 'phase1/m1s': 'Banks in loop order', 'phase1/m2': (c) => `Bank per ${c.visits} layers`,
 			'phase1/m6': (c) => `${experts(c)} narrow experts`, 'phase1/m0-2e': (c) => `${cap(ratio(experts(c), experts(C[c.parent])))} the experts`, 'phase1/m7-elr': () => `Experts only, LR ${TYPED.expertLr}`, 'phase1/m4-elr': () => `Twin, expert LR ${TYPED.expertLr}`,
 			'shape/g': 'Finer experts', 'shape/u': (c) => `Deeper, narrower: ${layersOf(c)}`, 'shape/r': 'Looped expert layout', 'shape/m0r': (c) => `Middle residual ${res(c)}`,
 			'shape/m0lr': 'Middle output LR', 'shape/m0i': 'Middle output init', 'shape/d24': (c) => `Deeper, narrower: ${layersOf(c)}`, 'shape/d36': (c) => `Deeper, narrower: ${layersOf(c)}`,
-			'p05/m0': (c) => `Ordinary MoE, ${layersOf(c)} layers`, 'p05/m3': (c) => `Middle loop, ${layersOf(c)} layers`, 'p05/u': (c) => `Unrolled, ${layersOf(c)} layers`, 'untie/u0': 'Loop untied',
-			'p1/m0': (c) => `Ordinary MoE, ${layersOf(c)} layers`, 'p1/m3': (c) => `Middle loop, ${layersOf(c)} layers`, 'methods/smelt-v3': (c) => `Middle loop ×${c.visits}`, 'methods/smelt-v4': (c) => `Middle loop ×${c.visits}`,
+			'p05/m0': (c) => `Standard MoE, ${layersOf(c)} layers`, 'p05/m3': (c) => `Middle loop, ${layersOf(c)} layers`, 'p05/u': (c) => `Unrolled, ${layersOf(c)} layers`, 'untie/u0': 'Loop untied',
+			'p1/m0': (c) => `Standard MoE, ${layersOf(c)} layers`, 'p1/m3': (c) => `Middle loop, ${layersOf(c)} layers`, 'methods/smelt-v3': (c) => `Middle loop ×${c.visits}`, 'methods/smelt-v4': (c) => `Middle loop ×${c.visits}`,
 			'methods/latentloop-residual': 'Residual per visit', 'methods/m0-loop': 'Loop without matching', 'methods/meta': 'Prelude, loop, coda', 'methods/foil': 'Flattened core',
 			'methods/expert-tying': 'Tied expert banks', 'methods/huginn': 'Recurrent core', 'methods/sandwich': 'Decaying re-entry', 'methods/loom': 'Whole-stack loop',
 			'methods/ouro': 'Learned exit', 'methods/relaxed': 'Per-visit low rank'
@@ -140,12 +140,12 @@ window.CONTENT = {
 		checks: {
 			quantities: { logits: 'Logits', loss: 'Loss', gradient: 'Gradients', updated_parameter: 'Optimizer step', cached_logits: 'Cached logits' },
 			cases: {
-				ordinary_moe: 'Ordinary MoE', shared_stack: 'Shared stack', shared_layer: 'Shared layer',
+				ordinary_moe: 'Standard MoE', shared_stack: 'Shared stack', shared_layer: 'Shared layer',
 				partial_attention: 'Attention per visit', partial_router: 'Router per visit', expert_tying: 'Expert tying'
 			}
 		},
 		chain: [
-			['M0', 'Ordinary MoE', 'phase1/m0'],
+			['M0', 'Standard MoE', 'phase1/m0'],
 			['G', 'Finer experts', 'shape/g'],
 			['U', 'Deeper and narrower', 'shape/u'],
 			['R', 'Looped expert layout', 'shape/r'],

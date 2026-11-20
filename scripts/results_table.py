@@ -36,7 +36,7 @@ OPTIMIZERS = {"adamw": "AdamW", "muon": "Muon"}
 ISSUES = "https://github.com/datamllab/LoopTitan/issues/"
 NOTES = [
     "- Test, Validation: bits per byte (BPB) on the complete held-out test and validation splits after the last update.",
-    "- Δ test: test BPB minus the ordinary MoE's with the same optimizer, in mBPB (0.001 BPB).",
+    "- Δ test: test BPB minus the standard MoE's with the same optimizer, in mBPB (0.001 BPB).",
     "- Parameters, FLOPs, KV: unique non-embedding parameters, training FLOPs per token and logical KV cache "
     "relative to `recipes/phase1/m0-<optimizer>.json`, from `moeloop.comparison.compare_recipes` with the P2 "
     "track's accounting in `eval/bench/tracks.json`. Matched budgets are within 5% on all three.",

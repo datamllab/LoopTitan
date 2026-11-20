@@ -127,7 +127,7 @@ function chainSvg(W, small) {
 	const LW = small ? 0 : 200;
 	const RH = small ? 56 : 46;
 	const top = 8;
-	const rows = [{ n: 'Ordinary MoE', base: true }, ...steps, { n: 'Looped MoE, all five', total: true, a: 'M0', b: 'M3' }];
+	const rows = [{ n: 'Standard MoE', base: true }, ...steps, { n: 'Looped MoE, all five', total: true, a: 'M0', b: 'M3' }];
 	const H = top + rows.length * RH + 44;
 	const LO = -10;
 	const HI = 2;
@@ -135,7 +135,7 @@ function chainSvg(W, small) {
 	const P1 = W - (small ? 30 : 40);
 	const x = (v) => P0 + ((P1 - P0) * (v - LO)) / (HI - LO);
 	const yAx = top + rows.length * RH + 6;
-	let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="The looped recipe’s gain over the ordinary MoE, built one decision at a time, under AdamW and Muon. The loop step itself is close to zero.">`;
+	let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="The looped recipe’s gain over the standard MoE, built one decision at a time, under AdamW and Muon. The loop step itself is close to zero.">`;
 	for (let v = LO; v <= HI; v += 2) s += `<line class="${v === 0 ? 'c-zero' : 'c-grid'}" x1="${x(v)}" x2="${x(v)}" y1="${top}" y2="${yAx}"/>`;
 	rows.forEach((r, i) => {
 		const y0 = top + i * RH;
@@ -166,7 +166,7 @@ function chainSvg(W, small) {
 	});
 	s += `<line class="c-axis" x1="${P0}" x2="${P1}" y1="${yAx}" y2="${yAx}"/>`;
 	for (let v = LO; v <= HI; v += 2) s += `<text class="c-tick" x="${x(v)}" y="${yAx + 17}" text-anchor="middle">${v < 0 ? `−${-v}` : v}</text>`;
-	s += `<text class="c-axt" x="${P1}" y="${yAx + 36}" text-anchor="end">← better · test mBPB against the ordinary MoE</text>`;
+	s += `<text class="c-axt" x="${P1}" y="${yAx + 36}" text-anchor="end">← better · test mBPB against the standard MoE</text>`;
 	return s + '</svg>';
 }
 function results() {
@@ -179,7 +179,7 @@ function results() {
 	<div class="lt-fig__head"><div><p class="lt-fig__eyebrow"><span class="lt-mlabel">Phase 1</span>${B(sc.stored_non_embedding)} stored · ${B(sc.active_non_embedding)} active · ${tokens}B tokens</p><p class="lt-fig__title">The looped recipe, built one decision at a time</p></div><p class="lt-legend"><span><span class="lt-legend__k"></span>AdamW</span><span><span class="lt-legend__k lt-legend__k--m"></span>Muon</span></p></div>
 	<div class="lt-chain lt-chain--wide">${chainSvg(720, false)}</div>
 	<div class="lt-chain lt-chain--small">${chainSvg(360, true)}</div>
-	<figcaption class="lt-cap">Test mBPB against the ordinary MoE trained with the same optimizer; lower is better. Each step adds one decision at matched parameters, FLOPs and KV cache, as in the first table of each optimizer below. Learning rate tuned once per optimizer on the ordinary MoE (AdamW ${lr(TR.lr_adamw)}, Muon ${lr(TR.lr_muon)}), seed ${TR.seed}.</figcaption>
+	<figcaption class="lt-cap">Test mBPB against the standard MoE trained with the same optimizer; lower is better. Each step adds one decision at matched parameters, FLOPs and KV cache, as in the first table of each optimizer below. Learning rate tuned once per optimizer on the standard MoE (AdamW ${lr(TR.lr_adamw)}, Muon ${lr(TR.lr_muon)}), seed ${TR.seed}.</figcaption>
 </figure>`;
 }
 

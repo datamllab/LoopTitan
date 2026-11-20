@@ -77,9 +77,9 @@ This JSON proves the declared analytical budget pair. The real pair pilot, the f
 
 ## P1 and the within-document attention budget
 
-`smelt_p1_pair()` fixes the ordinary baseline as d672/L10/E64/top8/F544/heads7/KV1. SMELT is d576 with 10 physical layers (2+5+3, the middle 5 layers run twice) and E96/top8/heads9/KV1. The shape is selected only among 12 pre-declared FFN widths (384 to 472, step 8). The selected shape has the smallest maximum analytical budget difference. Held-out quality is not used to select the shape. Both arms use vocab151669 and context4096. SMELT has 15 logical Cell calls in total.
+`smelt_p1_pair()` fixes the standard MoE baseline as d672/L10/E64/top8/F544/heads7/KV1. SMELT is d576 with 10 physical layers (2+5+3, the middle 5 layers run twice) and E96/top8/heads9/KV1. The shape is selected only among 12 pre-declared FFN widths (384 to 472, step 8). The selected shape has the smallest maximum analytical budget difference. Held-out quality is not used to select the shape. Both arms use vocab151669 and context4096. SMELT has 15 logical Cell calls in total.
 
-The 100M-active tier of the ordinary baseline is an active non-embedding body of about 98.5M for one pass. Its unique non-embedding parameters are about 712.7M. Its total parameters, with the two separate vocabulary owners, are about 916.5M. The actual SMELT F440 has about 737.8M unique non-embedding parameters and about 912.6M total parameters. The output fields explain the active, unique and logical-visit work separately. Do not use "100M" for the total model size.
+The 100M-active tier of the standard MoE baseline is an active non-embedding body of about 98.5M for one pass. Its unique non-embedding parameters are about 712.7M. Its total parameters, with the two separate vocabulary owners, are about 916.5M. The actual SMELT F440 has about 737.8M unique non-embedding parameters and about 912.6M total parameters. The output fields explain the active, unique and logical-visit work separately. Do not use "100M" for the total model size.
 
 The data of this run has train 24,000,067,249, validation 10,001,497 and test 10,009,889 valid labels. Each arm completed 19,537 updates and 20,486,029,312 fresh labels. The budget uses the [statistics of the complete training prefix](evidence/p1-data-statistics.json): epoch0, seed42, world16, 5,001,472 blocks of 4096 tokens, no padding. The mean number of within-document causal query/key pairs allowed per sequence is **4,180,216.9229844734**, diagonal included. This value covers the complete planned training prefix and was cross-checked with the actual loader. It is not from a small sample of 20M labels. It is not equal to dense-S² or to the full causal triangle.
 
@@ -103,7 +103,7 @@ comparison = compare_recipes(
 print(json.dumps(comparison["matched"], indent=2))
 ```
 
-| Analytical budget, relative difference to the reference | Ordinary MoE | SMELT | Difference |
+| Analytical budget, relative difference to the reference | Standard MoE | SMELT | Difference |
 |---|---:|---:|---:|
 | unique non-embedding parameters | 712,656,672 | 737,845,056 | +3.5344% |
 | training matrix FLOPs / padded position | 1,284,757,348.671 | 1,248,742,044.863 | −2.8033% |
@@ -119,7 +119,7 @@ The [P1 evidence](evidence/p1.json) reports these items separately: the complete
 
 A negative SMELT−MoE CE difference means that SMELT is better. Paired document evaluation requires the same data, context and readout, and the label count of each document. It does not estimate the variance across training seeds. This run trained only seed42. A small advantage or no advantage is kept as it is. A single-point lead is not used to claim a general gain or a complete reproduction of the SMELT paper.
 
-Run cost and the implementation check are also separate. P1 reports the wall-clock time and the GPU hours of the two structures as measured. The [same-geometry 8-GPU FSDP check](evidence/performance-fsdp8.json) of the ordinary MoE against the official TorchTitan measured a median step-time overhead of 1.95%. That check used GPU-resident synthetic data, with no data loading, validation or checkpoint saving. It does not cover multi-node runs or all methods. It is also not a complete proof of BF16 equivalence gradient by gradient. SMELT has 15 logical Cell calls and the MoE has 10. Thus the cost difference between the two models cannot be attributed directly to a performance regression of the same model implementation.
+Run cost and the implementation check are also separate. P1 reports the wall-clock time and the GPU hours of the two structures as measured. The [same-geometry 8-GPU FSDP check](evidence/performance-fsdp8.json) of the standard MoE against the official TorchTitan measured a median step-time overhead of 1.95%. That check used GPU-resident synthetic data, with no data loading, validation or checkpoint saving. It does not cover multi-node runs or all methods. It is also not a complete proof of BF16 equivalence gradient by gradient. SMELT has 15 logical Cell calls and the MoE has 10. Thus the cost difference between the two models cannot be attributed directly to a performance regression of the same model implementation.
 
 ## Questions that a comparison answers
 

@@ -8,7 +8,7 @@
 
 P1/P2 use the same public DCLM prefix, tokenizer, document isolation and order, 4096ctx, local16/global256/GA1, seed42, BF16 compute/FP32 master and reduce, the same terminal CE/aux rules and the full WSD. Each arm has **19,537 updates /20,486,029,312 fresh valid labels**, with no padding. Stop and resume do not change the original schedule horizon. The shapes are different, so the record does not claim that the initial weights are identical element by element.
 
-| P2 configuration /main analysis budget | Ordinary MoE | SMELT |
+| P2 configuration /main analysis budget | Standard MoE | SMELT |
 |---|---:|---:|
 | width /expert FFN width | 1280 /432 | 1056 /384 |
 | physical layers /logical calls | 12 /12 | 12 (3+6+3) /18 |
@@ -35,7 +35,7 @@ The final gate and the documents have their own later sources. They do not claim
 
 ### Native curves, complete HF evaluation and actual cost
 
-| P2 fixed endpoint | Ordinary MoE | SMELT | Candidate − ordinary |
+| P2 fixed endpoint | Standard MoE | SMELT | Candidate − standard |
 |---|---:|---:|---:|
 | native fixed validation slice CE, 1,048,576 labels | 2.82716393 | 2.81225824 | −0.01490569 |
 | complete 4096ctx HF validation CE, 10,001,497 labels /8167docs | 2.89231853 | 2.87802890 | −0.01428963 |
@@ -130,7 +130,7 @@ These checks support parameter changes inside the existing mechanisms. They do n
 
 To replay this configuration directly, read the [MoE JSON](../recipes/p1_moe.json) and the [SMELT JSON](../recipes/p1_smelt.json). Do not regenerate it from the defaults of the general factory. The training source code is frozen at `1bea4d6d2c539e3ae02517aaeede5f9ab68271a7`. Later documentation and CLI release commits cannot rewrite the source of this training. TorchTitan is pinned to `086bf6c166ec85c1298eb5596fa9bf95f6a2d840`. The actual environment is Python3.12.15, Torch2.14.0+cu130, CUDA13.0 and Transformers5.19.0.
 
-| P1 configuration or analysis budget | Ordinary MoE | SMELT |
+| P1 configuration or analysis budget | Standard MoE | SMELT |
 |---|---:|---:|
 | width / expert FFN width | 672 / 544 | 576 / 440 |
 | physical layers / logical Cell calls | 10 / 10 | 10 (2+5+3) / 15 |
@@ -141,7 +141,7 @@ To replay this configuration directly, read the [MoE JSON](../recipes/p1_moe.jso
 | training FLOPs / padded position | 1,284,757,348.671 | 1,248,742,044.863 (−2.8033%) |
 | logical KV bytes / 4096ctx, batch1/BF16 | 15,728,640 | 15,728,640 |
 
-The "100M-active tier" refers to the active non-embedding body of the ordinary MoE, which is about 98.5M. It is not the total parameter count. In SMELT, the middle 5 layers share whole Cells and run twice. The two core residuals are each multiplied by 1/2. The outer regions are not scaled. All three budgets are inside the 5% pairing range that was declared in advance. The FFN width was selected from 12 candidates declared in advance, by the budget residuals, not by quality. These are `fixed_terminal_document_matrix_v1` analytical budgets. Actual kernel time, memory and GPU-hours are reported separately. Analytical compute does not replace measured resources.
+The "100M-active tier" refers to the active non-embedding body of the standard MoE, which is about 98.5M. It is not the total parameter count. In SMELT, the middle 5 layers share whole Cells and run twice. The two core residuals are each multiplied by 1/2. The outer regions are not scaled. All three budgets are inside the 5% pairing range that was declared in advance. The FFN width was selected from 12 candidates declared in advance, by the budget residuals, not by quality. These are `fixed_terminal_document_matrix_v1` analytical budgets. Actual kernel time, memory and GPU-hours are reported separately. Analytical compute does not replace measured resources.
 
 The [public source list](evidence/p1-dclm-source.json) pins the 1024 ordered metadata files of DCLM revision `817d6752765f6a41261085171dd546b104f60626`. When preparation reached the budgets, it had actually read the first 198 files. It did not download or train on the complete dataset. The [actual manifest](evidence/p1-data-manifest.json) identifies train **24,000,067,249**, validation **10,001,497** and test **10,009,889** valid labels, with the fingerprint `e67a956d2fe51dd1784505a6f58d7790f397a09624330700c0ebaffcd344f152`. The data is deduplicated globally by original document identity and exact content, and whole documents are assigned to splits. The Qwen3 tokenizer is pinned to `ae659febe817e4b3ebd7355f47792725801204c9`, with vocabulary 151669. The hashes of the source tokenizer and of the normalized prepared assets are kept separately.
 
@@ -155,16 +155,16 @@ Each arm actually passed the common stop points 8, 95, 954, 4769, 10000 and 1953
 
 The [public P1 evidence](evidence/p1.json) collects the frozen configuration, the [complete curves](evidence/p1-native-curves.svg), the [late-stage zoom](evidence/p1-native-late-curves.svg), the evaluation and the resource definitions. The complete HF endpoint evaluation uses 4096ctx and untruncated splits. The per-document identities and the valid label counts of the two arms agree:
 
-| Complete HF evaluation | labels / documents | Ordinary MoE CE | SMELT CE | ΔCE (SMELT−MoE) |
+| Complete HF evaluation | labels / documents | Standard MoE CE | SMELT CE | ΔCE (SMELT−MoE) |
 |---|---:|---:|---:|---:|
 | validation | 10,001,497 / 8,167 | 3.01446893 | 3.00836268 | −0.00610625 |
 | test | 10,009,889 / 8,212 | 3.00927801 | 3.00338042 | −0.00589759 |
 
-From 6,002,049,024 training labels onward, the SMELT CE is lower at 31 consecutive native validation points on the same data. The end of the common analytical compute range is **2.5581766134191145×10¹⁹ FLOPs**. At that point, the ordinary MoE CE, interpolated between the adjacent measured points, is **2.95114454**. SMELT is **2.94383287**. The difference is **−0.00731166**. The compute needed to reach the same native CE is compared only inside the range that both arms observed. The analytical compute saving is **6.0311%**. The main result does not use endpoint estimates of each arm outside the common range. It does not mix native CE of about 1M labels with complete HF CE.
+From 6,002,049,024 training labels onward, the SMELT CE is lower at 31 consecutive native validation points on the same data. The end of the common analytical compute range is **2.5581766134191145×10¹⁹ FLOPs**. At that point, the standard MoE CE, interpolated between the adjacent measured points, is **2.95114454**. SMELT is **2.94383287**. The difference is **−0.00731166**. The compute needed to reach the same native CE is compared only inside the range that both arms observed. The analytical compute saving is **6.0311%**. The main result does not use endpoint estimates of each arm outside the common range. It does not mix native CE of about 1M labels with complete HF CE.
 
 This result is classified as **`clear_positive`, only for this public DCLM, the frozen model pair and seed42**: the complete val/test and the late curve agree in direction. It does not remove the budget residual of 3.5344% more unique non-embedding parameters in SMELT. It does not estimate the variance across training seeds. It does not prove a causal gain for all MoE models, scales or data. Per-document pairing is not a significance test of training randomness.
 
-The actual native training resources are **78.02286 GPU-hours** for the ordinary MoE and **103.43271 GPU-hours** for SMELT, a total of **181.45557 GPU-hours**. They count real process wall time × local GPU count, including initialization, native validation and saving. They do not include independent HF post-processing or idle environment time. The actual training cost of SMELT is **32.5672%** higher. This round has **no GPU-time gain**. The 6.0311% above is a quality comparison on analytical compute. It is not a speed-up ratio.
+The actual native training resources are **78.02286 GPU-hours** for the standard MoE and **103.43271 GPU-hours** for SMELT, a total of **181.45557 GPU-hours**. They count real process wall time × local GPU count, including initialization, native validation and saving. They do not include independent HF post-processing or idle environment time. The actual training cost of SMELT is **32.5672%** higher. This round has **no GPU-time gain**. The 6.0311% above is a quality comparison on analytical compute. It is not a speed-up ratio.
 
 This run adapts the core sharing structure of SMELT and its idea of fair comparison to public DCLM and a common model stack. It does not claim to reproduce the original corpus, the complete engineering, or savings in absolute loss or on the scaling frontier.
 
@@ -184,11 +184,11 @@ This evidence covers the recorded model tiers, execution settings and topology. 
 
 ## Performance and mathematical qualification of the public implementation
 
-The [public reference script](../scripts/recipe_benchmark.py) runs on one H200 with the target shape of the ordinary MoE, BF16, batch2/context4096, head chunks8 and no AC. It checks the same parameter/mathematical configuration and natural routing. After 5 warmup steps, it measures 20 complete steps. Each step includes the chunked head/CE, backpropagation and the same AdamW. The median of this library is **147.04ms**. The public TorchTitan Qwen3 path is **141.43ms**. The ratio is **1.0397**. It does not reach the predefined `>1.20` investigation line. Initialization, data I/O, checkpoint/eval and distributed communication are not in this measurement.
+The [public reference script](../scripts/recipe_benchmark.py) runs on one H200 with the target shape of the standard MoE, BF16, batch2/context4096, head chunks8 and no AC. It checks the same parameter/mathematical configuration and natural routing. After 5 warmup steps, it measures 20 complete steps. Each step includes the chunked head/CE, backpropagation and the same AdamW. The median of this library is **147.04ms**. The public TorchTitan Qwen3 path is **141.43ms**. The ratio is **1.0397**. It does not reach the predefined `>1.20` investigation line. Initialization, data I/O, checkpoint/eval and distributed communication are not in this measurement.
 
 In this record, the original complete BF16 deep-gradient check is still **`correctness.status="failed"`**. The errors and the 3% threshold are kept as they were, and the natural top-k divergence is recorded. With explicit `--component-math`, the same-input Flex/SDPA, the FP32 router and the official HF experts, with all their component derivative checks, passed. There is also a complete-update oracle on a small official HF FP32 model. The qualification scope is `component_equivalence_with_observed_end_to_end_bf16_route_divergence`. It does not claim complete-network gradient parity. The performance measurement did not fix the routing.
 
-The [8-GPU performance summary](evidence/performance-fsdp8.json) comes from a real FSDP comparison on 8 H200 GPUs in one node. At the time of the run, the published [213-line measurement script](../scripts/recipe_benchmark_fsdp8.py) was byte-identical to the executed file (SHA256 `6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4` in the summary). The current file has changed since then and is not byte-identical to it. Both arms use the ordinary P1 geometry, the same initial weights, local batch16/context4096, accumulation2/global batch256, head chunks8, no AC, FP32 master/BF16 FSDP/FP32 reduce, the same fused AdamW and clip1. After 1 safe update and 3 warmup updates, each arm measured 10 complete updates. Each step takes the maximum synchronized wall time of the 8 ranks. The barrier is outside the timing.
+The [8-GPU performance summary](evidence/performance-fsdp8.json) comes from a real FSDP comparison on 8 H200 GPUs in one node. At the time of the run, the published [213-line measurement script](../scripts/recipe_benchmark_fsdp8.py) was byte-identical to the executed file (SHA256 `6e363bb2000ff9c863ed00cb385d2be83fc43a836d8788983e958c1114f95ab4` in the summary). The current file has changed since then and is not byte-identical to it. Both arms use the P1 standard MoE geometry, the same initial weights, local batch16/context4096, accumulation2/global batch256, head chunks8, no AC, FP32 master/BF16 FSDP/FP32 reduce, the same fused AdamW and clip1. After 1 safe update and 3 warmup updates, each arm measured 10 complete updates. Each step takes the maximum synchronized wall time of the 8 ranks. The barrier is outside the timing.
 
 | One-node 8-GPU FSDP | median step | global valid labels/s | peak allocated GiB |
 |---|---:|---:|---:|
@@ -199,7 +199,7 @@ The step ratio is **1.01952**. It does not reach the original `>1.20` investigat
 
 Each side keeps its own native FSDP grouping/reshard, Flex autotune and router implementation. Actual hooks record that on both sides the router input is FP32 and the materialized gate weight is BF16. The official scores are FP32. The output dtype alone cannot prove the same precision for each operator. The mathematical basis is still the single-GPU component checks and the HF FP32 oracle above. The original strict BF16 failure is kept. This run adds distributed timing and run safety checks. The ratio covers only 8 GPUs on one node. It is not an official two-node comparison, complete distributed BF16 gradient equivalence or complete scientific P1 acceptance.
 
-In a training environment with the software versions listed in the summary and the pinned TorchTitan checkout, you can rerun the measurement with the commands below. First, extract the two model configurations of this run from the public summary. This performance measurement uses the ordinary P1 geometry. But its synthetic data and 8-GPU FSDP/GA2 are recorded separately from the real data and 16-GPU HSDP/GA1 of formal P1.
+In a training environment with the software versions listed in the summary and the pinned TorchTitan checkout, you can rerun the measurement with the commands below. First, extract the two model configurations of this run from the public summary. This performance measurement uses the P1 standard MoE geometry. But its synthetic data and 8-GPU FSDP/GA2 are recorded separately from the real data and 16-GPU HSDP/GA1 of formal P1.
 
 ```bash
 export PYTHONPATH="$PWD/src:$PWD/scripts:${TORCHTITAN_SOURCE:?set pinned checkout root}"
@@ -249,9 +249,9 @@ The actual new forks are those of Foil/Tying: 8 continuous steps compared with 4
 
 ### Budget pairing and data scope
 
-The ordinary MoE/SMELT also completed **a real 8-step pilot per arm**, with 262,144 positions/labels per arm, context2048/global batch16 and the same DCLM fixture. From five fixed candidates, the selected pair is a 12-physical-layer×8-expert MoE against an 8-physical-layer×12-expert SMELT, both with 12 logical Cell calls; vocab151669, dim128, expert hidden256, top-k2, heads4/2. Below are the three analytical budgets of `fixed_terminal_matrix_v1`, without AC, with batch1/BF16 KV:
+The standard MoE/SMELT also completed **a real 8-step pilot per arm**, with 262,144 positions/labels per arm, context2048/global batch16 and the same DCLM fixture. From five fixed candidates, the selected pair is a 12-physical-layer×8-expert MoE against an 8-physical-layer×12-expert SMELT, both with 12 logical Cell calls; vocab151669, dim128, expert hidden256, top-k2, heads4/2. Below are the three analytical budgets of `fixed_terminal_matrix_v1`, without AC, with batch1/BF16 KV:
 
-| Budget | Ordinary MoE | SMELT | Relative difference |
+| Budget | Standard MoE | SMELT | Relative difference |
 |---|---:|---:|---:|
 | unique non-embedding parameters | 10,042,496 | 9,844,864 | -1.968% |
 | matrix training FLOPs/position | 171,998,976 | 172,035,840 | +0.0214% |
@@ -329,7 +329,7 @@ With the same source, a [relative-path end-to-end regression](evidence/relative-
 
 ### 0.1 support set
 
-The target scope is: plain reference core, single-state causal LM, softmax normalized top-k/dropless, GQA/RoPE, terminal CE, AdamW, same-topology continuation and independent HF exact cache. Fixed/full supports ordinary/stack/layer/typical partial sharing. Sampled depth and suffix are limited to a fully shared stack. Strict data continuation currently requires `num_workers=0` and immutable shared manifests.
+The target scope is: plain reference core, single-state causal LM, softmax normalized top-k/dropless, GQA/RoPE, terminal CE, AdamW, same-topology continuation and independent HF exact cache. Fixed/full supports standard MoE/stack/layer/typical partial sharing. Sampled depth and suffix are limited to a fully shared stack. Strict data continuation currently requires `num_workers=0` and immutable shared manifests.
 
 CUDA graphs, arbitrary model compile, EP/TP/CP/PP, elastic-topology resume, dynamic token halting, approximate KV, multi-state models and other optimizers were not part of the verified commitment of 0.1. Later stages extended this scope for two items only: multi-state models (see [Qualification of new training dynamics and combinations](#qualification-of-new-training-dynamics-and-combinations)) and one other optimizer, Muon on GPU (see #49). The other items of this list remain outside the verified scope. That a combination can be built on CPU does not mean that it has native machine qualification.
 
