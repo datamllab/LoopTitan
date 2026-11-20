@@ -329,7 +329,7 @@ With the same source, a [relative-path end-to-end regression](evidence/relative-
 
 ### 0.1 support set
 
-The target scope is: plain reference core, single-state causal LM, softmax normalized top-k/dropless, GQA/RoPE, terminal CE, AdamW, same-topology continuation and independent HF exact cache. Fixed/full supports standard MoE/stack/layer/typical partial sharing. Sampled depth and suffix are limited to a fully shared stack. Strict data continuation currently requires `num_workers=0` and immutable shared manifests.
+The target scope is: plain reference core, single-state causal LM, softmax normalized top-k/dropless, GQA/RoPE, terminal CE, AdamW, same-topology continuation and independent HF exact cache. Fixed/full supports no sharing and stack, layer and typical partial sharing. Sampled depth and suffix are limited to a fully shared stack. Strict data continuation currently requires `num_workers=0` and immutable shared manifests.
 
 CUDA graphs, arbitrary model compile, EP/TP/CP/PP, elastic-topology resume, dynamic token halting, approximate KV, multi-state models and other optimizers were not part of the verified commitment of 0.1. Later stages extended this scope for two items only: multi-state models (see [Qualification of new training dynamics and combinations](#qualification-of-new-training-dynamics-and-combinations)) and one other optimizer, Muon on GPU (see #49). The other items of this list remain outside the verified scope. That a combination can be built on CPU does not mean that it has native machine qualification.
 
