@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the 0.1B size-study specs to recipes/p1/: python scripts/p1_specs.py [--check]
 
-The size study (D/N curve at about 100M active parameters) compares M0, the ordinary MoE
+The size study (D/N curve at about 100M active parameters) compares M0, the standard MoE
 p1_moe_spec(), with M3, the SMELT p1_smelt_spec(), under AdamW and Muon. Track M of
 eval/bench/tracks.json gives every spec the same schedule and optimizer settings, as
 scripts/phase1_specs.py does for Track P2.

@@ -3,12 +3,12 @@
 
 Every node is a frozen recipe arm, recipes/<family>/<arm>-<optimizer>.json (its optimizer files
 share one model). Its parent is the configuration it builds on, and it changes the listed
-ModelConfig fields; the root is the ordinary MoE, phase1/m0. The study families keep their own
+ModelConfig fields; the root is the standard MoE, phase1/m0. The study families keep their own
 declarations (ARMS of phase1_specs.py, shape_specs.py and p05_specs.py): a P2 base recipe stands
 for the Phase 1 arm with its model. The other nodes are declared in DECLARED, each parent chosen
 from what the method's paper and constructor build on, which is not always the configuration
 nearest by field count: untie/u0 is one field from phase1/m4 but is M3 untied, and
-methods/expert-tying has phase1/m2's model but ties the layers of an ordinary MoE.
+methods/expert-tying has phase1/m2's model but ties the layers of a standard MoE.
 tests/comparison/test_lineage.py checks every node against its recipe files. --json writes the
 nodes, parents and changed fields with their old and new values.
 """
@@ -31,38 +31,38 @@ BASES = {"p2_moe": "phase1/m0", "p2_smelt": "phase1/m3"}  # the Phase 1 arm with
 # node: (parent, the model fields it changes, why this parent); checked against the recipe files
 DECLARED = {
     "phase1/m3": ("phase1/m0", ("dim", "hidden_dim", "num_heads", "num_experts", *LOOP, "core"),
-                  "SMELT runs the middle half of an ordinary MoE twice, at P2's matched width and experts."),
+                  "SMELT runs the middle half of a standard MoE twice, at P2's matched width and experts."),
     "untie/u0": ("phase1/m3", ("num_cells", "num_visits"), "M3 untied: each core visit gets its own cells."),
-    "p1/m0": ("phase1/m0", ("dim", "hidden_dim", "num_heads", "num_cells"), "The ordinary MoE at P1's 0.1B scale."),
+    "p1/m0": ("phase1/m0", ("dim", "hidden_dim", "num_heads", "num_cells"), "The standard MoE at P1's 0.1B scale."),
     "p1/m3": ("p1/m0", ("dim", "hidden_dim", "num_heads", "num_experts", *LOOP, "core"),
-              "SMELT on P1's ordinary MoE, at P1's matched width and experts."),
+              "SMELT on P1's standard MoE, at P1's matched width and experts."),
     "methods/smelt-v3": ("phase1/m3", ("num_cells", "num_visits", "core"), "SMELT's P2 core run 3 times."),
     "methods/smelt-v4": ("phase1/m3", ("num_cells", "num_visits", "core"), "SMELT's P2 core run 4 times."),
     "methods/latentloop-residual": ("phase1/m3", ("visit_residual_scales", "core"),
         "LatentLoop Section 3.1's per-visit residual on SMELT's loop (latentloop_residual_spec builds on smelt_spec)."),
     "methods/m0-loop": ("phase1/m0", (*LOOP, "core"), "m0's cells in SMELT's loop, the budget-convention control."),
     "methods/meta": ("phase1/m0", ("num_experts", *LOOP),
-                     "A shared middle stack between an independent prelude and coda of an ordinary MoE."),
+                     "A shared middle stack between an independent prelude and coda of a standard MoE."),
     "methods/foil": ("phase1/m0", ("attention_per_visit", *LOOP, "prefix", "core", "suffix"),
-                     "Foil flattens the core of its Base, an ordinary MoE with prelude and coda: (E,D,L)->(2E,D/2,2L)."),
+                     "Foil flattens the core of its Base, a standard MoE with prelude and coda: (E,D,L)->(2E,D/2,2L)."),
     "methods/expert-tying": ("phase1/m0", ("num_experts", "num_cells", "num_visits", "order",
                                            "attention_per_visit", "router_per_visit", "norm_per_visit"),
-                             "Tying shares one expert bank across consecutive layers of an ordinary MoE."),
+                             "Tying shares one expert bank across consecutive layers of a standard MoE."),
     "methods/huginn": ("phase1/m0", ("hidden_dim", "num_heads", "num_experts", *LOOP, "input_injection",
                                      "initial_state"),
                        "A recurrent core between prelude and coda, with a live input anchor and a random latent start."),
     "methods/loom": ("phase1/m0", ("num_experts", "num_cells", "num_visits", "router_per_visit",
                                    "state_update"),
-                     "The whole ordinary MoE stack looped, with per-visit routers and two EMA memories."),
+                     "The whole standard MoE stack looped, with per-visit routers and two EMA memories."),
     "methods/ouro": ("phase1/m0", ("dim", "hidden_dim", "num_heads", "num_experts", "num_cells", "num_visits",
                                    "exit_distribution"),
-                     "The whole ordinary MoE stack looped, with a learned exit distribution over visits."),
+                     "The whole standard MoE stack looped, with a learned exit distribution over visits."),
     "methods/sandwich": ("methods/huginn", ("hidden_dim", "num_heads", "num_experts", "top_k", *LOOP,
                                             "input_injection", "injection_dt", "initial_state"),
                          "Part I's MoE results report the Huginn MoE; this path replaces its linear injection and "
                          "random start with diagonal-decay injection and z_0 = e."),
     "methods/relaxed": ("phase1/m0", ("num_experts", "num_cells", "num_visits", "lora_attention_rank"),
-                        "The ordinary MoE stack shared in a cycle (a Recursive Transformer) with per-visit LoRA."),
+                        "The standard MoE stack shared in a cycle (a Recursive Transformer) with per-visit LoRA."),
 }
 
 
@@ -74,7 +74,7 @@ def family(parent: str, changes: dict, note: str) -> tuple:
 
 def lineage() -> dict[str, tuple]:
     """node: (parent, changed fields, note); the root's parent is None."""
-    nodes = {ROOT_NODE: (None, (), "The ordinary MoE: 12 layers of 64 experts, top-8 (P2).")}
+    nodes = {ROOT_NODE: (None, (), "The standard MoE: 12 layers of 64 experts, top-8 (P2).")}
     for arm, (base, changes, _, _, note) in phase1_specs.ARMS.items():
         if arm in phase1_specs.EXPERT_LR:  # the same model as its source arm; only the expert LR differs
             nodes[f"phase1/{arm}"] = (f"phase1/{phase1_specs.EXPERT_LR[arm][0]}", (), note)

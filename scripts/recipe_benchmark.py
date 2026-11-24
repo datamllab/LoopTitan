@@ -112,7 +112,7 @@ def describe(config: ModelConfig, settings: Settings) -> dict:
         raise ValueError("Transformers Qwen3-MoE requires QK norm and matched SDPA here")
     if settings.component_math and (settings.reference != "torchtitan" or settings.dtype != "bfloat16"
             or settings.candidate != "native" or config.num_visits != 1):
-        raise ValueError("component math qualification is limited to the ordinary native BF16 TorchTitan comparison")
+        raise ValueError("component math qualification is limited to the standard MoE in the native BF16 TorchTitan comparison")
     versions = {}
     for name in ("torch", "torchtitan", "transformers"):
         try:
@@ -715,7 +715,7 @@ def main():
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--dtype", choices=("bfloat16", "float32"), default="bfloat16")
     parser.add_argument("--activation-checkpoint", choices=("none", "full"), default="none")
-    parser.add_argument("--component-math", action="store_true", help="explicitly qualify ordinary TT BF16 by independent same-input component derivatives; retain strict whole-model result")
+    parser.add_argument("--component-math", action="store_true", help="explicitly qualify the standard MoE in TT BF16 by independent same-input component derivatives; retain strict whole-model result")
     for name, default in (("batch-size", 2), ("seq-len", 2048), ("head-chunks", 8), ("warmup", 5), ("steps", 20)):
         parser.add_argument("--" + name, type=int, default=default)
     args = vars(parser.parse_args())

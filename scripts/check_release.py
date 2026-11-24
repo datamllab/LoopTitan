@@ -699,7 +699,7 @@ def verify_scientific_anchor(path, *, anchor_name="P1"):
     anchor = read_json(path)
     require(anchor.get("format") == "moeloop-scientific-anchor" and anchor.get("version") == 1
             and anchor.get("anchor") == anchor_name, "unsupported scientific anchor schema")
-    require(set(anchor.get("arms", {})) == {"reference", "candidate"}, "P1 requires both ordinary MoE and SMELT arms")
+    require(set(anchor.get("arms", {})) == {"reference", "candidate"}, "P1 requires both standard MoE and SMELT arms")
     manifest = PreparedManifest.load(anchor["manifest"])
     require(anchor.get("manifest_fingerprint") == manifest.fingerprint, "P1 manifest fingerprint differs")
     provenance = manifest.payload.get("provenance", {})
@@ -981,7 +981,7 @@ def verify_performance(evidence):
                 and settings.get("device", "").startswith("cuda") and settings.get("warmup", 0) >= 2
                 and settings.get("steps", 0) >= 5 and report.get("runtime", {}).get("cuda")
                 and report.get("model_config", {}).get("num_visits") == 1,
-                f"{path}: primary ordinary-MoE native/grouped Flex BF16 CUDA benchmark is missing")
+                f"{path}: primary standard-MoE native/grouped Flex BF16 CUDA benchmark is missing")
         require(report.get("torchtitan_commit") == "086bf6c166ec85c1298eb5596fa9bf95f6a2d840"
                 and report.get("public_reference_source_sha256") == TT_REFERENCE_HASHES,
                 f"{path}: unchanged pinned official TorchTitan source identity differs")

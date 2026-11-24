@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the Phase 1 arm specs to recipes/phase1/: python scripts/phase1_specs.py [--check]
 
-Phase 1 asks where the looped-MoE gain over an ordinary MoE comes from at P2 scale
+Phase 1 asks where the looped-MoE gain over a standard MoE comes from at P2 scale
 (about 200M active parameters, 5B labels). Every arm starts from a frozen P2 recipe and
 changes only which modules its layers own or share (ARMS). The P2 track of
 eval/bench/tracks.json then gives every arm the same schedule and optimizer settings.
@@ -9,7 +9,7 @@ eval/bench/tracks.json then gives every arm the same schedule and optimizer sett
 The ladder takes SMELT (p2_smelt: 3 prefix layers, 6 core layers visited twice, 3 suffix
 layers) apart one shared module at a time: m4 unties the core, m7 shares only the experts,
 m5 also shares the router, and m3 is SMELT, which also shares attention and norms. The rails
-keep the ordinary MoE shape (p2_moe) and change only how the experts are organised. m0-2e
+keep the standard MoE shape (p2_moe) and change only how the experts are organised. m0-2e
 doubles the expert parameters: it is the one arm outside the budget.
 
 m7-elr and m4-elr (AdamW only, issue #264) are m7 and m4 with the core experts' LR times

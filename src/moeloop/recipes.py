@@ -191,7 +191,7 @@ def dense_spec(*, layers: int = 8, **geometry: Any) -> RecipeSpec:
 
 
 def moe_spec(*, layers: int = 8, **geometry: Any) -> RecipeSpec:
-    """Ordinary independent sparse layers; matching is an explicit contract."""
+    """Standard MoE: independent sparse layers; matching is an explicit contract."""
     return _spec("moe", _model(geometry, num_cells=layers, num_visits=1),
                  preserved=("Every logical layer has independently owned attention, router, norms and experts.",))
 
@@ -312,7 +312,7 @@ def _p1_spec(spec: RecipeSpec, *, base_lr: float, geometry_notes: tuple[str, ...
 
 
 def p1_moe_spec(*, base_lr: float = 3e-4) -> RecipeSpec:
-    """P1 ordinary MoE: public-stack geometry near the 100M-active tier."""
+    """P1 standard MoE: public-stack geometry near the 100M-active tier."""
     return _p1_spec(moe_spec(layers=10, vocab_size=151669, dim=672,
         hidden_dim=544, num_heads=7, num_kv_heads=1, num_experts=64,
         top_k=8, max_seq_len=4096), base_lr=base_lr)
@@ -347,7 +347,7 @@ def _p2_spec(spec: RecipeSpec, *, base_lr: float) -> RecipeSpec:
 
 
 def p2_moe_spec(*, base_lr: float = 3e-4) -> RecipeSpec:
-    """Second-scale ordinary MoE, near the 200M-active / 1.32B-unique tier."""
+    """Second-scale standard MoE, near the 200M-active / 1.32B-unique tier."""
     return _p2_spec(moe_spec(layers=12, vocab_size=151669, dim=1280,
         hidden_dim=432, num_heads=10, num_kv_heads=1, num_experts=64,
         top_k=8, max_seq_len=4096), base_lr=base_lr)

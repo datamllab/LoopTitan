@@ -2,23 +2,23 @@
 
 <!-- Written by scripts/results_table.py from phase1.json; edit the data, not this file. -->
 
-Protocol: every row is trained on the same data (5.0B tokens of the P2 track's DCLM manifest) with the same schedule (4,769 updates of 1,048,576 tokens, warmup-stable-decay) and seed 42. Learning rate: tuned once per optimizer on the ordinary MoE (AdamW 1.2e-3, Muon 1.7e-3; [#180](https://github.com/datamllab/LoopTitan/issues/180)); the same grid on the chain-end loop selects the same value. Every other row inherits that value without a search of its own; learning-rate variants and checks in the record are not in the table (listed below, and one rerun at another learning rate is a note under AdamW).
+Protocol: every row is trained on the same data (5.0B tokens of the P2 track's DCLM manifest) with the same schedule (4,769 updates of 1,048,576 tokens, warmup-stable-decay) and seed 42. Learning rate: tuned once per optimizer on the standard MoE (AdamW 1.2e-3, Muon 1.7e-3; [#180](https://github.com/datamllab/LoopTitan/issues/180)); the same grid on the chain-end loop selects the same value. Every other row inherits that value without a search of its own; learning-rate variants and checks in the record are not in the table (listed below, and one rerun at another learning rate is a note under AdamW).
 
 This page shows a subset of the Phase 1 record. Not shown, trained with the same data, schedule and learning rate: `phase1/m1`, `phase1/m1s`, `phase1/m2` and `phase1/m6` ([#200](https://github.com/datamllab/LoopTitan/issues/200)), `shape/m0r` ([#218](https://github.com/datamllab/LoopTitan/issues/218)), `shape/d24` and `shape/d36` ([#242](https://github.com/datamllab/LoopTitan/issues/242)) and `shape/m0i` ([#252](https://github.com/datamllab/LoopTitan/issues/252)). Not shown, learning-rate variants of shown rows: `phase1/m4-elr` and `phase1/m7-elr`, with the middle layers' expert learning rate ×√2 ([#266](https://github.com/datamllab/LoopTitan/issues/266)), and `shape/m0lr`, with the middle layers' output-projection learning rate ×0.5 ([#252](https://github.com/datamllab/LoopTitan/issues/252)). The learning-rate grids and checks are in [#180](https://github.com/datamllab/LoopTitan/issues/180) and [#243](https://github.com/datamllab/LoopTitan/issues/243); the studies are [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216) and [#225](https://github.com/datamllab/LoopTitan/issues/225).
 
 - Test, Validation: bits per byte (BPB) on the complete held-out test and validation splits after the last update.
-- Δ test: test BPB minus the ordinary MoE's with the same optimizer, in mBPB (0.001 BPB).
+- Δ test: test BPB minus the standard MoE's with the same optimizer, in mBPB (0.001 BPB).
 - Parameters, FLOPs, KV: unique non-embedding parameters, training FLOPs per token and logical KV cache relative to `recipes/phase1/m0-<optimizer>.json`, from `moeloop.comparison.compare_recipes` with the P2 track's accounting in `eval/bench/tracks.json`. Matched budgets are within 5% on all three.
 - Source: the published designs the configuration and its ancestors in `scripts/lineage.py` follow, numbered in [Sources](#sources).
 - Run: the issue whose results comment holds the values. The design links to its frozen configuration.
 
 ## AdamW
 
-### Matched budgets: one-change chain from ordinary MoE (`phase1/m0`) to chain-end loop (`phase1/m3`)
+### Matched budgets: one-change chain from standard MoE (`phase1/m0`) to chain-end loop (`phase1/m3`)
 
 | Design | Source | Test | Δ test (mBPB) | Validation | Parameters | FLOPs | KV | LR | Run |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| [ordinary MoE: 12 layers at width 1280, 64 experts per layer, expert hidden size 432, top-8](../../recipes/phase1/m0-adamw.json) |  | 0.999533 | +0.00 | 1.001293 | +0.0% | +0.0% | +0.0% | 1.2e-3 | [#180](https://github.com/datamllab/LoopTitan/issues/180) |
+| [standard MoE: 12 layers at width 1280, 64 experts per layer, expert hidden size 432, top-8](../../recipes/phase1/m0-adamw.json) |  | 0.999533 | +0.00 | 1.001293 | +0.0% | +0.0% | +0.0% | 1.2e-3 | [#180](https://github.com/datamllab/LoopTitan/issues/180) |
 | [finer experts: 12 layers at width 1280, 72 experts per layer, expert hidden size 384, top-9](../../recipes/shape/g-adamw.json) |  | 0.995309 | -4.22 | 0.997202 | +0.0% | +0.0% | +0.0% | 1.2e-3 | [#218](https://github.com/datamllab/LoopTitan/issues/218) |
 | [deeper and narrower: 18 layers at width 1056, 58 experts per layer, expert hidden size 384, top-8](../../recipes/shape/u-adamw.json) | [1](#sources) | 0.992619 | -6.91 | 0.994388 | -0.3% | +2.3% | +3.1% | 1.2e-3 | [#218](https://github.com/datamllab/LoopTitan/issues/218) |
 | [expert layout: 18 layers at width 1056, 88 experts in each of the first 3 and last 3 layers, 44 in each of the middle 12, expert hidden size 384](../../recipes/shape/r-adamw.json) | [1](#sources) | 0.993624 | -5.91 | 0.995442 | +0.8% | +2.3% | +3.1% | 1.2e-3 | [#218](https://github.com/datamllab/LoopTitan/issues/218) |
@@ -47,8 +47,8 @@ This page shows a subset of the Phase 1 record. Not shown, trained with the same
 
 | Design | Source | Test | Δ test (mBPB) | Validation | Parameters | FLOPs | KV | LR | Run |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| [ordinary MoE looped: 12 layers at width 1280, 64 experts per layer, expert hidden size 432; the middle 6 looped twice, residual ×0.5](../../recipes/methods/m0-loop-adamw.json) | [1](#sources) | 0.984730 | -14.80 | 0.986424 | +0.0% | +31.5% | +50.0% | 1.2e-3 | [#247](https://github.com/datamllab/LoopTitan/issues/247) |
-| [ordinary MoE with twice the experts: 12 layers at width 1280, 128 experts per layer, expert hidden size 432](../../recipes/phase1/m0-2e-adamw.json) |  | 0.985241 | -14.29 | 0.986998 | +96.7% | +0.2% | +0.0% | 1.2e-3 | [#200](https://github.com/datamllab/LoopTitan/issues/200) |
+| [standard MoE looped: 12 layers at width 1280, 64 experts per layer, expert hidden size 432; the middle 6 looped twice, residual ×0.5](../../recipes/methods/m0-loop-adamw.json) | [1](#sources) | 0.984730 | -14.80 | 0.986424 | +0.0% | +31.5% | +50.0% | 1.2e-3 | [#247](https://github.com/datamllab/LoopTitan/issues/247) |
+| [standard MoE with twice the experts: 12 layers at width 1280, 128 experts per layer, expert hidden size 432](../../recipes/phase1/m0-2e-adamw.json) |  | 0.985241 | -14.29 | 0.986998 | +96.7% | +0.2% | +0.0% | 1.2e-3 | [#200](https://github.com/datamllab/LoopTitan/issues/200) |
 
 Notes (AdamW):
 
@@ -56,11 +56,11 @@ Notes (AdamW):
 
 ## Muon
 
-### Matched budgets: one-change chain from ordinary MoE (`phase1/m0`) to chain-end loop (`phase1/m3`)
+### Matched budgets: one-change chain from standard MoE (`phase1/m0`) to chain-end loop (`phase1/m3`)
 
 | Design | Source | Test | Δ test (mBPB) | Validation | Parameters | FLOPs | KV | LR | Run |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| [ordinary MoE: 12 layers at width 1280, 64 experts per layer, expert hidden size 432, top-8](../../recipes/phase1/m0-muon.json) |  | 0.974376 | +0.00 | 0.976141 | +0.0% | +0.0% | +0.0% | 1.7e-3 | [#180](https://github.com/datamllab/LoopTitan/issues/180) |
+| [standard MoE: 12 layers at width 1280, 64 experts per layer, expert hidden size 432, top-8](../../recipes/phase1/m0-muon.json) |  | 0.974376 | +0.00 | 0.976141 | +0.0% | +0.0% | +0.0% | 1.7e-3 | [#180](https://github.com/datamllab/LoopTitan/issues/180) |
 | [finer experts: 12 layers at width 1280, 72 experts per layer, expert hidden size 384, top-9](../../recipes/shape/g-muon.json) |  | 0.973517 | -0.86 | 0.975193 | +0.0% | +0.0% | +0.0% | 1.7e-3 | [#218](https://github.com/datamllab/LoopTitan/issues/218) |
 | [deeper and narrower: 18 layers at width 1056, 58 experts per layer, expert hidden size 384, top-8](../../recipes/shape/u-muon.json) | [1](#sources) | 0.970165 | -4.21 | 0.971959 | -0.3% | +2.3% | +3.1% | 1.7e-3 | [#218](https://github.com/datamllab/LoopTitan/issues/218) |
 | [expert layout: 18 layers at width 1056, 88 experts in each of the first 3 and last 3 layers, 44 in each of the middle 12, expert hidden size 384](../../recipes/shape/r-muon.json) | [1](#sources) | 0.971013 | -3.36 | 0.972742 | +0.8% | +2.3% | +3.1% | 1.7e-3 | [#218](https://github.com/datamllab/LoopTitan/issues/218) |
@@ -89,8 +89,8 @@ Notes (AdamW):
 
 | Design | Source | Test | Δ test (mBPB) | Validation | Parameters | FLOPs | KV | LR | Run |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| [ordinary MoE looped: 12 layers at width 1280, 64 experts per layer, expert hidden size 432; the middle 6 looped twice, residual ×0.5](../../recipes/methods/m0-loop-muon.json) | [1](#sources) | 0.962134 | -12.24 | 0.964069 | +0.0% | +31.5% | +50.0% | 1.7e-3 | [#247](https://github.com/datamllab/LoopTitan/issues/247) |
-| [ordinary MoE with twice the experts: 12 layers at width 1280, 128 experts per layer, expert hidden size 432](../../recipes/phase1/m0-2e-muon.json) |  | 0.964525 | -9.85 | 0.966379 | +96.7% | +0.2% | +0.0% | 1.7e-3 | [#200](https://github.com/datamllab/LoopTitan/issues/200) |
+| [standard MoE looped: 12 layers at width 1280, 64 experts per layer, expert hidden size 432; the middle 6 looped twice, residual ×0.5](../../recipes/methods/m0-loop-muon.json) | [1](#sources) | 0.962134 | -12.24 | 0.964069 | +0.0% | +31.5% | +50.0% | 1.7e-3 | [#247](https://github.com/datamllab/LoopTitan/issues/247) |
+| [standard MoE with twice the experts: 12 layers at width 1280, 128 experts per layer, expert hidden size 432](../../recipes/phase1/m0-2e-muon.json) |  | 0.964525 | -9.85 | 0.966379 | +96.7% | +0.2% | +0.0% | 1.7e-3 | [#200](https://github.com/datamllab/LoopTitan/issues/200) |
 
 ## Sources
 

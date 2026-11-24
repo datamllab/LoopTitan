@@ -113,7 +113,7 @@ If a check fails, `check_recipe` raises `ConformanceError`, and its `report` hol
 python scripts/lineage.py
 ```
 
-The command prints the tree of the published recipes. The root is the ordinary MoE `phase1/m0`. Each node lists the `ModelConfig` fields that it changes against its parent. In this tree, the reference `phase1/m3` is a child of `phase1/m0`. Against `phase1/m3`, the new configuration changes one field, `router_per_visit` (step 2). `--json PATH` also writes the nodes, the parents and the changed fields with their old and new values. The tree holds only the published recipes under `recipes/`, so the new configuration does not appear in it.
+The command prints the tree of the published recipes. The root is the standard MoE `phase1/m0`. Each node lists the `ModelConfig` fields that it changes against its parent. In this tree, the reference `phase1/m3` is a child of `phase1/m0`. Against `phase1/m3`, the new configuration changes one field, `router_per_visit` (step 2). `--json PATH` also writes the nodes, the parents and the changed fields with their old and new values. The tree holds only the published recipes under `recipes/`, so the new configuration does not appear in it.
 
 ### What a new forward pass gets today
 

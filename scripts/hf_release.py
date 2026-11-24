@@ -14,7 +14,7 @@ decimals, or the whole run is refused. The card and its figures under assets/ (b
 model stands among the designs of the plan, budgets, the README's destination capsules; light, dark
 and narrow files) are generated with the README figures' functions; every number on them comes from
 the results file, the recipe and the P2 track, and the reference of the BPB difference and of the
-budgets is the ordinary MoE under the same optimizer. The collection title names the release on each
+budgets is the standard MoE under the same optimizer. The collection title names the release on each
 card; each model's `short` name labels the figures and its `note` opens its collection note. The
 plan's `org_card` is the organisation card's text.
 A model whose `export_dir` is still empty is rendered in the dry-run and refused by `--upload`.
@@ -26,7 +26,7 @@ changes visibility.
 
 A pair plan lists pairs. Each pair names one evidence file (anchor P1: docs/evidence/p1.json,
 anchor P2: docs/evidence/recipes-v3.json), a DCLM source receipt, and two models: `looped`
-(the evidence `candidate` arm) and its matched ordinary-MoE `control` (the `reference` arm).
+(the evidence `candidate` arm) and its matched standard-MoE `control` (the `reference` arm).
 Every model gives its repo name, display recipe, local export directory, recipe file, checkpoint
 SHA-256 and the exact files to upload with their SHA-256. Relative paths resolve against the
 plan file. Optional model keys: `paper` (URL) and `metrics` ({"BPB": "evidence.json#/json/pointer"}).
@@ -69,7 +69,7 @@ SPLITS = ("validation", "test")
 NAMESPACE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 GENERATED = ("README.md", "assets/")  # written by this script for a single model: the card and its figures
 SUPERSEDED = ("banner.svg", "budgets.svg")  # figures of earlier cards, removed by a card update; nothing else is
-# The learning rate was tuned on the ordinary MoE (REFERENCE) and the same grid run on this loop; the track's
+# The learning rate was tuned on the standard MoE (REFERENCE) and the same grid run on this loop; the track's
 # lr_selection (eval/bench/tracks.json) names both models only in prose (M0 and M3), so the path is named here.
 SAME_GRID = "recipes/phase1/m3-{}.json"
 
@@ -223,7 +223,7 @@ def collection_note(model, run, reference, matched):
     delta, tolerance = 1000 * (run["test_bpb"] - reference["test_bpb"]), load_tracks()["P2"].budget["tolerance"]
     if model["config"] == reference["config"]:
         return f"{model['note']} Test BPB {run['test_bpb']:.4f}."
-    return (f"{model['note']} Test BPB {run['test_bpb']:.4f}, {signed(delta, 1)} mBPB against the ordinary MoE with "
+    return (f"{model['note']} Test BPB {run['test_bpb']:.4f}, {signed(delta, 1)} mBPB against the standard MoE with "
             f"the same optimizer; " + (f"budgets matched within {tolerance:.0%}." if matched else "outside matched budgets."))
 
 
@@ -279,7 +279,7 @@ def render_card(role, model, repos, facts, source, base):
     recipe = read_json(base / model["recipe_file"])
     run, optimizer, schedule = recipe["run"], recipe["optimizer"], recipe["run"]["schedule"]
     looped, control = facts["arms"]["candidate"], facts["arms"]["reference"]
-    kind = "Looped (weight-shared depth) MoE" if role == "looped" else "Ordinary MoE control"
+    kind = "Looped (weight-shared depth) MoE" if role == "looped" else "Standard MoE control"
     tags = ["moeloop", "mixture-of-experts", "looped-moe" if role == "looped" else "moe-control",
             "custom_code", facts["anchor"].lower()]
     lines = ["---", "license: mit", "library_name: transformers", "pipeline_tag: text-generation",
@@ -289,7 +289,7 @@ def render_card(role, model, repos, facts, source, base):
              f"[moeloop-lab](https://github.com/datamllab/LoopTitan). Base language model; not instruction tuned.", "",
              "## Recipe", "", f"- Recipe: {model['recipe']} (`{recipe['name']}`)",
              f"- Paper: {model['paper']}" if model.get("paper") else
-             ("- Paper: none recorded" if role == "looped" else "- Paper: none (ordinary MoE control)"), "",
+             ("- Paper: none recorded" if role == "looped" else "- Paper: none (standard MoE control)"), "",
              "## Matched analytical budgets", "",
              f"Residual = (looped - control) / control, from analytical estimates; the paired model is "
              f"[{paired}](https://huggingface.co/{paired}).", "",
@@ -334,7 +334,7 @@ def render_card(role, model, repos, facts, source, base):
               "- No instruction tuning, safety evaluation or claim of state-of-the-art quality.", "",
               "## Paired model", "",
               f"[{paired}](https://huggingface.co/{paired}): "
-              f"the {'ordinary MoE control' if role == 'looped' else 'looped model'} matched to this one.", ""]
+              f"the {'standard MoE control' if role == 'looped' else 'looped model'} matched to this one.", ""]
     return "\n".join(lines)
 
 
@@ -364,15 +364,15 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"**{name}** · {release} · design {place} of {len(designs)}, each trained with AdamW and with Muon", "",
               f"{row['design'][0].upper()}{row['design'][1:]}. A base language model trained from scratch, "
               "not instruction tuned.", "",
-              "## Results", "", f"| Test BPB | Validation BPB | Δ test vs ordinary MoE ({name}) |", "|---:|---:|---:|",
+              "## Results", "", f"| Test BPB | Validation BPB | Δ test vs standard MoE ({name}) |", "|---:|---:|---:|",
               f"| {run['test_bpb']:.6f} | {run['validation_bpb']:.6f} | {signed(delta, 2)} mBPB |", "",
               themed("standing", standing_text(model, family), 720), "",
               "Bits per byte on the complete held-out test and validation splits after the last update; lower is better. "
-              f"The ordinary MoE is [`{reference['config']}`]({repo}/blob/main/{reference['config']}); "
+              f"The standard MoE is [`{reference['config']}`]({repo}/blob/main/{reference['config']}); "
               "1 mBPB is 0.001 BPB.", "", "## Budgets", "",
-              f"Outside matched budgets: more than {tolerance:.0%} from the ordinary MoE ({name}) in " +
+              f"Outside matched budgets: more than {tolerance:.0%} from the standard MoE ({name}) in " +
               " and ".join(f"{BUDGET_NAMES[key]} ({signed(100 * value, 1)}%)" for key, value in outside.items()) + "."
-              if outside else f"Matched budgets: all three within {tolerance:.0%} of the ordinary MoE ({name}).", "",
+              if outside else f"Matched budgets: all three within {tolerance:.0%} of the standard MoE ({name}).", "",
               themed("budgets", budgets_text(run, name, tolerance), 720), "",
               "## Training", "",
               f"{train['successful_updates'] * train['global_batch_positions'] / 1e9:.1f}B tokens of "
@@ -381,9 +381,9 @@ def model_card(repo_id, model, row, optimizer, run, reference, release, page, da
               f"tokens in sequences of {train['seq_len']:,}, {train['schedule']['name'].replace('_', '-')} schedule, "
               f"seed {train['seed']}. {name} at learning rate {lr(recipe['optimizer']['base_lr'])}, " +
               ("tuned on this model, once per optimizer" if model["config"] == reference["config"] else
-               "the value tuned once per optimizer on the ordinary MoE; the same grid on this model selects the same value"
+               "the value tuned once per optimizer on the standard MoE; the same grid on this model selects the same value"
                if model["config"] == SAME_GRID.format(optimizer) else
-               "inherited from the ordinary MoE, where it was tuned once per optimizer") +
+               "inherited from the standard MoE, where it was tuned once per optimizer") +
               f" ([#{reference['issue']}]({repo}/issues/{reference['issue']})). The full protocol: "
               f"[results page]({repo}/blob/main/{page}). Configuration: [`{model['config']}`]({repo}/blob/main/{model['config']}); "
               f"run record: [#{run['issue']}]({repo}/issues/{run['issue']}).", "",
@@ -509,12 +509,12 @@ def banner(config_path, config, optimizer, t, narrow=False):
 def standing_text(model, family):
     rows = [f"{design['short']}: " + ", ".join(f"{OPTIMIZERS[opt]} {r['delta']:+.1f}" for opt, r in design["runs"].items())
             for design in family]
-    return (f"Test mBPB of the {len(family)} designs of this release against the ordinary MoE, by optimizer: " +
+    return (f"Test mBPB of the {len(family)} designs of this release against the standard MoE, by optimizer: " +
             "; ".join(rows) + ".")
 
 
 def standing(model, family, t, narrow=False):
-    """Where the model stands: every design of the release, test mBPB against the ordinary MoE with the same
+    """Where the model stands: every design of the release, test mBPB against the standard MoE with the same
     optimizer, AdamW and Muon side by side (one above the other when narrow); the row of this model on the
     loop's ground, its bar in ink and the others grey; a design outside matched budgets drawn open."""
     deltas = [r["delta"] for design in family for r in design["runs"].values()]
@@ -532,7 +532,7 @@ def standing(model, family, t, narrow=False):
         panels = [("adamw", 268, 474, 84), ("muon", 504, 696, 84)]
         h = 84 + (n - 1) * pitch + 70
     out = [figures.card(0, 0, w, h, t),
-           figures.text(label_x, 34, "Where it stands" if narrow else "Where it stands: test mBPB against the ordinary MoE",
+           figures.text(label_x, 34, "Where it stands" if narrow else "Where it stands: test mBPB against the standard MoE",
                         14, t["ink"], 600),
            figures.text(w - label_x, 34, "test mBPB, ← lower is better" if narrow else "← lower is better", 12, t["mid"], 400, "end")]
     for opt, x0, x1, top in panels:
@@ -568,7 +568,7 @@ def standing(model, family, t, narrow=False):
 
 
 def budgets_text(run, name, tolerance):
-    return (f"Budgets against the ordinary MoE ({name}): " +
+    return (f"Budgets against the standard MoE ({name}): " +
             ", ".join(f"{BUDGET_NAMES[key]} {100 * run['budgets'][key]:+.2f}%" for key in METRICS) +
             f"; tolerance ±{tolerance:.0%}")
 
@@ -584,7 +584,7 @@ def budgets(config_path, reference_path, run, name, t=figures.LIGHT, narrow=Fals
     inside = sum(abs(entry["relative_difference"]) <= entry["relative_tolerance"] for entry in entries.values())
     state = f"{inside} of {len(entries)} within ±{figures.pct(track.budget['tolerance'])}"
     out = [figures.card(0, 0, w, h, t),
-           figures.text(x, 38, f"Budgets ({name})" if narrow else f"Budgets against the ordinary MoE ({name})", 14, t["ink"], 600),
+           figures.text(x, 38, f"Budgets ({name})" if narrow else f"Budgets against the standard MoE ({name})", 14, t["ink"], 600),
            figures.okline(w - x, 34, entries, t, state)[0]]
     for i, (key, label) in enumerate(figures.BUDGETS):
         entry, y = entries[key], (84 + i * 72 if narrow else 92 + i * 54)

@@ -13,11 +13,11 @@ pinned: false
 
 <!-- capsules -->
 
-Open models and open records for looped mixture-of-experts language models, built and compared with [LoopTitan](https://github.com/datamllab/LoopTitan). Every model here comes with its configuration, its budgets against an ordinary MoE, its held-out results and the issue that records its run.
+Open models and open records for looped mixture-of-experts language models, built and compared with [LoopTitan](https://github.com/datamllab/LoopTitan). Every model here comes with its configuration, its budgets against a standard MoE, its held-out results and the issue that records its run.
 
 ## LoopTitan Phase 1
 
-From an ordinary MoE to a looped MoE one change at a time, each design trained with AdamW and with Muon on the same data, with the same schedule and seed, at matched parameters, training FLOPs and KV cache. Each model page shows where the model stands among the others.
+From a standard MoE to a looped MoE one change at a time, each design trained with AdamW and with Muon on the same data, with the same schedule and seed, at matched parameters, training FLOPs and KV cache. Each model page shows where the model stands among the others.
 
 <!-- models -->
 

@@ -23,7 +23,7 @@ The first four have a historical engineering qualification. SMELT also has the f
 
 | Method and entry | Preserved semantics | Adaptations to the common stack |
 |---|---|---|
-| [SMELT v3 §3/Appendix A](https://arxiv.org/html/2609.01343v3), `smelt_spec(physical_layers=8)` | prefix/core/suffix physical layer counts 2/4/2; the core runs twice in full; the core attention and FFN residuals are each multiplied by 1/2, the outer cells use 1 | Public text, common sparse cells and AdamW; the budget pairing with an ordinary MoE is defined separately |
+| [SMELT v3 §3/Appendix A](https://arxiv.org/html/2609.01343v3), `smelt_spec(physical_layers=8)` | prefix/core/suffix physical layer counts 2/4/2; the core runs twice in full; the core attention and FFN residuals are each multiplied by 1/2, the outer cells use 1 | Public text, common sparse cells and AdamW; the budget pairing with a standard MoE is defined separately |
 | [Meta Looped MoE v1 C.1–C.2](https://arxiv.org/html/2609.40316v1), `meta_spec(core_layers=2, passes=4)` | Independent prefix/suffix, a shared loop in the middle; fixed depth, full BPTT, terminal CE | Common softmax top-k, normalization of the selected weights, dropless dispatch, AdamW and an independent embedding/head; no claim to verify the scaling law |
 | [Foil v1 §2.1–2.2](https://arxiv.org/html/2609.35751v1), `foil_spec(num_experts=4, core_layers=4, passes=1)` | core `(E,D,L)→(2E,D/2,2L)`, where D is the number of physical banks; each logical visit has its own attention; experts, router and norms are shared within a bank | Common cell, public data and optimizer; the independent prefix/suffix stay, with the original E experts |
 | [Tying v1 §3/Appendix B](https://arxiv.org/html/2606.16825v1), `expert_tying_spec(groups=2, group_size=4)` | Each group of g consecutive logical layers shares only the experts; attention, router and norm are independent per layer; expert LR=`base_lr/sqrt(g)`, other LRs do not change, the WD coefficient is not compensated | The recipe defaults to AdamW; the paper's background is Muon. With `optimizer.name` set to `"Muon"`, the core experts still scale their LR by `expert_lr_multiplier`, and WD is not compensated. Groups follow the real canonical core expert owners |
@@ -38,7 +38,7 @@ The first four, sandwich, relaxed and the LatentLoop residual variant use fixed 
 
 The historical engineering qualification of the four methods used a pre-tokenized DCLM fixture of 300M/1M/1M train/validation/test labels. It stays as a smoke test. The upstream download commit of the old copy is unknown; its parent manifest/chunk SHA identifies it. The import keeps the original tokens/EOS, does not decode or re-encode, and only prepends the BOS of this library, BOS=EOS=PAD151645. P1 uses raw DCLM that anyone can rebuild from public sources, with 24,000,067,249 /10,001,497 /10,009,889 train/validation/test valid labels completed. The Qwen3-30B-A3B tokenizer is pinned at `ae659febe817e4b3ebd7355f47792725801204c9`, vocab151669. A plain factory reads the vocabulary from the manifest explicitly before it builds the spec. [Training](training.md) gives the data identity, the tokenizer of four source files and the `--resume` entry.
 
-## P1 ordinary MoE / SMELT
+## P1 standard MoE / SMELT
 
 The real training configurations are published unchanged as [`p1_moe.json`](../recipes/p1_moe.json) and [`p1_smelt.json`](../recipes/p1_smelt.json). Load them directly as plain `RecipeSpec` objects. They keep the model, training, optimizer, the full schedule and the frozen identity:
 
@@ -52,7 +52,7 @@ print(spec.model.hidden_dim)  # 440
 print(spec.run["schedule_total_steps"])  # 19537
 ```
 
-| Geometry | Ordinary MoE | SMELT |
+| Geometry | Standard MoE | SMELT |
 |---|---:|---:|
 | residual width | 672 | 576 |
 | single-expert hidden | 544 | 440 |
@@ -61,7 +61,7 @@ print(spec.run["schedule_total_steps"])  # 19537
 | core visits / logical cell calls | 1 / 10 | 2 / 15 |
 | heads / KV heads / head dim | 7 / 1 / 96 | 9 / 1 / 64 |
 
-Both arms have the 151669-token vocabulary, an independent embedding/head, 4096ctx, and fixed depth/full BPTT/terminal CE. Only SMELT multiplies the two core residuals by 1/2 each. The 100M-active tier means about 98.5M active body parameters in a single traversal of the ordinary baseline, without the embedding/head. Its non-embedding unique parameters are about 712.7M, and the total model is about 916.5M. These three numbers have different names and must not be mixed.
+Both arms have the 151669-token vocabulary, an independent embedding/head, 4096ctx, and fixed depth/full BPTT/terminal CE. Only SMELT multiplies the two core residuals by 1/2 each. The 100M-active tier means about 98.5M active body parameters in a single traversal of the standard MoE baseline, without the embedding/head. Its non-embedding unique parameters are about 712.7M, and the total model is about 916.5M. These three numbers have different names and must not be mixed.
 
 F440 comes from the 4096ctx document packing of the complete planned 20.486B-label training prefix: epoch0/seed42/world16, 5,001,472 blocks, on average 4,180,216.9229844734 within-document causal attention pairs per sequence. An analytical screen of 12 pre-declared FFN widths selected the shape only by three budgets: unique non-embedding parameters, training matrix FLOPs and logical KV. It did not look at model quality. `p1_moe_spec()` and `p1_smelt_spec()` rebuild these two trained arms (F440, with the measured-pairs convention that P2 also uses). The default dense-S² analysis with no pairs selects F424, which was never trained.
 
