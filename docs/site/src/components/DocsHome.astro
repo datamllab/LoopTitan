@@ -127,7 +127,19 @@ void P;
 			} catch {}
 		});
 	});
+	// Starlight's search closes on the next window click, so this click must stop here before it opens the search.
+	const openSearch = () => document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]')?.click();
 	document.querySelectorAll('[data-open-search]').forEach((b) =>
-		b.addEventListener('click', () => document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]')?.click())
+		b.addEventListener('click', (e) => {
+			e.stopPropagation();
+			openSearch();
+		})
 	);
+	// The button shows "/" as its shortcut; Starlight itself listens only for Ctrl or Cmd + K.
+	addEventListener('keydown', (e) => {
+		const t = e.target as HTMLElement;
+		if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || t.closest('input, textarea, select, [contenteditable], dialog')) return;
+		e.preventDefault();
+		openSearch();
+	});
 </script>
