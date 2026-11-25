@@ -45,7 +45,9 @@ def test_metadata():
     assert p["license"] == "MIT" and p["license-files"] == ["LICENSE"]
     assert p["requires-python"] == ">=3.11"
     assert p["dependencies"] == []  # the base install stays torch-free
-    assert p["urls"] == {"Repository": "https://github.com/datamllab/LoopTitan"}
+    assert p["urls"] == {"Homepage": "https://datamllab.github.io/LoopTitan/",
+                         "Documentation": "https://datamllab.github.io/LoopTitan/docs/",
+                         "Repository": "https://github.com/datamllab/LoopTitan"}
     assert "Programming Language :: Python :: 3.11" in p["classifiers"]
     assert not [c for c in p["classifiers"] if c.startswith("License ::")]  # the SPDX field is the license
     cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
@@ -147,7 +149,7 @@ def test_built_wheel_contents(tmp_path):
     assert meta["Name"] == "moeloop-lab" and meta["Version"] == "1.0.0rc1"
     assert meta["Requires-Python"] == ">=3.11" and meta["License-Expression"] == "MIT"
     assert meta["Description-Content-Type"].startswith("text/markdown")
-    assert {u.split(", ")[0] for u in meta.get_all("Project-URL")} == {"Repository"}
+    assert {u.split(", ")[0] for u in meta.get_all("Project-URL")} == {"Homepage", "Documentation", "Repository"}
     requires = meta.get_all("Requires-Dist")
     assert all("extra ==" in r for r in requires)  # nothing is required by default
     assert any(r.startswith("torchtitan==0.3.0") for r in requires)

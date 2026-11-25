@@ -23,6 +23,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
+Homepage = "https://datamllab.github.io/LoopTitan/"
+Documentation = "https://datamllab.github.io/LoopTitan/docs/"
 Repository = "https://github.com/datamllab/LoopTitan"
 
 [project.optional-dependencies]
