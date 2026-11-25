@@ -1,6 +1,6 @@
 # Marks of other organisations
 
-These files are used unchanged in the destination capsules of the README and the Hugging Face pages, each beside a link to its own service. They are the property of their owners; no endorsement is implied.
+These files are used unchanged in the destination capsules of the README and the Hugging Face pages, each beside a link to its own service. The Hugging Face and arXiv marks are also copied unchanged to `docs/site/home/brand/`, beside the homepage's Models and Paper links. They are the property of their owners; no endorsement is implied.
 
 | File | Source | Terms |
 |:---|:---|:---|
