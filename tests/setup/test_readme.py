@@ -127,12 +127,12 @@ def test_readme_citation_follows_a_preferred_citation_after_regeneration(tmp_pat
 
 def test_capsules_link_only_to_places_that_exist():
     """Paper is a placeholder without a link until it is public; Homepage and Models lead to the project site and the
-    Hugging Face collection, and the other four lead to their place."""
+    Hugging Face organisation page, and the other four lead to their place."""
     row = re.findall(r'(?:<a href="([^"]+)">)?<picture><source[^>]*capsule-(\w+)-dark\.svg', README.read_text())
     assert [key for _, key in row] == ["homepage", "docs", "models", "paper", "results", "record", "contribute"]
     links = dict((key, href) for href, key in row)
     assert links["homepage"] == "https://datamllab.github.io/LoopTitan/"
-    assert links["models"] == "https://huggingface.co/collections/NaturalScale/looptitan-phase-1-6afb1e0dbc400210b5b0a5eb"
+    assert links["models"] == "https://huggingface.co/NaturalScale"
     assert not links["paper"]
     for key in ("docs", "results", "record", "contribute"):
         path, _, anchor = links[key].partition("#")
