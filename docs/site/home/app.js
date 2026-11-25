@@ -975,11 +975,11 @@
 		};
 	}
 
-	/* Every little while the header shell winds back to its pole and grows again, as at the opening; never while the
-	   tab is hidden, and not at all for reduced motion. */
+	/* Every five to seven seconds (a little irregular, so it surprises rather than ticks) the header shell winds back to
+	   its pole and grows again, as at the opening; never while the tab is hidden, and not at all for reduced motion. */
 	function markAgain(svg) {
-		const EVERY = 14000, BACK = 600;
-		const again = () => setTimeout(once, EVERY);
+		const BACK = 600;
+		const again = () => setTimeout(once, 5000 + Math.random() * 2000);
 		const once = () => {
 			if (document.hidden) return again();
 			const grow = shellGrower(svg, svg.dataset.mark), t0 = performance.now();
