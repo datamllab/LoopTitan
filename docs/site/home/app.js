@@ -975,6 +975,26 @@
 		};
 	}
 
+	/* Every little while the header shell winds back to its pole and grows again, as at the opening; never while the
+	   tab is hidden, and not at all for reduced motion. */
+	function markAgain(svg) {
+		const EVERY = 14000, BACK = 600;
+		const again = () => setTimeout(once, EVERY);
+		const once = () => {
+			if (document.hidden) return again();
+			const grow = shellGrower(svg, svg.dataset.mark), t0 = performance.now();
+			animate((dt, now) => {
+				const ms = now - t0;
+				if (ms < BACK) { grow(Math.max(0.001, 1 - easeIn(ms / BACK))); return true; }
+				const p = clamp((ms - BACK) / MO.t5);
+				grow(p >= 1 ? 1 : easeOut(p));
+				if (p >= 1) { again(); return false; }
+				return true;
+			});
+		};
+		again();
+	}
+
 	/* ---------------------------------------------------------------- the opening
 	   Two things, one clock, about 1.2 s. The shell in the header grows from its pole along its own spiral (760 ms).
 	   Beside it the card comes in; its layers rise out of the shaft in one wave from the loop outward; as the loop's
@@ -1001,7 +1021,7 @@
 			ctl.chrome(ms);
 			if (!shown) { shown = true; ctl.show(); }
 			if (!arced && ms > T_ARC) { arced = true; ctl.arc(); }
-			if (ms > T_END && ms > MO.t5) { grow(1); ctl.chrome(Infinity); ctl.end(); return false; }
+			if (ms > T_END && ms > MO.t5) { grow(1); ctl.chrome(Infinity); ctl.end(); if (hm && !reduced) markAgain(hm); return false; }
 			return true;
 		});
 	}
