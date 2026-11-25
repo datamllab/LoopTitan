@@ -1,7 +1,7 @@
 """Huginn checkpoint conversion: logits of the converted LoopedLM against the official forward.
 
 The tiny test needs no network: it builds a random state dict in the official
-layout and compares with ``official_forward``, a plain transcription of
+layout and compares with ``official_forward``, an independent re-implementation of
 ``RavenForCausalLM.forward`` in ``raven_modeling_minimal.py``
 (tomg-group-umd/huginn-0125 at bb6621b) with ``init_scale=0``, the zero initial
 state. The real-checkpoint test runs the official remote code itself; it needs

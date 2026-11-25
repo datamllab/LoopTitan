@@ -58,7 +58,7 @@ Before a resume, record the parent attempt, the checkpoint identity, the origina
 
 ## Terms in earlier threads
 
-Most issues, pull requests and comments before plan #274 are in Chinese. The keywords and headings that the tools parse (`### Goal`, `### Arms`, `## Changes`, `Closes #N`, `Verdict:`, `Decision:`, `Blocked:`) were English then and did not change. The table maps the other earlier terms to the English ones that the tools and skills use now. In results comments, `、` separated items that are now separated by `, `.
+Most issues, pull requests and comments before plan #274 are in Chinese. The keywords and headings that the tools parse (`### Goal`, `### Arms`, `## Changes`, `Closes #N`, `Verdict:`, `Decision:`, `Blocked:`) were English then and did not change. The table maps the other earlier terms to the English ones that the tools and skills use now. In results comments, `、` separated items that are now separated by `, `. Artifact folders in the commands of earlier threads (`$MOELOOP_ARTIFACTS/phase1/…`, `$MOELOOP_ARTIFACTS/phase2/…`) are storage prefixes chosen when the runs were launched; they do not name study phases.
 
 | Earlier Chinese | English |
 | --- | --- |

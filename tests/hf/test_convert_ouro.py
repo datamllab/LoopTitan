@@ -1,7 +1,7 @@
 """Ouro checkpoint conversion: logits of the converted LoopedLM against the official forward.
 
 The tiny test needs no network: it builds a random state dict in the official
-layout and compares with ``official_forward``, a plain transcription of
+layout and compares with ``official_forward``, an independent re-implementation of the forward of
 ``modeling_ouro.py`` (ByteDance/Ouro-1.4B at 574fa66). The real-checkpoint test
 runs the official remote code itself; it needs MOELOOP_OURO_DIR (a snapshot of
 an official Ouro repo) and a transformers version that loads that code
