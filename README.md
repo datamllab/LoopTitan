@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <!-- Paper gets its link when it is public -->
-  <a href="https://datamllab.github.io/LoopTitan/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><a href="https://huggingface.co/NaturalScale"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models" height="32"></picture></a><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper" height="32"></picture><a href="docs/results/phase1.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
+    <a href="https://datamllab.github.io/LoopTitan/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><a href="https://huggingface.co/NaturalScale"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models" height="32"></picture></a><a href="https://arxiv.org/abs/2611.34821"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper" height="32"></picture></a><a href="docs/results/phase1.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
 </p>
 
 <p align="center">
@@ -313,15 +312,18 @@ LoopTitan builds on the work of many people. We thank them.
 
 ## Citation
 
-Cite the repository and the exact source commit: [CITATION.cff](CITATION.cff). Cite the papers of the designs you use separately; the [method map](docs/method-map.md) lists them.
+If you use LoopTitan, please cite the paper, [arXiv:2611.34821](https://arxiv.org/abs/2611.34821). Cite the papers of the designs you use separately; the [method map](docs/method-map.md) lists them.
 
 <!-- citation: generated from CITATION.cff by scripts/readme_figures.py -->
 ```bibtex
-@software{looptitan,
-  title = {{LoopTitan}},
-  author = {{The LoopTitan authors}},
-  version = {1.0.0rc1},
-  url = {https://github.com/datamllab/LoopTitan}
+@misc{looptitan2026,
+  title = {{LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?}},
+  author = {Tian, Zichen and Lu, Yudong and Wu, Xuansheng and Zou, Na and Hu, Xia and Wang, Guanchu and Sun, Qianru},
+  year = {2026},
+  eprint = {2611.34821},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url = {https://arxiv.org/abs/2611.34821}
 }
 ```
 <!-- /citation -->

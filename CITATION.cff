@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, cite the repository and the exact source commit. Method papers are listed separately in docs/method-map.md."
+message: "If you use LoopTitan, please cite the paper below. Method papers are listed separately in docs/method-map.md."
 type: software
 title: "LoopTitan"
 authors:
@@ -9,3 +9,26 @@ url: "https://github.com/datamllab/LoopTitan"
 version: "1.0.0rc1"
 license: MIT
 abstract: "LoopTitan is an open-source PyTorch library for training and comparing looped Mixture-of-Experts language models. Nine published recipes share one explicit model, in which a few physical blocks run several times."
+preferred-citation:
+  type: article
+  title: "LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?"
+  authors:
+    - given-names: "Zichen"
+      family-names: "Tian"
+    - given-names: "Yudong"
+      family-names: "Lu"
+    - given-names: "Xuansheng"
+      family-names: "Wu"
+    - given-names: "Na"
+      family-names: "Zou"
+    - given-names: "Xia"
+      family-names: "Hu"
+    - given-names: "Guanchu"
+      family-names: "Wang"
+    - given-names: "Qianru"
+      family-names: "Sun"
+  year: 2026
+  identifiers:
+    - type: other
+      value: "arXiv:2611.34821 [cs.LG]"
+  url: "https://arxiv.org/abs/2611.34821"
