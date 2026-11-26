@@ -5,20 +5,30 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "moeloop-lab"
 version = "1.0.0rc1"
-description = "Readable recursive sparse models, TorchTitan training, and portable model delivery"
+description = "Open PyTorch infrastructure for looped mixture-of-experts (MoE) language models: one model for the published designs, budget-matched comparison, TorchTitan training and Hugging Face export"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-keywords = ["mixture-of-experts", "looped-transformer", "recursive-depth", "torchtitan", "pytorch"]
+keywords = [
+  "looped MoE", "mixture-of-experts", "MoE", "looped transformer", "looped language model", "parameter sharing",
+  "recurrent depth", "latent reasoning", "large language models", "pretraining", "Muon", "AdamW",
+  "compute-matched comparison", "PyTorch", "TorchTitan", "Hugging Face",
+]
 classifiers = [
   "Development Status :: 4 - Beta",
+  "Environment :: GPU :: NVIDIA CUDA",
+  "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
+  "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = []
 
@@ -26,6 +36,8 @@ dependencies = []
 Homepage = "https://datamllab.github.io/LoopTitan/"
 Documentation = "https://datamllab.github.io/LoopTitan/docs/"
 Repository = "https://github.com/datamllab/LoopTitan"
+Paper = "https://arxiv.org/abs/2611.34821"
+Models = "https://huggingface.co/NaturalScale"
 
 [project.optional-dependencies]
 model = ["torch==2.14.0"]

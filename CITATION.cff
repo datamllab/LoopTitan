@@ -8,7 +8,18 @@ repository-code: "https://github.com/datamllab/LoopTitan"
 url: "https://github.com/datamllab/LoopTitan"
 version: "1.0.0rc1"
 license: MIT
-abstract: "LoopTitan is an open-source PyTorch library for training and comparing looped Mixture-of-Experts language models. Nine published recipes share one explicit model, in which a few physical blocks run several times."
+abstract: "LoopTitan is open PyTorch infrastructure for looped mixture-of-experts (MoE) language models, in which a few MoE layers run several times with shared weights. Nine published looped recipes, among them SMELT, Huginn, Ouro, LOOM and Relaxed Recursive Transformers, are configurations of one explicit model. LoopTitan matches parameters, training FLOPs and KV cache before training, trains with TorchTitan under AdamW or Muon, and exports standalone Hugging Face models."
+keywords:
+  - looped MoE
+  - mixture-of-experts
+  - looped transformer
+  - looped language model
+  - parameter sharing
+  - recurrent depth
+  - large language models
+  - Muon
+  - PyTorch
+  - TorchTitan
 preferred-citation:
   type: article
   title: "LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?"

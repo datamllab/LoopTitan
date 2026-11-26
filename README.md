@@ -2,12 +2,12 @@
   <picture>
     <source media="(max-width: 640px)" srcset="docs/assets/banner-narrow.svg">
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
-    <img src="docs/assets/banner-light.svg" alt="LoopTitan. A common ground for looped MoE research. The design space of looped MoE in one model, compared on equal terms." width="880">
+    <img src="docs/assets/banner-light.svg" alt="LoopTitan. A common ground for looped mixture-of-experts (MoE) research. The design space of looped MoE in one model, compared on equal terms." width="880">
   </picture>
 </p>
 
 <p align="center">
-    <a href="https://datamllab.github.io/LoopTitan/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><a href="https://huggingface.co/NaturalScale"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models" height="32"></picture></a><a href="https://arxiv.org/abs/2611.34821"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper" height="32"></picture></a><a href="docs/results/phase1.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
+    <a href="https://datamllab.github.io/LoopTitan/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><a href="https://huggingface.co/NaturalScale"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models on Hugging Face" height="32"></picture></a><a href="https://arxiv.org/abs/2611.34821"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper on arXiv" height="32"></picture></a><a href="docs/results/phase1.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record in GitHub issues" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
 </p>
 
 <p align="center">
@@ -18,10 +18,15 @@
 </p>
 
 <p align="center">
+  Open PyTorch infrastructure for looped mixture-of-experts (MoE) language models.<br>
+  Code and models of <a href="https://arxiv.org/abs/2611.34821">LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?</a>
+</p>
+
+<p align="center">
   <picture>
     <source media="(max-width: 640px)" srcset="docs/assets/hero-narrow.svg">
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
-    <img src="docs/assets/hero-light.svg" alt="One model: three outer layers, six middle layers that run twice with one set of weights, three outer layers. A light passes the middle layers twice." width="880">
+    <img src="docs/assets/hero-light.svg" alt="A looped MoE: three outer layers, six middle layers that run twice with one set of weights, three outer layers. 12 layers stored, 18 run." width="880">
   </picture>
 </p>
 
@@ -31,7 +36,7 @@
   <picture>
     <source media="(max-width: 640px)" srcset="docs/assets/pillars-narrow.svg">
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/pillars-dark.svg">
-    <img src="docs/assets/pillars-light.svg" alt="Three tiles: 38 configurations, one model; three budgets within 5%; 30 of 30 values within tolerance against Transformers Qwen3-MoE." width="880">
+    <img src="docs/assets/pillars-light.svg" alt="Three tiles: 38 configurations, one model; the loop and the standard MoE within 5% in parameters, FLOPs and KV cache; 30 of 30 values within tolerance against Transformers Qwen3-MoE." width="880">
   </picture>
 </p>
 
