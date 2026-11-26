@@ -2229,7 +2229,7 @@
 		n.append(').');
 		const lk = h('p', 'ev-row', notes);
 		const a1 = h('a', 'ev', lk, 'docs/results/phase1.md');
-		a1.href = BLOB + 'docs/results/phase1.md';
+		a1.href = 'docs/results/phase1/';
 		a1.rel = 'noopener';
 	}
 

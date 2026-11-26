@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <a href="https://datamllab.github.io/LoopTitan/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><a href="https://huggingface.co/NaturalScale"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models on Hugging Face" height="32"></picture></a><a href="https://arxiv.org/abs/2611.34821"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper on arXiv" height="32"></picture></a><a href="docs/results/phase1.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record in GitHub issues" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
+    <a href="https://datamllab.github.io/LoopTitan/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-homepage-dark.svg"><img src="docs/assets/capsule-homepage-light.svg" alt="Homepage" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-docs-dark.svg"><img src="docs/assets/capsule-docs-light.svg" alt="Documentation" height="32"></picture></a><a href="https://huggingface.co/NaturalScale"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-models-dark.svg"><img src="docs/assets/capsule-models-light.svg" alt="Models on Hugging Face" height="32"></picture></a><a href="https://arxiv.org/abs/2611.34821"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-paper-dark.svg"><img src="docs/assets/capsule-paper-light.svg" alt="Paper on arXiv" height="32"></picture></a><a href="https://datamllab.github.io/LoopTitan/docs/results/phase1/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-results-dark.svg"><img src="docs/assets/capsule-results-light.svg" alt="Results" height="32"></picture></a><a href="https://github.com/datamllab/LoopTitan/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-record-dark.svg"><img src="docs/assets/capsule-record-light.svg" alt="Record in GitHub issues" height="32"></picture></a><a href=".github/CONTRIBUTING.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/capsule-contribute-dark.svg"><img src="docs/assets/capsule-contribute-light.svg" alt="Contribute" height="32"></picture></a>
 </p>
 
 <p align="center">
@@ -174,7 +174,7 @@ phase1/m0
   …
 ```
 
-The command prints the whole tree. Each configuration in plain words: [Phase 1 results](docs/results/phase1.md); what each keeps from its source and what it adapts: [method map](docs/method-map.md).
+The command prints the whole tree. Each configuration in plain words: [Phase 1 results](https://datamllab.github.io/LoopTitan/docs/results/phase1/); what each keeps from its source and what it adapts: [method map](docs/method-map.md).
 
 ## Compare
 
@@ -250,9 +250,9 @@ Test bits per byte (BPB) after 5.0B tokens of DCLM (4,769 updates of 1,048,576 t
 
 1. **The loop itself adds almost nothing.** At equal budgets the loop is level with its untied twin (step 5 against step 4); most of the gain comes from shape.
 2. **More than half of the gain disappears under Muon.** The whole chain gains 9.0 mBPB under AdamW and 3.7 under Muon.
-3. **Beyond equal budgets, one more visit gains as much as twice the experts under Muon.** The visit costs 31% more training FLOPs and no new weights ([outside matched budgets](docs/results/phase1.md#outside-matched-budgets)).
+3. **Beyond equal budgets, one more visit gains as much as twice the experts under Muon.** The visit costs 31% more training FLOPs and no new weights ([outside matched budgets](https://datamllab.github.io/LoopTitan/docs/results/phase1/#outside-matched-budgets)).
 
-Every configuration, the controls and both optimizers: [Phase 1 results](docs/results/phase1.md) ([data](docs/results/phase1.json)). The record of the study: [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216), [#225](https://github.com/datamllab/LoopTitan/issues/225).
+Every configuration, the controls and both optimizers: [Phase 1 results](https://datamllab.github.io/LoopTitan/docs/results/phase1/) ([data](docs/results/phase1.json)). The record of the study: [#177](https://github.com/datamllab/LoopTitan/issues/177), [#216](https://github.com/datamllab/LoopTitan/issues/216), [#225](https://github.com/datamllab/LoopTitan/issues/225).
 
 Later phases join this list when they are released.
 
@@ -288,7 +288,7 @@ A new configuration is a recipe: change the fields of an existing one, cost it, 
 | [Validation](docs/validation.md) | What was run on GPU, and the limits of each result |
 | [Development](docs/development.md) | Tests, conformance and diagnostics |
 | [Protocol](docs/protocol.md), [TorchTitan record](docs/torchtitan.md) | How studies and runs are recorded |
-| [Phase 1 results](docs/results/phase1.md) | Every Phase 1 configuration under one protocol |
+| [Phase 1 results](https://datamllab.github.io/LoopTitan/docs/results/phase1/) | Every Phase 1 configuration under one protocol |
 
 Tests: `uv sync --frozen && uv run --frozen python -m pytest -q`. The model tests need Torch and the `train` extra ([Development](docs/development.md#development-environment-and-checks)).
 

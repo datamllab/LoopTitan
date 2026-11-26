@@ -126,8 +126,8 @@ def test_readme_citation_follows_a_preferred_citation_after_regeneration(tmp_pat
 
 
 def test_capsules_link_only_to_places_that_exist():
-    """Homepage, Documentation, Models and Paper lead to the project site, its documentation, the Hugging Face
-    organisation page and the paper on arXiv, and the other three lead to their place."""
+    """Homepage, Documentation, Results, Models and Paper lead to the project site, its documentation and results
+    page, the Hugging Face organisation page and the paper on arXiv, and the other two lead to their place."""
     row = re.findall(r'(?:<a href="([^"]+)">)?<picture><source[^>]*capsule-(\w+)-dark\.svg', README.read_text())
     assert [key for _, key in row] == ["homepage", "docs", "models", "paper", "results", "record", "contribute"]
     links = dict((key, href) for href, key in row)
@@ -135,7 +135,8 @@ def test_capsules_link_only_to_places_that_exist():
     assert links["docs"] == "https://datamllab.github.io/LoopTitan/docs/"
     assert links["models"] == "https://huggingface.co/NaturalScale"
     assert links["paper"] == "https://arxiv.org/abs/2611.34821"
-    for key in ("results", "record", "contribute"):
+    assert links["results"] == "https://datamllab.github.io/LoopTitan/docs/results/phase1/"
+    for key in ("record", "contribute"):
         path, _, anchor = links[key].partition("#")
         if links[key].startswith("https://"):
             assert links[key] == "https://github.com/datamllab/LoopTitan/issues"
