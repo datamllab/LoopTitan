@@ -59,3 +59,31 @@ def test_the_site_is_published_only_from_main_while_the_repository_is_public():
     public = "github.event_name == 'push' && github.event.repository.private == false"
     assert public in wf["jobs"]["deploy"]["if"] and public in wf["jobs"]["build"]["env"]["PUBLISH"]
     assert set(wf["permissions"].values()) == {"read"}
+
+
+def test_every_page_has_a_description():
+    nav = (SITE / "nav.mjs").read_text()
+    slugs = re.findall(r"\['[^']+', '([^']*)', '[^']*'\]", nav)
+    block = nav[nav.index("export const DESCRIPTIONS") :]
+    block = block[: block.index("\n};")]
+    described = set(re.findall(r"^\t'?([\w/-]+)'?: ", block, re.M))
+    assert slugs and set(slugs) - described == set()
+
+
+def test_the_homepage_structured_data_follows_the_citation():
+    html = (HOME / "index.html").read_text()
+    graph = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S).group(1))["@graph"]
+    node = {n["@type"]: n for n in graph}
+    cff = yaml.safe_load((ROOT / "CITATION.cff").read_text())
+    paper, software = node["ScholarlyArticle"], node["SoftwareSourceCode"]
+    cited = cff["preferred-citation"]
+    assert paper["name"] == cited["title"] and paper["url"] == cited["url"] == paper["@id"]
+    assert [a["name"] for a in paper["author"]] == [f"{a['given-names']} {a['family-names']}" for a in cited["authors"]]
+    assert software["codeRepository"] == cff["repository-code"] and software["version"] == cff["version"]
+    assert software["citation"]["@id"] == paper["@id"]
+
+
+def test_llms_txt_cites_as_the_readme_does():
+    bibtex = re.compile(r"```bibtex\n(.*?)```", re.S)
+    readme = bibtex.search((ROOT / "README.md").read_text()).group(1)
+    assert bibtex.search((SITE / "src" / "llms.md").read_text()).group(1) == readme

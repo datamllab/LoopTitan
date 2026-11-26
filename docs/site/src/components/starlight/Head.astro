@@ -1,7 +1,11 @@
 ---
-// Starlight's <head>, the shared tokens (the homepage's own file) and preloads for its two faces.
+// Starlight's <head>, the shared tokens (the homepage's own file), preloads for its two faces, and the homepage's
+// structured data: the software, the paper and the models.
 import Default from '@astrojs/starlight/components/Head.astro';
 import { BASE } from '../../../nav.mjs';
+import { jsonLd } from '../../lib/structured.mjs';
+
+const notFound = Astro.locals.starlightRoute.entry.id === '404';
 ---
 
 <link rel="stylesheet" href={`${BASE}tokens.css`} />
@@ -10,3 +14,4 @@ import { BASE } from '../../../nav.mjs';
 <link rel="preload" href={`${BASE}fonts/geist-mono.woff2`} as="font" type="font/woff2" crossorigin />
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)" />
+{!notFound && <script type="application/ld+json" is:inline set:html={jsonLd} />}

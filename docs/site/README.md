@@ -20,7 +20,9 @@ repository's model environment for the data step (below). `build.sh` runs four s
      other repository path become GitHub links, bare `#123` becomes a link to the issue. A link to a path that is not
      in the repository fails the sync.
 3. `astro build` (Astro 7.4.12, Starlight 0.42.11) with `base` from `SITE_BASE`. `starlight-links-validator` checks
-   every internal link and anchor in the documents; Pagefind indexes the documentation for search.
+   every internal link and anchor in the documents; Pagefind indexes the documentation for search. The build also
+   writes `sitemap-index.xml` (the homepage and every page), `llms.txt` and `llms-full.txt` (below) and `robots.txt`
+   at the base.
 4. `scripts/check-dist.mjs`: the homepage arrived as synced, every page and `404.html` exist, every root-relative
    link and asset in the built HTML lies under the base and resolves, and so does every relative link of the homepage.
 
@@ -69,5 +71,8 @@ studies a card links) are the `TYPED` block at the top of `home/content.js`, eac
 | `src/lib/home.mjs`, `figures.mjs`, `vocab.mjs` | build-time figures from the homepage's `data/*.js`, `content.js` and the mechanism drawings in `app.js` |
 | `src/lib/postprocess.mjs` | rendered-HTML refinements: tables, numeric cells, result bars, short result headers |
 | `scripts/gen_data.py`, `data/record-snapshot.json` | the homepage's data; the record snapshot |
+| `home/index.html` `<head>` | title, description, canonical URL, link previews (`brand/og.png`, 1200 × 630) and the structured data (schema.org JSON-LD: the software, the paper, the models); `src/lib/structured.mjs` gives the documentation the same graph |
+| `nav.mjs` `DESCRIPTIONS` | the description of each documentation page |
+| `src/llms.md`, `src/lib/llms.mjs`, `src/pages/` | `llms.txt` (after llmstxt.org: the summary, the paper, the findings, the models, the citation, then every page), `llms-full.txt` (the same, then every page in full), `robots.txt` |
 | `scripts/sync.mjs`, `scripts/check-dist.mjs` | the sync step; the check of the built site |
 | `tests/setup/test_site.py` (repository root) | the navigation names existing documents, every document is in the navigation, the homepage stays under the base |

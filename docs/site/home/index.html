@@ -4,7 +4,96 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LoopTitan · A common ground for looped MoE research</title>
-<meta name="description" content="LoopTitan: the design space of looped MoE in one model, compared on equal budgets, checked against independent code, with an open record.">
+<meta name="description" content="Open PyTorch infrastructure for looped mixture-of-experts (MoE) language models: nine published looped recipes in one model, compared at matched parameters, FLOPs and KV cache.">
+<link rel="canonical" href="https://datamllab.github.io/LoopTitan/">
+<!-- link previews and structured data: absolute URLs of the published site -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LoopTitan">
+<meta property="og:title" content="LoopTitan · A common ground for looped MoE research">
+<meta property="og:description" content="The design space of looped mixture-of-experts (MoE) in one model, compared on equal terms. Paper: What Does Parameter Revisit Buy a Mixture-of-Experts? (arXiv:2611.34821). 17 open models.">
+<meta property="og:url" content="https://datamllab.github.io/LoopTitan/">
+<meta property="og:image" content="https://datamllab.github.io/LoopTitan/brand/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LoopTitan. A common ground for looped MoE research. A looped MoE: 3 outer layers, 6 middle layers that run twice with one set of weights, 3 outer layers; 12 layers stored, 18 run.">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+	"@context": "https://schema.org",
+	"@graph": [
+		{
+			"@type": "SoftwareSourceCode",
+			"@id": "https://datamllab.github.io/LoopTitan/#software",
+			"name": "LoopTitan",
+			"description": "Open-source PyTorch library for training and comparing looped mixture-of-experts (MoE) language models. Nine published looped recipes share one explicit model, in which a few physical blocks run several times. Parameters, training FLOPs and KV cache of any two configurations are compared before training.",
+			"url": "https://datamllab.github.io/LoopTitan/",
+			"codeRepository": "https://github.com/datamllab/LoopTitan",
+			"documentation": "https://datamllab.github.io/LoopTitan/docs/",
+			"license": "https://opensource.org/license/mit",
+			"programmingLanguage": "Python",
+			"runtimePlatform": "PyTorch",
+			"version": "1.0.0rc1",
+			"author": { "@type": "Organization", "name": "The LoopTitan authors" },
+			"keywords": ["looped mixture-of-experts", "looped MoE", "mixture of experts", "looped transformer", "parameter sharing", "recurrent depth", "Muon", "TorchTitan"],
+			"citation": { "@id": "https://arxiv.org/abs/2611.34821" },
+			"subjectOf": { "@id": "https://arxiv.org/abs/2611.34821" },
+			"workExample": { "@id": "https://huggingface.co/collections/NaturalScale/looptitan-phase-1-6afb1e0dbc400210b5b0a5eb" }
+		},
+		{
+			"@type": "ScholarlyArticle",
+			"@id": "https://arxiv.org/abs/2611.34821",
+			"headline": "LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?",
+			"name": "LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?",
+			"author": [
+				{ "@type": "Person", "name": "Zichen Tian" },
+				{ "@type": "Person", "name": "Yudong Lu" },
+				{ "@type": "Person", "name": "Xuansheng Wu" },
+				{ "@type": "Person", "name": "Na Zou" },
+				{ "@type": "Person", "name": "Xia Hu" },
+				{ "@type": "Person", "name": "Guanchu Wang" },
+				{ "@type": "Person", "name": "Qianru Sun" }
+			],
+			"datePublished": "2026-11-25",
+			"url": "https://arxiv.org/abs/2611.34821",
+			"identifier": "arXiv:2611.34821",
+			"publisher": { "@type": "Organization", "name": "arXiv", "url": "https://arxiv.org/" },
+			"inLanguage": "en",
+			"isAccessibleForFree": true,
+			"abstract": "Looped Mixture-of-Experts (MoE) architectures revisit layer parameters across depths. This design increases effective depth without adding parameters. Recent looped MoE studies report substantial gains over the standard MoE at matched budgets (parameters, FLOPs and KV cache). However, the reported gains still confound parameter revisit with other design choices, e.g., network shape and residual scale. We ask, what does parameter revisit itself buy? Using matched non-revisit controls, we find that parameter revisit itself buys almost nothing. We argue that revisit only offers a freedom an MoE already has, i.e., trading experts for depth (more layers, fewer experts each) at fixed parameters. First, at matched budgets, we decompose the state-of-the-art looped recipe, with revisit last. A non-revisit control retains all the gain. Most comes from network shape, and the rest from residual scale. We prove this scale acts as a lower learning rate on revisited layers. This helps under AdamW's uneven layer step sizes, but disappears under Muon, which keeps them nearly equal. Second, beyond matched budgets, we evaluate revisit by adding compute at fixed parameters. One extra visit gains more than doubling the experts. Yet without revisit, a deeper standard MoE at equal parameters and compute obtains 90.2% of that gain under Muon. Overall, gains come from network shape, the optimizer and added compute, which a standard MoE can adopt. Accordingly, we propose LoopTitan-Base as a stronger MoE baseline. Under Muon, it matches the strongest looped recipe without revisit or residual scale. We open-source LoopTitan and release 17 pretrained models (including LoopTitan-Base and the control). Our experiment record is public as GitHub issues, with predictions pre-registered and the full exploration history kept. This is our Phase 1 technical report, laying the foundation for follow-up studies.",
+			"about": { "@id": "https://datamllab.github.io/LoopTitan/#software" }
+		},
+		{
+			"@type": "Collection",
+			"@id": "https://huggingface.co/collections/NaturalScale/looptitan-phase-1-6afb1e0dbc400210b5b0a5eb",
+			"name": "LoopTitan Phase 1 models",
+			"description": "17 pretrained models of the paper on Hugging Face. Nine designs of standard and looped MoE on the same data, schedule and seed: eight trained with AdamW and with Muon, one with Muon only.",
+			"url": "https://huggingface.co/collections/NaturalScale/looptitan-phase-1-6afb1e0dbc400210b5b0a5eb",
+			"publisher": { "@type": "Organization", "name": "NaturalScale", "url": "https://huggingface.co/NaturalScale" },
+			"isBasedOn": { "@id": "https://datamllab.github.io/LoopTitan/#software" },
+			"citation": { "@id": "https://arxiv.org/abs/2611.34821" },
+			"hasPart": [
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-1.3B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-1.3B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-1.3B-A0.2B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-1.3B-A0.2B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-FineExperts-1.3B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-FineExperts-1.3B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-FineExperts-1.3B-A0.2B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-FineExperts-1.3B-A0.2B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE18-1.3B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE18-1.3B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-Base-1.3B-A0.2B", "url": "https://huggingface.co/NaturalScale/LoopTitan-Base-1.3B-A0.2B" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE18-Layout-1.3B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE18-Layout-1.3B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE18-Layout-1.3B-A0.2B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE18-Layout-1.3B-A0.2B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-Unrolled-1.3B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-Unrolled-1.3B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-Unrolled-1.3B-A0.2B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-Unrolled-1.3B-A0.2B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-Looped-1.3B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-Looped-1.3B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-Looped-1.3B-A0.2B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-Looped-1.3B-A0.2B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-Revisit-1.3B-A0.3B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-Revisit-1.3B-A0.3B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-Revisit-1.3B-A0.3B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-Revisit-1.3B-A0.3B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-Deep-1.3B-A0.3B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-Deep-1.3B-A0.3B-Muon" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-2xExperts-2.6B-A0.2B-AdamW", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-2xExperts-2.6B-A0.2B-AdamW" },
+				{ "@type": "CreativeWork", "name": "LoopTitan-MoE12-2xExperts-2.6B-A0.2B-Muon", "url": "https://huggingface.co/NaturalScale/LoopTitan-MoE12-2xExperts-2.6B-A0.2B-Muon" }
+			]
+		}
+	]
+}
+</script>
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
@@ -202,7 +291,7 @@
 					<span class="tstrip"><span class="tstrip__c" data-mx-cells aria-hidden="true"></span><span class="tstrip__t" data-mx-ok data-v="checksWithin"></span></span>
 				</div>
 				<div class="calls" data-calls aria-hidden="true"></div>
-				<div class="tplot" data-tplot role="img" aria-label="Thirty measured differences, each against its tolerance; every one is below it."></div>
+				<div class="tplot" data-tplot role="img" aria-label="Thirty measured differences against Hugging Face Transformers Qwen3-MoE, each against its tolerance; every one is below it."></div>
 				<div class="mxwrap" id="mx-values" hidden><div class="matrix" data-matrix></div></div>
 				<button type="button" class="disc__tog mx__tog" aria-expanded="false" aria-controls="mx-values" data-mx-tog><svg class="i" aria-hidden="true"><use href="#g-head"/></svg><span data-v="checksAll"></span></button>
 				<figcaption class="note" id="mx-cap">Largest absolute difference from the reference, <span data-v="updates"></span> <span data-v="optimizer"></span> updates each, <span data-v="dtype"></span> on <span data-v="device"></span>, Transformers <span data-v="transformers"></span>. Each dot is one difference against its own tolerance. Evidence: <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/baselines.md" rel="noopener">docs/baselines.md</a> <a class="ev" href="https://github.com/datamllab/LoopTitan/blob/main/docs/evidence/qwen3-cpu.json" rel="noopener">qwen3-cpu.json</a></figcaption>
