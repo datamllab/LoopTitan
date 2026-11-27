@@ -140,3 +140,29 @@ def test_capsules_link_only_to_places_that_exist():
     assert links["results"] == site + "docs/results/phase1/"
     assert links["record"] == "https://github.com/datamllab/LoopTitan/issues"
     assert (links["film"], links["work"], links["agent"]) == (site + "#film", site + "#record", site + "#start")
+
+
+def test_quick_start_python_runs_and_prints_what_its_comments_say(capsys):
+    """The Python block of the quick start runs as written, and each print gives the value in its comment."""
+    pytest.importorskip("torch")
+    section = README.read_text().split("## Quick start", 1)[1].split("\n## ", 1)[0]
+    code = re.findall(r"^```python\n(.*?)^```", section, re.M | re.S)
+    assert len(code) == 1 and len(code[0].strip().splitlines()) < 10
+    exec(compile(code[0], "README quick start", "exec"), {})
+    printed = capsys.readouterr().out.splitlines()
+    expected = [m.split("#", 1)[1].strip().split(" = ")[0] for m in code[0].splitlines() if m.startswith("print(")]
+    assert printed == expected
+
+
+def test_quick_start_commands_are_the_documented_ones():
+    """The quick start's commands: clone, the frozen Torch-free install and checks the development guide documents,
+    and the comparison of the Phase 1 loop with its twin; the Python setup is the CPU build of the pinned Torch."""
+    section = README.read_text().split("## Quick start", 1)[1].split("\n## ", 1)[0]
+    blocks = re.findall(r"^```sh\n(.*?)^```", section, re.M | re.S)
+    commands = [line for block in blocks for line in block.replace("\\\n", "").splitlines()]
+    assert "uv sync --frozen" in commands and "uv run --frozen python -m pytest -q" in commands
+    development = (ROOT / "docs" / "development.md").read_text()
+    assert "uv sync --frozen" in development and "uv run --frozen python -m pytest -q" in development
+    torch = re.search(r'"torch==([\d.]+)"', (ROOT / "pyproject.toml").read_text()).group(1)
+    assert any(f"'torch=={torch}'" in line for line in commands)
+    assert len(commands) <= 7

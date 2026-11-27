@@ -41,16 +41,21 @@ Open PyTorch infrastructure for looped mixture-of-experts (MoE) language models.
 
 ## Quick start
 
-Install from source (Python 3.12, Torch 2.14.0):
+Clone, install the Torch-free core with [uv](https://docs.astral.sh/uv/), print the lineage of every configuration, run the tests:
 
 ```sh
-uv venv --python 3.12
-. .venv/bin/activate
-uv pip install 'torch==2.14.0' --index-url https://download.pytorch.org/whl/cpu
-uv pip install '.[data,hf]'
+git clone https://github.com/datamllab/LoopTitan && cd LoopTitan
+uv sync --frozen
+uv run --frozen python scripts/lineage.py
+uv run --frozen python -m pytest -q
 ```
 
-Compare the loop of [Phase 1](#studies-run-on-looptitan) with its untied twin, which owns separate weights for each visit. The command prints one JSON record; its `matched` section, shown here, holds the three budgets:
+Then compare the loop of [Phase 1](#studies-run-on-looptitan) with its untied twin on a CPU, before any training; the command prints one JSON record ([format](docs/comparison.md#cli-and-plain-json)), whose three budgets are drawn below:
+
+```sh
+uv run --frozen python scripts/compare_recipes.py compare \
+  recipes/phase1/m3-adamw.json recipes/phase1/m4-adamw.json --seq-len 4096
+```
 
 <p align="center">
   <picture>
@@ -60,53 +65,29 @@ Compare the loop of [Phase 1](#studies-run-on-looptitan) with its untied twin, w
   </picture>
 </p>
 
-```console
-$ python scripts/compare_recipes.py compare \
-    recipes/phase1/m3-adamw.json recipes/phase1/m4-adamw.json --seq-len 4096
-  …
-  "matched": {
-    "logical_kv_bytes": {
-      …
-      "relative_difference": 0.0,
-      "relative_tolerance": 0.05
-    },
-    "training_flops_per_token": {
-      …
-      "relative_difference": -0.0010398183468857637,
-      "relative_tolerance": 0.05
-    },
-    "unique_non_embedding_parameters": {
-      …
-      "relative_difference": 0.01103571024112304,
-      "relative_tolerance": 0.05
-    }
-  },
-  …
-```
+<details>
+<summary>In Python</summary>
 
-Build a looped model, run it and cost it:
+The model itself needs Torch 2.14.0 (the CPU build here):
+
+```sh
+uv pip install 'torch==2.14.0' --index-url https://download.pytorch.org/whl/cpu
+uv pip install '.[data,hf]'
+```
 
 ```python
 import torch
 from moeloop import LoopedLM, ModelConfig
 from moeloop.costs import estimate_cost
 
-# one outer layer, two middle layers that run twice, one outer layer;
-# the middle layers share their weights across visits, attention excepted
-config = ModelConfig(vocab_size=128, dim=32, hidden_dim=64, num_heads=4, num_kv_heads=2,
-                     num_experts=4, top_k=2, prefix_cells=1, num_cells=2, suffix_cells=1,
-                     num_visits=2, attention_per_visit=True, max_seq_len=64)
-model = LoopedLM(config).eval()
-with torch.no_grad():
-    logits = model(torch.randint(0, 128, (2, 16))).logits
-print(tuple(logits.shape))                 # (2, 16, 128)
-
-cost = estimate_cost(config, seq_len=16)
-print(cost["calls"]["forward_cells"])      # 6
-print(cost["parameters"]["unique_non_embedding"],
-      cost["flops"]["training_per_token"],
-      cost["kv"]["bytes_at_context"])      # 117536 619008 6144
+# one outer layer, two middle layers that run twice (shared weights, attention per visit), one outer layer
+config = ModelConfig(vocab_size=128, dim=32, hidden_dim=64, num_heads=4, num_kv_heads=2, num_experts=4, top_k=2,
+                     prefix_cells=1, num_cells=2, suffix_cells=1, num_visits=2, attention_per_visit=True, max_seq_len=64)
+print(LoopedLM(config)(torch.randint(0, 128, (2, 16))).logits.shape)  # torch.Size([2, 16, 128])
+print(estimate_cost(config, seq_len=16)["calls"]["forward_cells"])     # 6 = 1 + 2 × 2 + 1
 ```
+
+</details>
 
 ## Designs
 
@@ -190,7 +171,7 @@ print({name: check["status"] for name, check in report["checks"].items()})
 #  'cache': 'pass', 'hf_roundtrip': 'pass', 'identity': 'pass'}
 ```
 
-Here `config` is the model of the quick start.
+Here `config` is the model of the [quick start](#quick-start)'s Python example.
 
 ## Train and export
 
@@ -287,7 +268,7 @@ A new configuration is a recipe: change the fields of an existing one, cost it, 
 | [Protocol](docs/protocol.md), [TorchTitan record](docs/torchtitan.md) | How studies and runs are recorded |
 | [Phase 1 results](https://datamllab.github.io/LoopTitan/docs/results/phase1/) | Every Phase 1 configuration under one protocol |
 
-Tests: `uv sync --frozen && uv run --frozen python -m pytest -q`. The model tests need Torch and the `train` extra ([Development](docs/development.md#development-environment-and-checks)).
+The quick start runs the Torch-free tests; the model tests need Torch and the `train` extra ([Development](docs/development.md#development-environment-and-checks)).
 
 ## Acknowledgements
 
