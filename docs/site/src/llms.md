@@ -18,6 +18,7 @@ A looped MoE runs some of its MoE layers several times with one set of weights: 
 - Checked against independent code. The model matches the official Hugging Face Transformers Qwen3-MoE (`Qwen3MoeForCausalLM`) in logits, gradients, optimizer steps and KV cache: 30 of 30 values within tolerance. The published looped checkpoints ByteDance/Ouro-1.4B and tomg-group-umd/huginn-0125 convert with the same logits.
 - Training on TorchTitan with AdamW or Muon. Initial weights, data order and validation samples do not depend on the GPU count; resume is bit-exact in model and optimizer state; export writes a standalone Hugging Face model.
 - A conformance check (`moeloop.testing.check_recipe`) tests a new configuration on a CPU in seconds: parameter ownership, shared gradients, cost-model calls, cache, export round trip and identity.
+- Fully agent-driven research. AI agents plan, build, run and review every study; researchers set the direction and approve. Each task is a public GitHub issue, and the rules and skills the agents follow ship with the code (`AGENTS.md`).
 - An open record and a benchmark. Each study declares its arms, controlled settings and budget in an issue before the runs; failed runs stay in the record. The Looped MoE Bench is a frozen protocol of four tracks, and anyone can enter a result by pull request.
 
 ## Designs implemented

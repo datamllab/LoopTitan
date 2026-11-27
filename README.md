@@ -19,6 +19,7 @@
 
 <p align="center">
   Open PyTorch infrastructure for looped mixture-of-experts (MoE) language models.<br>
+  <b>Fully agent-driven.</b> Researchers set the direction. Agents do the rest.<br>
   Code and models of <a href="https://arxiv.org/abs/2611.34821">LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?</a>
 </p>
 
@@ -53,6 +54,10 @@ Unique parameters, training FLOPs and KV cache come from the configuration, on a
 ### Checked against independent code.
 
 The model matches the official Transformers Qwen3-MoE in logits, gradients, optimizer steps and cache ([check](docs/baselines.md)). Two published looped checkpoints convert with the same logits ([#199](https://github.com/datamllab/LoopTitan/issues/199), [#201](https://github.com/datamllab/LoopTitan/issues/201)).
+
+### Run by agents.
+
+Agents plan, build, run and review every study here, and each task is a public [issue](https://github.com/datamllab/LoopTitan/issues). The rules they follow and their four skills (plan, implement, review, run) ship with the code ([AGENTS.md](AGENTS.md)). Send your own agent ([contributing](.github/CONTRIBUTING.md#agents)).
 
 ## Quick start
 
