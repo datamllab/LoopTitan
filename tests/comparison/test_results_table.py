@@ -4,6 +4,8 @@ import re
 import subprocess
 import sys
 
+import yaml
+
 import results_table
 
 DATA = json.loads(results_table.DATA.read_text())
@@ -26,6 +28,14 @@ def test_every_method_configuration_is_reported():
 
 def test_the_table_is_current():
     assert results_table.TABLE.read_text() == results_table.render(DATA)
+
+
+def test_the_page_opens_with_the_paper_of_the_citation():
+    paper = yaml.safe_load((results_table.ROOT / "CITATION.cff").read_text())["preferred-citation"]
+    assert results_table.PAPER == (paper["title"], paper["url"])
+    assert results_table.TABLE.read_text().split("\n\n")[2] == (
+        "Paper: [LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?](https://arxiv.org/abs/2611.34821) "
+        "(arXiv:2611.34821)")
 
 
 def test_the_check_passes_on_the_committed_data():

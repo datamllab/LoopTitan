@@ -34,6 +34,8 @@ REFERENCE = "recipes/phase1/m0-{}.json"
 METRICS = ("unique_non_embedding_parameters", "training_flops_per_token", "logical_kv_bytes")
 OPTIMIZERS = {"adamw": "AdamW", "muon": "Muon"}
 ISSUES = "https://github.com/datamllab/LoopTitan/issues/"
+# the paper of CITATION.cff's preferred-citation (title, url); a test keeps the two equal
+PAPER = ("LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?", "https://arxiv.org/abs/2611.34821")
 NOTES = [
     "- Test, Validation: bits per byte (BPB) on the complete held-out test and validation splits after the last update.",
     "- Δ test: test BPB minus the standard MoE's with the same optimizer, in mBPB (0.001 BPB).",
@@ -102,6 +104,7 @@ def render(data: dict) -> str:
     references = list(dict.fromkeys(entry for row in rows for entry in marks[row["design"]]))
     lines = ["# Phase 1 results", "",
              "<!-- Written by scripts/results_table.py from phase1.json; edit the data, not this file. -->", "",
+             f"Paper: [{PAPER[0]}]({PAPER[1]}) (arXiv:{PAPER[1].rsplit('/', 1)[1]})", "",
              data["protocol"], "", data["not_shown"], "", *NOTES]
     for optimizer, name in OPTIMIZERS.items():
         base = next(row["runs"][optimizer]["test_bpb"] for row in rows
