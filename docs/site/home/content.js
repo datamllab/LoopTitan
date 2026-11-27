@@ -153,9 +153,15 @@ window.CONTENT = {
 			['M3', 'The loop', 'phase1/m3']
 		],
 		record: {
-			kinds: [['study', 'Studies'], ['run', 'Run tasks'], ['plan', 'Plans'], ['code', 'Code tasks'], ['pr', 'Pull requests']]
+			kinds: [['study', 'Studies'], ['run', 'Run tasks'], ['plan', 'Plans'], ['code', 'Code tasks'], ['pr', 'Pull requests']],
+			// the label of the branches past the present
+			next: ['Branch from any result.'],
+			axis: 'every public issue, in the order opened',
+			aria: (n, studies, runs, d) => `The public record as a tree, to ${d}: ${n} GitHub issues and pull requests, among them ${studies} studies and ${runs} run tasks. Each study or plan is a branch with its tasks on it; every issue stays. New branches start from results across the record.`
 		},
 		copy: { idle: 'Copy', done: 'Copied' },
+		// the entry of an outside result, as .github/CONTRIBUTING.md describes it
+		entry: ['folder', 'pull request', 'bench check', 'merged'],
 		film: { pause: 'Pause the film', play: 'Play the film', soundOn: 'Turn the music on', soundOff: 'Turn the music off' },
 		/* the published configurations of the results table: name in the results data, configuration */
 		pub: [['V3', 'methods/smelt-v3'], ['V4', 'methods/smelt-v4'], ['LatentLoop-Residual', 'methods/latentloop-residual'], ['Meta', 'methods/meta'], ['Foil', 'methods/foil'], ['Tying', 'methods/expert-tying'], ['Huginn', 'methods/huginn'], ['Sandwich', 'methods/sandwich'], ['LOOM', 'methods/loom'], ['Ouro', 'methods/ouro'], ['Relaxed', 'methods/relaxed']]
@@ -182,6 +188,7 @@ const V = (window.V = {
 	configs: String(Object.keys(C).length),
 	budgets: `${BK.filter((b) => m3.budgets[b].within).length} of ${BK.length}`,
 	checks: `${ok.filter(Boolean).length} of ${ok.length}`,
+	threads: String(R.threads.length),
 	checksWithin: `${ok.filter(Boolean).length} of ${ok.length} within tolerance`,
 	checksAll: `the ${ok.length} values`,
 	cases: Word(cases.length),

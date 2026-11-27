@@ -107,9 +107,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .hero__h { font-size: var(--fs-8); line-height: 1.04; letter-spacing: -.035em; font-weight: var(--w-s); text-wrap: balance; }
 .hero__sub { margin-top: var(--s-7); font-size: var(--fs-5); line-height: 1.5; color: var(--mid); max-width: 30em; letter-spacing: -.01em; text-wrap: pretty; }
 .hero__cta { margin: var(--s-8) 0 var(--s-9); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-4); }
-.hero__quiet { display: inline-flex; gap: var(--s-6); margin-left: var(--s-3); }
+/* the actions, then the quiet links on a line of their own: the paper, the models, the film */
+.hero__quiet { display: flex; flex-basis: 100%; gap: var(--s-6); margin: var(--s-2) 0 0 var(--s-1); }
 /* the three proofs: one row of three, each its figure, its claim, and the number that proves it */
-.pillars { margin-top: 0; align-self: stretch; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-6); border-top: 1px solid var(--line); padding-top: var(--s-6); }
+.pillars { margin-top: 0; align-self: stretch; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-5); border-top: 1px solid var(--line); padding-top: var(--s-6); }
 .pillars a { display: grid; align-content: start; gap: var(--s-4); }
 .pillars__t { display: grid; gap: var(--s-1); line-height: 1.4; }
 .pillars__t b { font-weight: var(--w-s); font-size: var(--fs-2); letter-spacing: -.008em; transition: color var(--t-1) var(--e-out); }
@@ -202,9 +203,24 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* The page in sixteen seconds, built like the instrument: one card, the picture on the film's own ground, and a bar
    whose chapters are the film's timeline, in the page's order. Each chapter's width is its duration, so the line
    under them fills at one speed. The ground is measured from the film's frames, so the poster never shows an edge. */
-.reel { --film: #e8ebfa; padding: 0 0 var(--s-2); }
+/* a trailer, opened by choice: a dialog over the page, the size of the view, and the page still behind it */
+.filmdlg { --film: #e8ebfa; width: min(calc(100vw - 2 * var(--gut)), 72rem, calc((100svh - 9rem) * 16 / 9 + 1rem)); max-width: none; max-height: none; padding: 0; border: 0; background: none; overflow: visible; color: inherit; }
+.filmdlg::backdrop { background: rgba(22, 24, 29, .56); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.filmdlg[open] { animation: dlgIn var(--t-4) var(--e-out); }
+.filmdlg[open]::backdrop { animation: dlgFade var(--t-3) var(--e-out); }
+@keyframes dlgIn { from { opacity: 0; transform: translateY(var(--s-3)) scale(.985); } }
+@keyframes dlgFade { from { opacity: 0; } }
+.filmdlg__x { position: absolute; right: 0; bottom: calc(100% + var(--s-3)); }
+html:has(.filmdlg[open]) { overflow: hidden; }
+.qlink--film { display: inline-flex; align-items: center; gap: .45em; }
+.qlink__play { display: grid; place-items: center; width: 1.2em; height: 1.2em; border-radius: 50%; background: var(--acc); color: #fff; }
+.qlink__play .i { width: .6em; height: .6em; margin-left: .08em; }
+.qlink__t { font-family: var(--mono); font-size: var(--fs-1); color: var(--soft-t); margin-left: .15em; }
+.btn--paper .btn__mark { display: grid; place-items: center; width: 1.375rem; height: 1.375rem; border-radius: var(--r-1); background: #fff; }
+.btn--paper .btn__mark img { height: .95rem; width: auto; }
+.btn--paper:has(.btn__mark) { padding-left: calc(var(--s-4) - var(--s-1)); }
 /* an object placed on the page, not a band across it: narrower than the sections, and never taller than the view */
-.reel__card { width: min(100%, 64rem, calc((100svh - var(--nav-h) - 9rem) * 16 / 9)); margin: 0 auto; padding: var(--s-3); border-radius: var(--r-3); background: var(--paper); box-shadow: var(--bd), var(--sh-2); }
+.reel__card { width: 100%; margin: 0; padding: var(--s-3); border-radius: var(--r-3); background: var(--paper); box-shadow: var(--bd), var(--sh-2); }
 .reel__stage { position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-2); overflow: hidden; background: var(--film); isolation: isolate; }
 /* the picture keeps its edge in the film's white scenes */
 .reel__stage::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(22, 24, 29, .06); pointer-events: none; }
@@ -250,12 +266,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .reel__snd[aria-pressed='true'] { color: var(--ink); }
 .reel__acts .iconbtn svg { fill: currentColor; }
 /* without script the browser's own controls play it */
-.no-js .reel__bar { display: none; }
+.no-js .reel__bar, .no-js .qlink--film { display: none; }
 @media (max-width: 640px) {
 	/* the phone: no card, so the picture runs from gutter to gutter; the timeline without its words; the play control
 	   in the film's one empty corner */
-	.reel__card { padding: 0; border-radius: 0; background: none; box-shadow: none; }
-	.reel__stage { box-shadow: var(--sh-2); }
+	.reel__card { padding: var(--s-2); border-radius: calc(var(--r-2) + var(--s-2)); }
 	.reel__bar { gap: var(--s-4); padding: var(--s-3) 0 0; }
 	.reel__ch button { height: var(--h-4); }
 	.reel__ch .reel__l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -487,11 +502,27 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .act { margin-top: var(--s-5); position: relative; }
 .act svg { width: 100%; overflow: visible; }
 .act text { font-family: var(--mono); fill: var(--soft-t); }
-.act .col rect { transition: opacity var(--t-1) var(--e-out); }
-.act .col:hover rect { opacity: .75; }
 
 /* ------------------------------------------------------------------ 7. start */
-.bento--start { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-areas: 'term add' 'cite add'; }
+.bento--start { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'term agent'; }
+/* the rules a result enters under, right below the two ways in */
+#start .bento--rec { margin-top: var(--s-5); }
+/* the two ways in, as twins: the person's four commands and the agent's one instruction */
+.term--agent { grid-area: agent; }
+.term--agent .term__body { white-space: pre-wrap; max-width: 38em; }
+.term__k { position: absolute; left: var(--s-7); top: calc(var(--s-3) + var(--s-2)); font-family: var(--mono); font-size: var(--fs-1); line-height: var(--h-3); color: var(--c-mute); }
+.bento--start .term__body { padding-top: var(--s-10); }
+.term__foot { padding: 0 var(--s-7) var(--s-6); font-size: var(--fs-2); color: var(--c-mute); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); }
+.term__foot a { color: var(--c-fg-2); text-decoration: underline; text-decoration-color: var(--c-punc); text-underline-offset: 3px; transition: color var(--t-1) var(--e-out); }
+.term__foot a:hover { color: #fff; }
+.sh__h2 { color: var(--acc); }
+.bento--add { display: block; margin-top: var(--s-10); }
+.bento--add .card--add { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto 1fr auto; column-gap: var(--s-10); }
+.bento--add .card--add > .cardlabel { grid-column: 1; grid-row: 1; }
+.bento--add .card--add > .addfig { grid-column: 1; grid-row: 2 / 4; align-self: center; }
+.bento--add .card--add > .steps { grid-column: 2; grid-row: 1 / 3; margin-top: 0; }
+.bento--add .card--add > .ev-row { grid-column: 2; grid-row: 3; }
+.study__cite { margin-top: var(--s-6); }
 .term--start { grid-area: term; }
 .card--add { grid-area: add; }
 .steps { margin-top: var(--s-5); display: grid; margin-bottom: var(--s-5); }
@@ -648,7 +679,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* stations on a shaft: train and export, and declare, check, record */
 .rail, .flow { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-7); }
-.flow { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: var(--s-10); }
 .rail > li, .flow > li { position: relative; display: grid; align-content: start; gap: var(--s-2); padding-top: var(--s-9); min-width: 0; }
 .rail > li::before, .flow > li::before { content: ''; position: absolute; left: 0; top: var(--s-4); width: 0.25rem; height: var(--s-5); border-radius: 1px; background: var(--ink); }
 .rail > li::after, .flow > li::after { content: ''; position: absolute; left: 0; right: calc(-1 * var(--s-7)); top: calc(var(--s-4) + var(--s-5) - 0.5px); height: 1px; background: var(--line); }
@@ -656,9 +686,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .rail b, .flow b { font-size: var(--fs-4); line-height: 1.35; font-weight: var(--w-s); letter-spacing: -.016em; }
 .rail span, .flow span:not(.flow__n) { font-size: var(--fs-3); color: var(--mid); line-height: 1.55; text-wrap: pretty; }
 .rail .ev { justify-self: start; margin-top: var(--s-2); }
-.flow__n { position: absolute; left: var(--s-4); top: var(--s-4); font-family: var(--mono); font-size: var(--fs-1); line-height: 1; color: var(--soft-t); }
-.flow__in .ev-row { margin-top: var(--s-2); }
-.flow > li:last-child::after { right: 0; }
 
 /* the record's composition: each count over a bar of its share, in the chart's grey ramp */
 .tally dd { margin: 0; }
@@ -687,13 +714,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .addfig text { font-family: var(--mono); font-size: 11px; }
 
 /* cite, licence and the authors */
-.card--cite { grid-area: cite; padding: var(--s-6) var(--s-7); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); }
-.card--cite .card__t { margin-top: 0; }
-.authors { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3) var(--s-5); padding-bottom: var(--s-4); margin-bottom: var(--s-3); border-bottom: 1px solid var(--line); }
-.authors__n { font-size: var(--fs-2); font-weight: var(--w-s); color: var(--ink); }
-.authors__i { display: flex; flex-wrap: wrap; gap: var(--s-3); }
-.authors__i li { display: inline-flex; align-items: center; gap: var(--s-3); height: var(--h-4); padding: 0 var(--s-4); border: 1px dashed var(--hair); border-radius: var(--r-1); font-size: var(--fs-1); line-height: 1; color: var(--soft-t); }
-.authors__i img { height: var(--s-6); width: auto; }
 
 /* back matter: one list style for repositories and references */
 .thanks__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-5); margin: var(--s-2) 0 var(--s-5); max-width: 34em; }
@@ -741,8 +761,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 	.hero__grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
 	.hero__copy { display: contents; }
 	.hero__copy > * { max-width: 42.5rem; }
-	.inst { order: 2; margin-top: var(--s-8); }
-	.pillars { order: 3; margin-top: var(--s-8); max-width: 42.5rem; }
+	/* narrow: the four properties come before the instrument, the record first */
+	.pillars { order: 2; margin-top: var(--s-8); max-width: 42.5rem; }
+	.inst { order: 3; margin-top: var(--s-8); }
 	.bento--cmp .term, .card--match, .card--chain { grid-column: span 12; }
 	.bento--chk { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'mx mx' 'stat code'; }
 	.study { grid-template-columns: minmax(0, 1fr); }
@@ -757,8 +778,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 	.insp__grid { grid-template-columns: minmax(0, 1fr); }
 	.bento--rec, .back { grid-template-columns: minmax(0, 1fr); }
 	.back { gap: var(--s-10); }
-	.bento--start { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'term' 'add' 'cite'; }
-	.card--cite { display: block; }
+	.bento--start { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'term' 'agent'; }
+	.bento--add .card--add { display: block; }
+	.term__k { left: var(--s-5); }
+	.term__foot { padding: 0 var(--s-5) var(--s-5); }
 	/* the stations stand on a vertical shaft */
 	.rail, .flow { grid-template-columns: minmax(0, 1fr); gap: var(--s-6); }
 	.rail > li, .flow > li { padding: 0 0 0 var(--s-9); }
@@ -775,9 +798,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 	.hero__sub { margin-top: var(--s-5); }
 	.hero__cta { order: 1; margin-top: var(--s-6); }
 	.hero__quiet { margin-left: var(--s-2); }
-	.inst { order: 2; margin-top: var(--s-7); }
+	/* one block: the actions, then the pillars right under them */
+	.pillars { order: 2; margin-top: var(--s-6); }
+	.hero__cta { margin-bottom: 0; }
+	/* the phone: the instrument would fill the second screen, and the same drawing returns in Designs; the record comes next */
+	.inst { display: none; }
 	.release { order: 4; margin: var(--s-7) 0 0; }
-	.pillars { order: 5; }
 	.inst__bar { display: block; padding: var(--s-4) var(--s-4) 0; }
 	.seg--hero { display: flex; flex-wrap: wrap; width: 100%; border-radius: var(--r-3); overflow: visible; }
 	.seg--hero.is-over { -webkit-mask-image: none; mask-image: none; }
@@ -803,7 +829,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 	.code code { white-space: pre-wrap; }
 	.card, .mech { padding: var(--s-6); }
 	.term__body { padding-top: var(--s-10); }
-	.card--cite { padding: var(--s-6); }
 	.mxwrap { overflow-x: auto; margin: var(--s-5) calc(-1 * var(--s-6)) 0; padding: 0 var(--s-6); scrollbar-width: thin; }
 	.mxwrap .matrix { min-width: 37rem; }
 	.mx__r, .matrix > .mx__h:first-child { position: sticky; left: 0; z-index: 1; background: var(--paper); }
@@ -910,39 +935,200 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* the record: a timeline of threads */
 .tl { display: block; width: 100%; overflow: visible; }
-.act.is-wait .tl { clip-path: inset(0 100% 0 0); }
-.act.is-on .tl { clip-path: inset(0 0 0 0); transition: clip-path var(--t-5) var(--e-move); }
-.tl__g { stroke: var(--faint); stroke-width: 1; }
-.tl line { stroke-linecap: round; }
-.tl__h line { stroke-width: 2.5; }
-.tl__h--study line { stroke: var(--ink); }
-.tl__h--plan line { stroke: #5b616e; }
-.tl__decl { fill: var(--ink); }
-.tl__t line { stroke-width: 1.5; }
-.tl__t--run line { stroke: #3b404b; }
-.tl__t--plan line, .tl__t--study line { stroke: #5b616e; }
-.tl__t--code line { stroke: #9aa0ab; }
-.tl__t--pr line { stroke: #c9cdd4; }
-.tl__cap { stroke-width: 1.25 !important; }
-.tl__open { fill: var(--paper); stroke: var(--ink); stroke-width: 1.25; }
-.tl__t.is-case line { stroke: var(--ink); stroke-width: 2; }
-.tl__case { color: var(--ink); }
-.tl__case text { font-family: var(--mono); font-size: 9.5px; fill: var(--ink); }
-.tl__t.is-hl line, .tl__case.is-hl text { stroke-width: 3; font-weight: 600; }
-.tl__m { stroke-width: 1.25; }
-.tl__m--pr { stroke: #c9cdd4; }
-.tl__m--code { stroke: #9aa0ab; }
-.tl__n { font-family: var(--mono); font-size: 9px; fill: var(--soft-t); }
-.tl__n--study { fill: var(--ink-2); }
 .tl__d { font-family: var(--mono); font-size: 10px; fill: var(--soft-t); }
 .card--case.is-hl { box-shadow: var(--bd), 0 0 0 2px var(--ink); }
+/* the record up close: one place on the map, in GitHub's own look (Primer's light colours, type and Octicons), framed as a
+   specimen on the page's card. The text is the public record, translated; every row and comment links to its source. */
+.card--spec { margin: 0; background: var(--surface-2); }
+.spec { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s-5); align-items: stretch; }
+/* the thread is shown whole; the list takes the thread's height and fades at its end */
+.gh.gh--thread { height: auto; padding-bottom: 16px; }
+.gh.gh--thread::after { display: none; }
+.gh.gh--list { height: auto; contain: size; }
+.gh.gh--list::after { display: none; }
+/* act one starts close under the first screen */
+#record { padding-top: var(--s-10); }
+.gh {
+	--gh-fg: #1f2328; --gh-muted: #59636e; --gh-border: #d1d9e0; --gh-subtle: #f6f8fa; --gh-link: #0969da; --gh-done: #8250df;
+	position: relative; height: 33rem; overflow: hidden; border: 1px solid var(--gh-border); border-radius: 6px; background: #fff; color: var(--gh-fg);
+	font: 400 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; letter-spacing: 0; font-feature-settings: normal;
+	box-shadow: var(--sh-1);
+}
+.gh::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4.5rem; background: linear-gradient(rgba(255, 255, 255, 0), #fff 85%); pointer-events: none; }
+.gh a { color: inherit; }
+.gh a:hover { color: var(--gh-link); text-decoration: underline; }
+.gh svg { width: 16px; height: 16px; fill: currentColor; flex: none; }
+.gh-crumb { padding: 10px 16px; border-bottom: 1px solid var(--gh-border); background: var(--gh-subtle); font-size: 12px; color: var(--gh-muted); }
+.gh-row { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--gh-border); }
+.gh-ic { margin-top: 3px; color: var(--gh-done); }
+.gh-ic.is-open { color: #1a7f37; }
+/* sub-issues, nested as GitHub draws them: an elbow from the parent's icon */
+.gh-row--l1 { padding-left: 40px; }
+.gh-row--l1::before { content: ''; position: absolute; left: 23px; top: -1px; width: 13px; height: 21px; border-left: 1.5px solid var(--gh-border); border-bottom: 1.5px solid var(--gh-border); border-bottom-left-radius: 6px; }
+.gh-row--l1.has-sib::after { content: ''; position: absolute; left: 23px; top: 19px; bottom: -1px; border-left: 1.5px solid var(--gh-border); }
+.gh-row--l1, .gh-row--l1 + .gh-row--l1 { border-top: 0; }
+.gh-rows .gh-row--l0:not(:first-child) { border-top: 1px solid var(--gh-border); }
+.gh-rows .gh-row:has(+ .gh-row--l1) { border-bottom: 0; }
+/* the row whose thread is open on the right, as GitHub shows a row under the pointer */
+.gh-row.is-sel { background: var(--gh-subtle); }
+.gh .gh-row.is-sel .gh-row__t > a { color: var(--gh-link); text-decoration: underline; }
+.gh-row__t { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 14px; line-height: 1.5; font-weight: 600; }
+.gh-row__t > a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-row__t > .gh-lab, .gh-row__t > .gh-sub { flex: none; }
+.gh-row__s { margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--gh-muted); }
+.gh-com { display: inline-flex; align-items: center; gap: 4px; align-self: start; margin-top: 3px; font-size: 12px; color: var(--gh-muted); }
+.gh-lab { display: inline-block; padding: 0 7px; margin-left: 2px; border: 1px solid transparent; border-radius: 2em; font-size: 12px; font-weight: 500; line-height: 18px; white-space: nowrap; vertical-align: 1px; }
+.gh-lab--study { background: #1d76db; color: #fff; }
+.gh-lab--run { background: #fbca04; color: #1f2328; }
+.gh-lab--code { background: #0e8a16; color: #fff; }
+.gh-lab--pr { background: #bfd4f2; color: #1f2328; }
+.gh-sub { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; margin-left: 2px; border: 1px solid var(--gh-border); border-radius: 2em; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--gh-muted); vertical-align: 1px; white-space: nowrap; }
+.gh-sub svg { width: 12px; height: 12px; color: var(--gh-done); }
+.gh-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--gh-border); }
+.gh-head__t { font-size: 20px; line-height: 1.3; font-weight: 600; }
+.gh-head__n { font-weight: 400; color: var(--gh-muted); }
+.gh-head__s { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--gh-muted); }
+.gh-head__s b { color: var(--gh-fg); font-weight: 600; }
+.gh-state { display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border-radius: 2em; background: var(--gh-done); color: #fff; font-weight: 500; }
+.gh-c { position: relative; margin: 16px 16px 0; border: 1px solid var(--gh-border); border-radius: 6px; background: #fff; }
+/* the timeline: one line through the conversation, as on GitHub */
+.gh-c + .gh-c::before, .gh-more::before { content: ''; position: absolute; left: 23px; top: -17px; height: 16px; border-left: 2px solid var(--gh-border); }
+.gh-state.is-open { background: #1f883d; }
+.gh-more { position: relative; margin: 16px 16px 0; padding: 6px 0; text-align: center; font-size: 13px; border-top: 1px dashed var(--gh-border); border-bottom: 1px dashed var(--gh-border); }
+.gh-more::before { top: -17px; }
+.gh-more + .gh-c::before { top: -17px; }
+.gh-more a { color: var(--gh-link); }
+.gh-at { font-weight: 600; color: var(--gh-fg) !important; }
+.gh-c__h { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 8px 8px 8px 12px; font-size: 14px; }
+.gh-c__a { font-weight: 600; white-space: nowrap; }
+.gh .gh-c__d { white-space: nowrap; }
+.gh .gh-c__d { color: var(--gh-muted); }
+.gh-c__b { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--gh-muted); }
+.gh-badge { padding: 0 7px; border: 1px solid var(--gh-border); border-radius: 2em; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--gh-muted); }
+.gh-av { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 10px; font-weight: 600; letter-spacing: .02em; box-shadow: 0 0 0 1px rgba(31, 35, 40, .15); }
+.gh-av--claude { background: #f3e6df; color: #8a3f22; }
+.gh-av--codex { background: #e6e9ee; color: #24292f; }
+.gh-md { padding: 4px 16px 12px; word-wrap: break-word; }
+.gh-md > * + * { margin-top: 12px; }
+.gh-md blockquote { margin: 0; padding: 0 1em; border-left: .25em solid var(--gh-border); color: var(--gh-muted); }
+.gh .gh-md a { color: var(--gh-link); }
+.gh-md b { font-weight: 600; }
+.gh-md ol { padding-left: 2em; list-style: decimal; }
+.gh-md li + li { margin-top: 4px; }
+.gh-md code { padding: .2em .4em; border-radius: 6px; background: rgba(129, 139, 152, .12); font: 85%/1.5 ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; word-break: break-all; }
+/* the close-up plays: rows arrive in turn, issues open green and close purple, the token carries each split and each
+   answer. Only while it plays; without script, and with reduced motion, the drawing is complete from the start. */
+.spec { position: relative; }
+.spec.is-play .is-pend { display: none; }
+.spec.is-play .gh-sub.is-pend { display: inline-flex; visibility: hidden; }
+.spec .is-new { animation: ghNew 1.2s var(--e-out), ghIn .22s cubic-bezier(.16, 1, .3, 1); }
+/* a child grows out of its parent: the elbow draws down from the parent's icon, then the row fades in */
+.spec .gh-row--l1.is-new { animation: ghNew 1.2s var(--e-out) .06s backwards, ghIn .22s cubic-bezier(.16, 1, .3, 1) .06s backwards; }
+.spec .gh-row--l1.is-new::before { transform-origin: top; animation: ghLine .18s cubic-bezier(.16, 1, .3, 1) backwards; }
+@keyframes ghLine { from { transform: scaleY(0); } }
+/* a parent is marked, briefly, before its children arrive */
+.spec .gh-row.is-cue { animation: ghCue .8s var(--e-out); }
+@keyframes ghCue { from { background-color: #ddf4ff; } }
+@keyframes ghIn { from { opacity: 0; transform: translateY(-6px); } }
+/* while the list builds alone: centred in the frame, at a width that reads as a page of issues */
+.spec.is-solo { display: flex; justify-content: center; align-items: flex-start; padding-top: var(--solo-top, 0); }
+.spec.is-solo .gh--thread { display: none; }
+.spec.is-play .gh--list { z-index: 1; }
+.spec.is-solo .gh.gh--list { width: min(100%, 40rem); height: auto; contain: none; }
+@keyframes ghNew { from { background-color: #ddf4ff; } }
+.spec .gh-ic.is-pop, .spec .gh-state.is-pop { animation: ghPop .28s cubic-bezier(.16, 1, .3, 1); }
+@keyframes ghPop { from { transform: scale(.55); } 60% { transform: scale(1.18); } }
+.spec__acts { display: inline-flex; align-items: center; gap: var(--s-4); }
+.replay { display: inline-flex; align-items: center; gap: var(--s-2); height: var(--h-4); padding: 0 var(--s-3); border-radius: var(--r-p); font-size: var(--fs-2); font-weight: var(--w-m); color: var(--mid); transition: color var(--t-1) var(--e-out), background-color var(--t-1) var(--e-out); }
+.replay:hover { color: var(--ink); background: var(--faint); }
+.replay .i { width: .875rem; height: .875rem; }
+/* the entry, drawn as the journey of one agent's result: folder, pull request, bench check, merged into the record */
+.entry__svg .en-l { fill: none; stroke: var(--hair); stroke-width: 1.5; }
+.entry__svg .en-g { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.entry__svg .en-dot { fill: var(--ink); stroke: none; }
+.entry__svg .en-pr { fill: var(--ink); stroke: none; }
+.entry__svg .en-rec { stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; fill: none; }
+.entry__svg .en-old { fill: var(--paper); stroke: #9aa0ab; stroke-width: 1.1; }
+.entry__svg .en-you { fill: var(--paper); stroke: var(--acc); stroke-width: 2; }
+.entry__svg .en-t { font-family: var(--mono); font-size: 11px; fill: var(--mid); }
+.entry__svg .en-st { transition: opacity .18s cubic-bezier(.16, 1, .3, 1); }
+.entry.is-play .en-st.is-pend { opacity: .16; }
+.entry__svg .en-st:not(.is-pend) .en-g, .entry__svg .en-st:not(.is-pend) .en-pr, .entry__svg .en-st:not(.is-pend) .en-dot { animation: enLit .6s var(--e-out); }
+@keyframes enLit { from { stroke: var(--acc); fill: var(--acc); } }
+.entry__svg .en-seg { fill: none; stroke: var(--acc); stroke-width: 1.5; stroke-dasharray: 1; stroke-dashoffset: 0; opacity: 0; transition: stroke-dashoffset .22s cubic-bezier(.16, 1, .3, 1), opacity .5s var(--e-out) .4s; }
+.entry.is-play .en-seg { opacity: 1; transition: stroke-dashoffset .22s cubic-bezier(.16, 1, .3, 1); }
+.entry.is-play .en-seg.is-pend { stroke-dashoffset: 1; }
+.entry.is-play .en-you.is-pend { opacity: 0; }
+.entry__svg .en-you { transform-box: fill-box; transform-origin: center; }
+.entry.is-play .en-you:not(.is-pend) { animation: ghPop .28s cubic-bezier(.16, 1, .3, 1); }
+@media (max-width: 860px) {
+	/* narrow: the list above the thread, each cropped to what one screen holds */
+	.spec { grid-template-columns: minmax(0, 1fr); }
+	.gh.gh--list { height: auto; contain: none; }
+	.gh-c__b .gh-badge + .gh-badge { display: none; }
+}
+@media (max-width: 640px) {
+	/* the phone: the list, then the thread, each whole */
+	.gh-head__t { font-size: 18px; }
+	/* the entry's labels stay readable at the phone's width */
+	.entry__svg .en-t { font-size: 16px; }
+	/* whole titles, wrapped */
+	.gh-row__t { flex-wrap: wrap; }
+	.gh-row__t > a { white-space: normal; }
+	/* the badges give way to the names */
+	.gh-c__b .gh-badge { display: none; }
+	.card--spec { padding: var(--s-4); }
+	.gh-row { padding: 8px 12px; }
+	.gh-head { padding: 12px; }
+	.gh-c { margin: 12px 12px 0; }
+	.gh-md { padding: 4px 12px 12px; }
+}
+/* the record as a tree: ink for studies and runs, greys for plans, code and pull requests; indigo only for the one
+   branch past the present, the place where the next agent starts */
+.card--act { margin: 0 0 var(--s-6); }
+.paths .paths__trunk { stroke: var(--ink); stroke-width: 1.5; }
+.paths__b path { fill: none; stroke: var(--ink); stroke-width: 1.25; stroke-linejoin: round; }
+.paths__b--plan path { stroke: var(--soft); }
+.paths__root { fill: var(--ink); }
+.paths__b--plan .paths__root { fill: var(--soft); }
+.paths .paths__stop { stroke: var(--ink); stroke-width: 1.25; }
+.paths__b--plan .paths__stop { stroke: var(--soft); }
+.paths__live { fill: var(--paper); stroke: var(--ink); stroke-width: 1.25; }
+.paths__n--run { fill: var(--ink); }
+.paths__n--code, .paths__n--study, .paths__n--plan { fill: var(--paper); stroke: #9aa0ab; stroke-width: 1.1; }
+.paths__n.is-case { fill: var(--ink); stroke: var(--paper); stroke-width: 1.5; }
+.paths__n.is-hl { r: 4px; }
+.paths__t--code circle { fill: var(--paper); stroke: #9aa0ab; stroke-width: 1.1; }
+.paths__t--pr line { stroke: #c9cdd4; stroke-width: 1.25; }
+.paths__b:hover path { stroke-width: 2; }
+.paths__nb { fill: none; stroke: var(--acc); stroke-width: 1.5; stroke-dasharray: 3 4; stroke-linecap: round; }
+/* once the record has grown, the new branches' dashes run outward for a while: still happening */
+.paths.is-live .paths__nb { animation: nbFlow 1.4s linear 4; }
+@keyframes nbFlow { to { stroke-dashoffset: -14; } }
+.paths__src { fill: var(--acc); }
+.paths__head { fill: #fff; stroke: var(--acc); stroke-width: 1.75; pointer-events: none; }
+.paths__you { fill: var(--paper); stroke: var(--acc); stroke-width: 2; }
+.act .paths__say { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--acc); letter-spacing: -.01em; }
+.paths__sayn { display: none; margin-top: var(--s-3); font-size: var(--fs-2); font-weight: var(--w-s); color: var(--acc); }
+.card--act.is-narrow .paths__sayn { display: block; }
+.act__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4) var(--s-7); flex-wrap: wrap; margin-top: var(--s-5); padding-top: var(--s-4); border-top: 1px solid var(--line); }
+.act__cap { flex: 1 1 28rem; font-size: var(--fs-2); line-height: 1.6; color: var(--mid); text-wrap: pretty; }
+.act__cap b { color: var(--ink); font-weight: var(--w-s); }
+.tally dt[data-k]::before { background: none; }
+.tally dt[data-k='study']::before, .tally dt[data-k='plan']::before { width: 0.75rem; height: 0.125rem; border-radius: 1px; background: var(--ink); }
+.tally dt[data-k='plan']::before { background: var(--soft); }
+.tally dt[data-k='run']::before { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--ink); }
+.tally dt[data-k='code']::before { width: 0.375rem; height: 0.375rem; border-radius: 50%; box-shadow: inset 0 0 0 1.25px #9aa0ab; }
+.tally dt[data-k='pr']::before { width: 1.25px; height: 0.375rem; border-radius: 0; background: #c9cdd4; }
+.card--entry { display: flex; flex-direction: column; }
+.card--entry .entry { margin: 0 0 var(--s-6); padding: var(--s-2) 0 0; max-width: none; }
+.card--entry .ev-row { margin-top: auto; padding-top: var(--s-4); }
+.act__h { margin: 0; font-size: var(--fs-6); line-height: 1.2; letter-spacing: -.022em; }
+/* the first screen: the line every agent is invited by, then what the space is */
+.hero__sub.hero__slogan { color: var(--ink); font-size: var(--fs-6); line-height: 1.3; font-weight: var(--w-m); letter-spacing: -.02em; }
 /* how an outside result would enter */
 .entry { display: block; width: 100%; max-width: 13rem; margin: 0 0 var(--s-2); }
 .entry__svg { display: block; width: 100%; height: auto; overflow: visible; }
-.entry__svg path, .entry__svg circle { fill: none; stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
-.entry__c circle { fill: var(--ink); stroke: none; }
-.entry__l { stroke: var(--hair) !important; }
-.entry__f text { font-family: var(--mono); font-size: 7px; fill: var(--soft-t); }
 .entry__t { font-family: var(--sans); font-size: 8.5px; font-weight: 500; fill: var(--mid); }
 
 .tl__key { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); margin-top: var(--s-3); font-size: var(--fs-1); color: var(--soft-t); }
@@ -957,8 +1143,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .tl__k--code line, .tl__k--plan line, .tl__k--study line { stroke: #9aa0ab; }
 .tl__k--pr line { stroke: #c9cdd4; }
 .tl__cl { stroke: var(--ink); stroke-width: 2; }
-.tl__case.is-hl .tl__cl { stroke-width: 3.5; }
-.tl__case.is-hl text { font-weight: 600; }
 
 /* data-filled spans that hold several links lay them out as the links they replace */
 .study__links [data-v='studies'] { display: contents; }
@@ -973,16 +1157,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* the record: one square per public thread, on the day it was opened; colours as in the counts above */
 .tl__base { stroke: var(--hair); stroke-width: 1; }
-.tl__tick { stroke: var(--hair); stroke-width: 1; }
 .tl__q--study { fill: #16181d; }
 .tl__q--run { fill: #3b404b; }
 .tl__q--plan { fill: #5b616e; }
 .tl__q--code { fill: #9aa0ab; }
 .tl__q--pr { fill: #c9cdd4; }
 .tl__q.is-case { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
-.tl__lead { fill: none; stroke: var(--ink); stroke-width: 1; }
-.tl__case text { font-family: var(--sans); font-size: 11px; font-weight: 600; fill: var(--ink); }
-.tl__case.is-hl text { text-decoration: underline; }
 .tl__q.is-case.is-hl { stroke-width: 2.5; }
 
 /* each count's label carries the colour of its squares, so the counts are the figure's key */

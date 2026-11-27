@@ -2234,85 +2234,224 @@
 	}
 
 	/* ---------------------------------------------------------------- 6. the record */
+	/* The record as a tree of explored paths. The trunk is the one shared record, every thread in the order it was
+	   opened (its issue number). Each study or plan leaves the trunk at its own issue and runs to its last task; its
+	   run tasks (filled) and code tasks (hollow) sit on it. Nothing is pruned: every thread of the record is drawn.
+	   A finished path ends in a stop; an open one runs to the present. Past the present, one indigo branch: the
+	   place where the next agent starts. */
 	function record() {
-		const th = REC.threads;
+		const th = [...REC.threads].sort((a, b) => a.n - b.n);
 		const kinds = T.record.kinds;
+		const L = T.record;
 		const colors = { study: '#16181d', run: '#3b404b', plan: '#5b616e', code: '#9aa0ab', pr: '#c9cdd4' };
-		const stack = ['pr', 'code', 'plan', 'run', 'study'];
 		const tally = document.querySelector('[data-tally]');
+		const cnt = (k) => th.filter((x) => x.kind === k).length;
+		const counts = [];
+		const most = Math.max(...kinds.map(([q]) => cnt(q)));
 		kinds.forEach(([k, n]) => {
 			const d = h('div', '', tally);
 			const dt = h('dt', '', d, n);
-			dt.style.setProperty('--c', colors[k]);
-			const cnt = th.filter((x) => x.kind === k).length;
-			const dd = h('dd', '', d, String(cnt));
+			dt.dataset.k = k;
+			const dd = h('dd', '', d, String(cnt(k)));
 			const bar = h('i', 'tally__b', dd);
 			bar.style.background = colors[k];
-			bar.style.width = `${(cnt / Math.max(...kinds.map(([q]) => th.filter((x) => x.kind === q).length))) * 100}%`;
+			bar.style.width = `${(cnt(k) / most) * 100}%`;
+			counts.push({ k, num: dd.firstChild, bar, shown: -1 });
 		});
-		// the record, one square per public thread, stacked on the day it was opened. The counts above double as the key.
 		const box = document.querySelector('[data-act]');
 		const day = (s_) => Date.parse(s_ + 'T00:00:00Z') / 86400000;
-		const D0 = Math.min(...th.map((t) => day(t.opened))), D1 = Math.max(...th.map((t) => day(t.opened)));
-		const nD = D1 - D0 + 1;
 		const fmtD = (d) => new Date(d * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-		const order = ['study', 'run', 'plan', 'code', 'pr'];
 		const kindName = Object.fromEntries(kinds.map(([k, n]) => [k, n.replace(/s$/, '').toLowerCase()]));
-		const byDay = Array.from({ length: nD }, () => []);
-		th.forEach((t) => byDay[day(t.opened) - D0].push(t));
-		byDay.forEach((a) => a.sort((x, y) => order.indexOf(x.kind) - order.indexOf(y.kind) || x.n - y.n));
-		const CASE = 230;
+		const rank = new Map(th.map((t, i) => [t.n, i]));
+		const heads = th.filter((t) => t.kind === 'study' || t.kind === 'plan');
+		const kids = Object.fromEntries(heads.map((p) => [p.n, th.filter((t) => t.parent === p.n)]));
+		const CASE = TYPED.case.issue;
+		const last = th[th.length - 1];
+		let A = null; // what grows, and when: set by draw(), read by grow()
 		function draw() {
 			box.textContent = '';
 			const k = remK();
-			const W = box.clientWidth / k;
-			const per = W < 520 ? 2 : 3; // squares across one day
-			const colW = W / nD, q = Math.min(7, (colW - 2) / per - 1.5), step = q + 1.5;
-			const rows = Math.max(...byDay.map((a) => Math.ceil(a.length / per)));
-			const top = 26, base = top + rows * step, H = base + 30;
-			const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, height: H * k, class: 'tl', role: 'img', 'aria-label': `${th.length} public threads, one square each, on the day each was opened, ${fmtD(D0)} to ${fmtD(D1)}. Issue #${CASE}, the real case, is marked.` }, box);
-			s('line', { class: 'tl__base', x1: 0, x2: W, y1: base + 1.5, y2: base + 1.5 }, svg);
+			const W = box.clientWidth / k, narrow = W < 560;
+			box.parentNode.classList.toggle('is-narrow', narrow);
+			const F = narrow ? 64 : Math.min(260, W * 0.2); // the room past the present
+			const X0 = 4, X1 = W - F;
+			const x = (n) => X0 + (rank.get(n) / (th.length - 1)) * (X1 - X0);
+			const LH = narrow ? 10 : 17, R = narrow ? 4 : 7, gap = narrow ? 6 : 12;
+			// each path takes the lowest lane free over its span
+			const lanes = [];
+			const paths = heads.map((p) => {
+				const xs = x(p.n), ks = kids[p.n];
+				const xe = !p.closed ? X1 : Math.max(xs + R + 6, ...ks.map((c) => x(c.n) + 4));
+				let lane = lanes.findIndex((end) => end + gap < xs);
+				if (lane < 0) { lane = lanes.length; lanes.push(0); }
+				lanes[lane] = xe;
+				return { p, xs, xe, ks, lane };
+			});
+			const top = narrow ? 14 : 30;
+			const base = top + lanes.length * LH + 10;
+			const H = base + 34;
+			const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, height: H * k, class: 'tl paths', role: 'img', 'aria-label': L.aria(th.length, cnt('study'), cnt('run'), fmtD(day(REC.as_of))) }, box);
+			const past = s('g', { class: 'paths__past' }, svg);
+			A = { X0, X1, base, R, svg, trunk: null, dots: [], ticks: [], paths: [], twigs: [], pops: [], say: null };
+			// the trunk: the one record
+			A.trunk = s('line', { class: 'paths__trunk', x1: X0, x2: X1, y1: base, y2: base }, past);
+			th.forEach((t) => {
+				if (t.parent || t.kind === 'study' || t.kind === 'plan') return;
+				const g = s('g', { class: `paths__t paths__t--${t.kind}` }, past);
+				const xx = x(t.n);
+				if (t.kind === 'pr') A.ticks.push({ x: xx, el: s('line', { x1: xx, x2: xx, y1: base + 3, y2: base + 7 }, g) });
+				else { const r = narrow ? 1.6 : 2.25; A.pops.push({ x: xx, lag: 0, r, el: s('circle', { cx: xx, cy: base, r }, g) }); }
+				s('title', {}, g).textContent = `#${t.n} · ${kindName[t.kind]} · opened ${fmtD(day(t.opened))}`;
+			});
 			let cx = 0, cy = 0;
-			byDay.forEach((a, d) => {
-				const x0 = d * colW + (colW - per * step + 1.5) / 2;
-				a.forEach((t, i) => {
-					const x = x0 + (i % per) * step, y = base - (Math.floor(i / per) + 1) * step;
-					const r = s('rect', { class: `tl__q tl__q--${t.kind}` + (t.n === CASE ? ' is-case' : ''), x, y, width: q, height: q, rx: 1 }, svg);
-					s('title', {}, r).textContent = `#${t.n} · ${kindName[t.kind]} · opened ${fmtD(day(t.opened))}`;
-					if (t.n === CASE) { cx = x + q / 2; cy = y; }
+			paths.forEach(({ p, xs, xe, ks, lane }) => {
+				const y = base - (lane + 1) * LH;
+				const g = s('g', { class: `paths__b paths__b--${p.kind}` + (p.closed ? '' : ' is-open') }, past);
+				s('title', {}, g).textContent = `#${p.n} · ${kindName[p.kind]} · ${ks.length} tasks · opened ${fmtD(day(p.opened))}` + (p.closed ? '' : ' · open');
+				const pe = s('path', { d: `M${xs} ${base}V${y + R}Q${xs} ${y} ${xs + R} ${y}H${xe}` }, g);
+				const len = pe.getTotalLength(), hl = xe - (xs + R);
+				A.paths.push({ el: pe, xs, xe, len, rise: len - hl, head: null });
+				const rr = narrow ? 1.75 : 2.5;
+				A.pops.push({ x: xs, lag: 0, r: rr, el: s('circle', { class: 'paths__root', cx: xs, cy: base, r: rr }, g) });
+				// a finished path ends in a stop; an open one in a ring at the present
+				if (p.closed) A.ticks.push({ x: xe, lag: 1, y, el: s('line', { class: 'paths__stop', x1: xe, x2: xe, y1: y - 3, y2: y + 3 }, g) });
+				else { const rl = narrow ? 2 : 2.75; A.pops.push({ x: X1, lag: 1, r: rl, el: s('circle', { class: 'paths__live', cx: xe, cy: y, r: rl }, g) }); }
+				ks.forEach((c) => {
+					const xx = Math.max(xs + R, x(c.n)), rn = narrow ? 1.6 : 2.4;
+					const n = s('circle', { class: `paths__n paths__n--${c.kind}` + (c.n === CASE ? ' is-case' : ''), cx: xx, cy: y, r: rn }, g);
+					A.pops.push({ x: xx, lag: 1, r: rn, el: n });
+					s('title', {}, n).textContent = `#${c.n} · ${kindName[c.kind]} · opened ${fmtD(day(c.opened))}`;
+					if (c.n === CASE) { cx = xx; cy = y; }
 				});
-				if (!a.length) s('line', { class: 'tl__tick', x1: d * colW + colW / 2, x2: d * colW + colW / 2, y1: base + 1.5, y2: base + 4.5 }, svg);
 			});
-			// the case beside: its square, and a label above the stacks
-			if (cx) {
-				const g = s('g', { class: 'tl__case', 'data-case': '' }, svg);
-				s('path', { class: 'tl__lead', d: `M${cx} ${cy - 2}V${12}` }, g);
-				const t = s('text', { x: cx + 4, y: 10 }, g);
-				t.textContent = `#${CASE}, the real case`;
+			// while the record grows, each path's tip carries a token: an agent at work on it
+			A.paths.forEach((q) => { q.head = s('circle', { class: 'paths__head', r: narrow ? 2 : 2.75, cx: q.xs, cy: base, opacity: 0 }, past); });
+			// new branches, in indigo: a few start from results across the record (each where nothing grows above it), and
+			// from the present a fan spreads into many directions at once
+			const nu = s('g', { class: 'paths__next' }, svg);
+			const bud = narrow ? 0 : 3;
+			const free = [];
+			paths.forEach((q) => q.ks.forEach((c) => {
+				const xx = Math.max(q.xs + R, x(c.n));
+				const over = paths.some((o) => o.lane > q.lane && o.xs - R * 2 <= xx + 34 && o.xe + 4 >= xx);
+				if (!over && xx < X1 - 40) free.push({ x: xx, y: base - (q.lane + 1) * LH });
+			}));
+			free.sort((a, b) => a.x - b.x);
+			const buds = [];
+			for (let i = 0; i < bud && free.length; i++) {
+				const c = free[Math.min(free.length - 1, Math.round(((i + 0.5) / bud) * (free.length - 1)))];
+				if (!buds.includes(c)) buds.push(c);
 			}
-			[D0, D1].forEach((d, j) => {
-				const t = s('text', { class: 'tl__d', x: j ? W : 0, y: H - 8, 'text-anchor': j ? 'end' : 'start' }, svg);
-				t.textContent = fmtD(d);
+			const twig = (x0, y0, x1, y1, k_, src) => {
+				const el = s('path', { class: 'paths__nb', d: `M${x0} ${y0}C${x0 + (x1 - x0) * k_} ${y0} ${x0 + (x1 - x0) * (1 - k_) * 0.6} ${y1} ${x1} ${y1}` }, nu);
+				const ru = narrow ? 2.5 : 3.25;
+				A.twigs.push({ el, len: el.getTotalLength(), src, you: s('circle', { class: 'paths__you', cx: x1, cy: y1, r: ru }, nu), r: ru });
+			};
+			buds.forEach((c) => twig(c.x, c.y, c.x + 30, c.y - LH * 1.4, 0.1, s('circle', { class: 'paths__src', cx: c.x, cy: c.y, r: 2.6 }, nu)));
+			const fan = narrow ? 3 : 4, ex = X1 + F * (narrow ? 0.8 : 0.62);
+			const yHi = base - Math.max(2, lanes.length) * LH * 0.9;
+			for (let i = 0; i < fan; i++) {
+				const ey = yHi + (i / (fan - 1)) * (base - yHi);
+				twig(X1, base, ex + (i % 2 ? (narrow ? -6 : 18) : 0), ey, 0.45);
+			}
+			A.tip = { r: narrow ? 2.5 : 3.25, el: s('circle', { class: 'paths__src', cx: X1, cy: base, r: narrow ? 2.5 : 3.25 }, nu) };
+			// the fan and the buds reach out together, interleaved, as many agents start at once
+			const fanT = A.twigs.filter((q) => !q.src), budT = A.twigs.filter((q) => q.src);
+			A.twigs = [];
+			for (let i = 0; i < Math.max(fanT.length, budT.length); i++) { if (fanT[i]) A.twigs.push(fanT[i]); if (budT[i]) A.twigs.push(budT[i]); }
+			if (!narrow) {
+				const tx = s('text', { class: 'paths__say', x: W, y: yHi - 16, 'text-anchor': 'end' }, nu);
+				tx.textContent = L.next.join(' ');
+				A.say = tx;
+			}
+			// the ends of the record, by issue number and date
+			const lab = (xx, anchor, text) => { const e = s('text', { class: 'tl__d', x: xx, y: H - 8, 'text-anchor': anchor }, svg); e.textContent = text; };
+			lab(X0, 'start', `#${th[0].n} · ${fmtD(day(th[0].opened))}`);
+			lab(X1, 'end', `#${last.n} · ${fmtD(day(REC.as_of))}`);
+			if (!narrow) lab((X0 + X1) / 2, 'middle', L.axis);
+		}
+		/* The record grows as it happened. A cursor walks the issues in their order: the trunk follows it and each issue on
+		   it lands as it passes; a study or plan sets out from its own issue (its riser climbs), then runs forward a
+		   moment behind the cursor, its tasks landing on it in turn; a finished path stops with a small snap, an open one
+		   runs on to the present. The counts above rise with it. At the present the new branches reach out together, the
+		   line arrives, and their dashes run outward for a while. Every frame is a true state of the record; the end is
+		   the drawing exactly. Played once, when the tree comes into view; with reduced motion the tree is whole at once. */
+		const T_GROW = 3200, RISE = 260, POP = 320, TWIG = 760, STAG = 90;
+		const backOut = (u) => { const c = 1.5; return 1 + (c + 1) * (u - 1) ** 3 + c * (u - 1) ** 2; };
+		const dashTo = (d, len) => {
+			const a = [];
+			let acc = 0;
+			while (acc + 7 <= d) { a.push(3, 4); acc += 7; }
+			a.push(Math.max(0.001, Math.min(3, d - acc)), len + 8);
+			return a.map((v) => +v.toFixed(2)).join(' ');
+		};
+		let t0 = null, done = reduced;
+		const total = () => T_GROW + RISE + (A ? A.twigs.length : 7) * STAG + TWIG + 120;
+		function grow(t) {
+			const fin = done || t >= total();
+			const { X0, X1, base } = A;
+			const tAt = (xx) => ((xx - X0) / (X1 - X0)) * T_GROW;
+			const cur = (tt) => X0 + clamp(tt / T_GROW) * (X1 - X0);
+			const pop = (el, r, a) => { const u = clamp(a / POP); el.setAttribute('r', fin ? r : (u <= 0 ? 0 : r * backOut(u)).toFixed(2)); };
+			A.trunk.setAttribute('x2', fin ? X1 : cur(t).toFixed(2));
+			A.pops.forEach((q) => pop(q.el, q.r, t - tAt(q.x) - (q.lag ? RISE : 0)));
+			A.ticks.forEach((q) => {
+				const u = fin ? 1 : backOut(clamp((t - tAt(q.x) - (q.lag ? RISE : 0)) / POP));
+				if (q.y != null) { q.el.setAttribute('y1', (q.y - 3 * u).toFixed(2)); q.el.setAttribute('y2', (q.y + 3 * u).toFixed(2)); }
+				else q.el.setAttribute('y2', (base + 3 + 4 * u).toFixed(2));
+				q.el.style.opacity = u > 0.01 ? '' : 0;
 			});
-			const mid = s('text', { class: 'tl__d', x: W / 2, y: H - 8, 'text-anchor': 'middle' }, svg);
-			mid.textContent = 'day each thread was opened';
+			A.paths.forEach((q) => {
+				if (fin) { q.el.style.strokeDasharray = ''; q.head.setAttribute('opacity', 0); return; }
+				const a = t - tAt(q.xs);
+				const d = a <= 0 ? 0 : a < RISE ? q.rise * easeOut(a / RISE) : q.rise + clamp(cur(t - RISE) - (q.xs + A.R), 0, q.xe - (q.xs + A.R));
+				q.el.style.strokeDasharray = `${d.toFixed(2)} ${(q.len + 2).toFixed(2)}`;
+				const on = d > 0.5 && d < q.len - 0.5;
+				q.head.setAttribute('opacity', on ? 1 : 0);
+				if (on) { const pt = q.el.getPointAtLength(d); q.head.setAttribute('cx', pt.x.toFixed(2)); q.head.setAttribute('cy', pt.y.toFixed(2)); }
+			});
+			const tNow = T_GROW + RISE;
+			pop(A.tip.el, A.tip.r, t - tNow);
+			A.twigs.forEach((q, i) => {
+				const a = t - tNow - i * STAG;
+				if (q.src) pop(q.src, 2.6, a);
+				q.el.style.strokeDasharray = fin ? '' : a <= 0 ? '0 ' + (q.len + 8) : dashTo(q.len * easeOut(clamp(a / TWIG)), q.len);
+				q.el.style.opacity = fin || a > 0 ? '' : 0; // a round cap would show a dot before the branch starts
+				pop(q.you, q.r, a - TWIG * 0.85);
+			});
+			if (A.say) A.say.style.opacity = fin ? '' : clamp((t - tNow - 420) / 520).toFixed(3);
+			say.style.opacity = fin ? '' : clamp((t - tNow - 420) / 520).toFixed(3);
+			// the counts: what the record held at this moment
+			const upto = fin ? th.length : Math.floor(clamp(t / T_GROW) * (th.length - 1) + 1e-6) + (t >= 0 ? 1 : 0);
+			const most = Math.max(...counts.map((c) => cnt(c.k)));
+			counts.forEach((c) => {
+				const v = th.slice(0, upto).filter((x) => x.kind === c.k).length;
+				if (v === c.shown) return;
+				c.shown = v;
+				c.num.textContent = String(v);
+				c.bar.style.width = `${(v / most) * 100}%`;
+			});
+			A.svg.classList.toggle('is-live', fin && !reduced && t0 != null);
+			return !fin;
 		}
 		draw();
-		const key = h('p', 'tl__key', box.parentNode);
-		key.textContent = 'Each square is one public thread: a study, a run task, a plan, a code task or a pull request.';
-		onResize(box, draw);
-		// the record unrolls by day as it comes into view (a clip, nothing redrawn)
-		if (!reduced) { box.classList.add('is-wait'); onVisible(box, () => box.classList.replace('is-wait', 'is-on'), 0.3); }
-		// the case card and its square point at each other
+		// on a phone the invitation is set under the drawing, not in it
+		const say = h('p', 'paths__sayn', box.parentNode);
+		say.textContent = L.next.join(' ');
+		box.after(say);
+		const frame = () => grow(done ? Infinity : t0 == null ? -1 : performance.now() - t0);
+		onResize(box, () => { draw(); frame(); });
+		frame();
+		const grown = () => { box.dataset.grown = '1'; box.dispatchEvent(new Event('grown')); };
+		if (reduced) grown();
+		else onVisible(box, () => { box.dataset.grown = '0'; t0 = performance.now(); animate(() => { const more = frame(); if (!more) { done = true; grown(); } return more; }); }, 0.35);
+		// the case card and its node point at each other
 		const caseCard = document.querySelector('.card--case');
-		const hl = (on) => { caseCard.classList.toggle('is-hl', on); box.querySelectorAll('.is-case, .tl__case').forEach((e) => e.classList.toggle('is-hl', on)); };
+		const hl = (on) => { caseCard.classList.toggle('is-hl', on); box.querySelectorAll('.is-case').forEach((e) => e.classList.toggle('is-hl', on)); };
 		caseCard.addEventListener('pointerenter', () => hl(true));
 		caseCard.addEventListener('pointerleave', () => hl(false));
-		box.addEventListener('pointerover', (e) => { if (e.target.closest('.tl__case, .is-case')) hl(true); });
-		box.addEventListener('pointerout', (e) => { if (e.target.closest('.tl__case, .is-case')) hl(false); });
-		// how an outside result enters: one folder by pull request, the bench check, a merged record
-		const en = document.querySelector('[data-entry]');
-		if (en) en.innerHTML = `<svg viewBox="0 0 200 52" class="entry__svg"><g class="entry__f"><path d="M4 6h13l4 4h21v24H4z"/></g><path class="entry__l" d="M48 20H70"/><g class="entry__c"><path d="M74 20h44"/><path d="M84 13v14M108 13v14"/><circle cx="97" cy="20" r="3.4"/></g><path class="entry__l" d="M122 20H146"/><g class="entry__m"><path d="M150 20h38"/><path d="M188 14v12"/></g><text class="entry__t" x="23" y="49" text-anchor="middle">folder</text><text class="entry__t" x="96" y="49" text-anchor="middle">check</text><text class="entry__t" x="169" y="49" text-anchor="middle">merged</text></svg>`;
+		box.addEventListener('pointerover', (e) => { if (e.target.closest('.is-case')) hl(true); });
+		box.addEventListener('pointerout', (e) => { if (e.target.closest('.is-case')) hl(false); });
 	}
 
 
@@ -2327,7 +2466,7 @@
 		const Q = Object.keys(tolOf), cases = Object.keys(CHK.cases);
 		const vals = cases.flatMap((c) => Q.map((q) => CHK.cases[c].errors[q] / CHK.tolerances[tolOf[q]].atol));
 		const nb = BKEYS.filter((k) => Math.abs(m3.budgets[k].rel) <= m3.budgets[k].tol).length;
-		const num = { configs: String(Object.keys(C).length), budgets: `${nb} of ${BKEYS.length}`, checks: `${vals.filter((v) => v <= 1).length} of ${vals.length}` };
+		const num = { configs: String(Object.keys(C).length), budgets: `${nb} of ${BKEYS.length}`, checks: `${vals.filter((v) => v <= 1).length} of ${vals.length}`, threads: String(REC.threads.length) };
 		document.querySelectorAll('[data-pn]').forEach((n) => (n.textContent = num[n.dataset.pn]));
 		const fig = (k) => document.querySelector(`[data-pf="${k}"]`);
 		{
@@ -2361,6 +2500,23 @@
 				const rs = cases.map((c, i) => vals[i * Q.length + j]).filter((v) => v > 0);
 				s('line', { x1: xq(Math.min(...rs)), x2: xq(Math.max(...rs)), y1: y, y2: y, stroke: 'var(--ink)', 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
 			});
+		}
+		{
+			// the record in miniature: the trunk, and the three studies with the most tasks as paths off it, each with its
+			// run tasks (filled) and code tasks (hollow); the last one still open, and one indigo branch past the present
+			const svg = s('svg', { viewBox: '0 0 56 32' }, fig('record'));
+			const st = REC.threads.filter((t_) => t_.kind === 'study').map((p_) => ({ p: p_, ks: REC.threads.filter((c) => c.parent === p_.n) }))
+				.sort((a, b) => b.ks.length - a.ks.length || a.p.n - b.p.n).slice(0, 3).sort((a, b) => a.p.n - b.p.n);
+			s('line', { x1: 1, x2: 42, y1: 28, y2: 28, stroke: 'var(--ink)', 'stroke-width': 1.75, 'stroke-linecap': 'round' }, svg);
+			st.forEach((q, i) => {
+				const x0 = 3 + i * 8, y = 21 - i * 7, x1 = x0 + 14 + Math.min(q.ks.length, 8) * 1.6;
+				s('path', { d: `M${x0} 28V${y + 2}Q${x0} ${y} ${x0 + 2} ${y}H${x1}`, stroke: 'var(--ink)', 'stroke-width': 1.25, fill: 'none', 'stroke-linecap': 'round' }, svg);
+				q.ks.slice(0, 4).forEach((c, j) => s('circle', { cx: x0 + 5 + j * 3.6, cy: y, r: 1.3, fill: c.kind === 'run' ? 'var(--ink)' : 'var(--paper)', stroke: 'var(--ink)', 'stroke-width': c.kind === 'run' ? 0 : 0.9 }, svg));
+				s('line', { x1: x1, x2: x1, y1: y - 2, y2: y + 2, stroke: 'var(--ink)', 'stroke-width': 1.25, 'stroke-linecap': 'round' }, svg);
+			});
+			s('path', { d: 'M42 28C48 28 48 17 54 17', stroke: 'var(--acc)', 'stroke-width': 1.25, fill: 'none', 'stroke-dasharray': '1.5 2', 'stroke-linecap': 'round' }, svg);
+			s('path', { d: 'M42 28H54', stroke: 'var(--acc)', 'stroke-width': 1.25, fill: 'none', 'stroke-dasharray': '1.5 2', 'stroke-linecap': 'round' }, svg);
+			s('circle', { cx: 42, cy: 28, r: 1.6, fill: 'var(--acc)' }, svg);
 		}
 		// each eyebrow shows where its section sits in the page, as a layer sits in the model
 		const ebs = [...document.querySelectorAll('.eyebrow')];
@@ -2425,13 +2581,187 @@
 		set(false);
 	}
 
+	/* ---------------------------------------------------------------- the record up close */
+	/* One place on the tree, happening, told by the unfolding alone: a brisk burst in three phrases.
+	   The issue list stands alone with three open issues. A study is marked, and its code task and run grow in beneath
+	   it together; they close, then the study (6 / 6). An agent's fix is marked, its pull request grows in, both close.
+	   A study is marked, its run grows in and is selected; the frame opens and the run's thread arrives beside it; once
+	   the layout is still, the comments arrive in reading order (one agent decides, another claims; a breath of hidden
+	   items; the report, the acceptance); the run closes, then its study (8 / 8). One change at a time. Played once in
+	   view (after the tree, if it is growing); Replay plays it again; Tab, reduced motion or no script give the
+	   complete drawing. */
+	function story() {
+		const spec = document.querySelector('.card--spec .spec');
+		if (!spec || reduced) return;
+		const list = spec.querySelector('.gh--list'), thread = spec.querySelector('.gh--thread');
+		const row = (n) => spec.querySelector(`.gh-row[data-n="${n}"]`);
+		const rows = [...spec.querySelectorAll('.gh-row')];
+		const head = spec.querySelector('.gh-head');
+		const cs = [...spec.querySelectorAll('.gh-c')];
+		const more = spec.querySelector('.gh-more');
+		const state = spec.querySelector('.gh-state');
+		const replayB = document.querySelector('[data-spec-replay]');
+		const ease = 'cubic-bezier(.65, 0, .35, 1)';
+		const wide = () => !matchMedia('(max-width: 860px)').matches;
+		const icon = (el, open) => {
+			const ic = el.querySelector('.gh-ic') || el;
+			ic.querySelector('use').setAttribute('href', open ? '#oc-issue-opened' : '#oc-issue-closed');
+			ic.classList.toggle('is-open', open);
+			if (ic.hasAttribute('aria-label')) ic.setAttribute('aria-label', open ? 'Open' : 'Closed');
+		};
+		const setState = (open) => { icon(state, open); state.lastElementChild.textContent = open ? 'Open' : 'Closed'; };
+		const pop = (el) => { el.classList.remove('is-pop'); void el.getBoundingClientRect(); el.classList.add('is-pop'); };
+		const sel = (on) => { row(271).classList.toggle('is-sel', on); if (on) row(271).setAttribute('aria-current', 'true'); else row(271).removeAttribute('aria-current'); };
+		// the list keeps its height smooth as rows arrive, so the centred list grows rather than jumps
+		const show = (el) => {
+			const h0 = list.offsetHeight;
+			el.classList.remove('is-pend', 'is-new'); void el.offsetWidth; el.classList.add('is-new');
+			const h1 = list.offsetHeight;
+			if (h0 !== h1 && spec.classList.contains('is-solo')) list.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 200, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+		};
+		const close = (r) => { icon(r, false); pop(r.querySelector('.gh-ic')); const sb = r.querySelector('.gh-sub'); if (sb) sb.classList.remove('is-pend'); };
+		let lock = 0;
+		const pend = () => {
+			// measured on the complete drawing only (the first call, or after a play has ended)
+			if (!spec.classList.contains('is-play')) {
+				lock = spec.offsetHeight;
+				spec.classList.add('is-play', 'is-solo');
+				// the list grows downward from where its complete form will sit, centred; nothing above a new row moves
+				if (wide()) { spec.style.height = lock + 'px'; spec.style.setProperty('--solo-top', Math.max(0, (lock - list.offsetHeight) / 2) + 'px'); }
+			}
+			rows.forEach((r) => { if (r.classList.contains('gh-row--l1')) r.classList.add('is-pend'); r.classList.remove('is-new', 'is-cue'); icon(r, true); const sb = r.querySelector('.gh-sub'); if (sb) sb.classList.add('is-pend'); });
+			[head, ...cs, more].forEach((e) => { e.classList.add('is-pend'); e.classList.remove('is-new'); });
+			sel(false); setState(true);
+		};
+		const end = () => { spec.classList.remove('is-play', 'is-solo'); spec.style.height = ''; spec.style.removeProperty('--solo-top'); replayB.hidden = false; };
+		let gen = 0;
+		const alive = (g) => { if (g !== gen) throw new Error('replaced'); };
+		const wait = (ms, g) => new Promise((res) => setTimeout(res, ms)).then(() => alive(g));
+		// a beat waits until there is room on screen below the last thing shown (the phone scrolls through it)
+		const room = (el, g) => new Promise((res, rej) => {
+			const f = () => {
+				if (g !== gen) return rej(new Error('replaced'));
+				const r = el.getBoundingClientRect();
+				// on a wide screen the frame's height is held, so only the element itself must be in view
+				if (!document.hidden && r.top > -20 && r.bottom < innerHeight - (wide() ? 8 : 90)) return res();
+				setTimeout(f, 120);
+			};
+			f();
+		});
+		// a parent is marked before its children grow in beneath it
+		const cue = (el) => { el.classList.remove('is-cue'); void el.offsetWidth; el.classList.add('is-cue'); };
+		// the frame opens: the list slides to its column and the thread comes in beside it, carrying its header
+		const open = () => {
+			const r0 = list.getBoundingClientRect();
+			show(head);
+			spec.classList.remove('is-solo');
+			if (!wide()) return Promise.resolve();
+			const r1 = list.getBoundingClientRect();
+			list.animate([{ transform: `translate(${r0.left - r1.left}px, ${r0.top - r1.top}px)`, width: r0.width + 'px', height: r0.height + 'px' }, { transform: 'none', width: r1.width + 'px', height: r1.height + 'px' }], { duration: 400, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+			return thread.animate([{ opacity: 0, transform: 'translateX(24px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 200, easing: 'cubic-bezier(.16, 1, .3, 1)', fill: 'backwards' }).finished.catch(() => {});
+		};
+		async function play() {
+			const g = ++gen;
+			replayB.hidden = true;
+			pend();
+			try {
+				await room(list, g);
+				// phrase 1, work splits: the study, then its code task and its run on each other's heels
+				cue(row(216)); await wait(90, g);
+				show(row(217)); await wait(80, g); show(row(218)); await wait(260, g);
+				close(row(217)); await wait(90, g); close(row(218)); await wait(100, g); close(row(216)); await wait(200, g);
+				// phrase 2, the record corrects itself: an agent's fix, its pull request
+				await room(row(220), g);
+				cue(row(220)); await wait(90, g); show(row(221)); await wait(280, g);
+				close(row(221)); await wait(100, g); close(row(220)); await wait(200, g);
+				// phrase 3, agents answer each other: a study's run, its thread, the exchange
+				await room(row(223), g);
+				cue(row(223)); await wait(90, g); show(row(271)); await wait(160, g);
+				sel(true); await wait(90, g);
+				await open(); alive(g); await wait(80, g);
+				await room(head, g); show(cs[0]); await wait(270, g);
+				await room(cs[0], g); show(cs[1]); await wait(260, g);
+				await room(cs[1], g); show(more); await wait(130, g);
+				await room(more, g); show(cs[2]); await wait(270, g);
+				await room(cs[2], g); show(cs[3]); await wait(330, g);
+				// the close, one beat: the run and its header, then its study
+				close(row(271)); setState(false); pop(state); await wait(110, g);
+				close(row(223)); await wait(250, g);
+				end();
+			} catch (e) { /* replaced by a replay or finished at once */ }
+		}
+		// the final drawing at once: for a keyboard visitor, whose Tab must find every link
+		const finish = () => {
+			gen++;
+			rows.forEach((r) => { r.classList.remove('is-pend', 'is-new', 'is-cue'); icon(r, false); const sb = r.querySelector('.gh-sub'); if (sb) sb.classList.remove('is-pend'); });
+			[head, ...cs, more].forEach((e) => e.classList.remove('is-pend', 'is-new'));
+			sel(true); setState(false);
+			list.getAnimations().forEach((a) => a.cancel()); thread.getAnimations().forEach((a) => a.cancel());
+			end();
+		};
+		addEventListener('keydown', (e) => { if (e.key === 'Tab' && spec.classList.contains('is-play')) finish(); });
+		replayB.addEventListener('click', () => { spec.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); play(); });
+		pend();
+		// it starts in view, once; if the tree above is still growing, it lets the tree finish first
+		const tree = document.querySelector('[data-act]');
+		let started = false, specIn = false;
+		const go = () => { if (started || !specIn || (tree && tree.dataset.grown === '0')) return; started = true; play(); };
+		new IntersectionObserver((es) => { specIn = es[0].isIntersecting; go(); }, { threshold: 0.3 }).observe(spec);
+		if (tree) tree.addEventListener('grown', go);
+		// a new width while it plays: the frame's held height no longer fits, so it completes at once
+		let vw = innerWidth;
+		addEventListener('resize', () => { if (innerWidth !== vw) { vw = innerWidth; if (spec.classList.contains('is-play')) finish(); } });
+	}
+
+	/* ---------------------------------------------------------------- an agent's entry */
+	/* The visitor's agent makes the same move, as .github/CONTRIBUTING.md describes it: the steps light in turn
+	   (a folder, a pull request, the bench check), the line drawing on from each to the next, and at the end the
+	   result joins the record as a new node beside the others. Played once in view; with reduced motion, complete. */
+	function entry() {
+		const en = document.querySelector('[data-entry]');
+		if (!en) return;
+		const svg = s('svg', { class: 'entry__svg', viewBox: '0 0 520 66', 'aria-hidden': 'true' }, en);
+		const Y = 20, X = [22, 172, 322, 466], R = 4.6;
+		const gap = [[X[0] + 20, X[1] - 16], [X[1] + 16, X[2] - 22], [X[2] + 22, X[3] - 34]];
+		gap.forEach(([a, b]) => s('path', { class: 'en-l', d: `M${a} ${Y}H${b}` }, svg));
+		const segs = gap.map(([a, b]) => s('path', { class: 'en-seg', d: `M${a} ${Y}H${b}`, pathLength: 1 }, svg));
+		const st = X.map((x, i) => {
+			const g = s('g', { class: 'en-st' }, svg);
+			if (i === 0) s('path', { class: 'en-g', d: `M${x - 13} ${Y - 9}h8.5l3 3.2h14.5v15.3h-26z` }, g);
+			if (i === 1) s('use', { class: 'en-pr', href: '#oc-pr', x: x - 9, y: Y - 9, width: 18, height: 18 }, g);
+			if (i === 2) { s('path', { class: 'en-g', d: `M${x - 15} ${Y}h30M${x - 9} ${Y - 8}v16M${x + 9} ${Y - 8}v16` }, g); s('circle', { class: 'en-dot', cx: x, cy: Y, r: 3.6 }, g); }
+			if (i === 3) { s('path', { class: 'en-rec', d: `M${x - 30} ${Y}H${x + 34}` }, g); s('circle', { class: 'en-old', cx: x - 18, cy: Y, r: 3 }, g); s('circle', { class: 'en-old', cx: x + 22, cy: Y, r: 3 }, g); }
+			s('text', { class: 'en-t', x, y: Y + 34, 'text-anchor': 'middle' }, g).textContent = T.entry[i];
+			return g;
+		});
+		const you = s('circle', { class: 'en-you', cx: X[3] + 2, cy: Y, r: R }, svg);
+		if (reduced) return;
+		en.classList.add('is-play');
+		[...st, ...segs, you].forEach((e) => e.classList.add('is-pend'));
+		const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+		const on = (e) => e.classList.remove('is-pend');
+		onVisible(en, async () => {
+			for (let i = 0; i < 4; i++) {
+				on(st[i]);
+				if (i < 3) { await nap(130); on(segs[i]); await nap(220); }
+			}
+			await nap(150);
+			on(you);
+			await nap(450);
+			en.classList.remove('is-play');
+		}, 0.6);
+	}
+
 	/* ---------------------------------------------------------------- the film */
-	/* Muted, it plays while it is in view and stops when it leaves, the tab hides or the visitor holds it; nothing of it
-	   loads until it is near the view. With reduced motion it waits on its poster for a press. Sound and full screen
-	   are one press each; native controls only in full screen. The chapters below are its timeline. */
+	/* A sixteen-second trailer, opened by choice: a quiet "Film 0:16" beside Paper and Models opens it in a dialog.
+	   Nothing of it loads before that. Opened, it plays with its music, since the visitor asked for it (with reduced
+	   motion too); closed, it stops. Sound and full screen are one press each; native controls only in full screen.
+	   The chapters below the picture are its timeline. */
 	function film() {
-		const fig = document.querySelector('[data-reel]');
-		if (!fig) return;
+		const dlg = document.querySelector('[data-film]');
+		const opener = document.querySelector('[data-film-open]');
+		if (!dlg || !opener) return;
+		const fig = dlg.querySelector('[data-reel]');
 		const L = T.film;
 		const v = fig.querySelector('[data-reel-v]');
 		const big = fig.querySelector('[data-reel-big]');
@@ -2442,16 +2772,15 @@
 		v.muted = true;
 		// the last stretch, the end card, is a rest: a line without a label
 		const chs = [...fig.querySelectorAll('[data-reel-ch] li')].map((li) => ({ li, b: li.querySelector('button'), a: +li.dataset.a, z: +li.dataset.z }));
-		let held = reduced; // the visitor holds it still: reduced motion, a pause, or a refused autoplay
-		let seen = false, loaded = false, raf = 0, cur = -1;
+		let held = true, loaded = false, raf = 0, cur = -1;
 		const isFull = () => document.fullscreenElement === v || document.webkitFullscreenElement === v || v.webkitDisplayingFullscreen === true;
-		const load = () => { if (loaded) return; loaded = true; v.preload = 'auto'; v.load(); };
+		const load = () => { if (loaded) return; loaded = true; v.poster = v.dataset.poster; v.preload = 'auto'; v.load(); };
 		const paint = () => {
-			const t = v.currentTime;
+			const t_ = v.currentTime;
 			let k = -1;
 			chs.forEach((c, i) => {
-				c.li.style.setProperty('--f', clamp((t - c.a) / (c.z - c.a)).toFixed(4));
-				if (t >= c.a && t < c.z) k = i;
+				c.li.style.setProperty('--f', clamp((t_ - c.a) / (c.z - c.a)).toFixed(4));
+				if (t_ >= c.a && t_ < c.z) k = i;
 			});
 			if (k === cur) return;
 			cur = k;
@@ -2477,7 +2806,7 @@
 		};
 		const stop = () => { mine.pause++; v.pause(); };
 		const sync = () => {
-			if (!held && !document.hidden && (seen || isFull())) { if (v.paused) play(); } else if (!v.paused) stop();
+			if (!held && !document.hidden && (dlg.open || isFull())) { if (v.paused) play(); } else if (!v.paused) stop();
 			ui();
 		};
 		v.addEventListener('play', () => { if (mine.play) mine.play--; else held = false; if (!raf) raf = requestAnimationFrame(tick); ui(); });
@@ -2490,6 +2819,37 @@
 		big.addEventListener('click', () => hold(false));
 		sndB.addEventListener('click', () => { v.muted = !v.muted; if (!v.muted) held = false; sync(); });
 		chs.forEach((c) => c.b && c.b.addEventListener('click', () => { load(); v.currentTime = c.a; paint(); hold(false); }));
+		// open: from the start, with its music; close: by the button, Escape or a press outside the picture.
+		// The address #film opens it too (the README links there); without a press the browser may refuse the music,
+		// then it plays muted, and failing that it waits on its Play button.
+		const open = (pressed) => {
+			if (dlg.open) return;
+			load();
+			if (v.currentTime > 15.5) v.currentTime = 0;
+			v.muted = false;
+			dlg.showModal();
+			held = false;
+			ui();
+			mine.play++;
+			const p = v.play();
+			if (p) p.catch(() => {
+				mine.play = 0;
+				if (pressed || !dlg.open) { held = true; ui(); return; }
+				v.muted = true;
+				play();
+			});
+		};
+		opener.addEventListener('click', () => open(true));
+		const byHash = () => { if (location.hash === '#film') open(false); };
+		addEventListener('hashchange', byHash);
+		byHash();
+		dlg.querySelector('[data-film-close]').addEventListener('click', () => dlg.close());
+		dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+		dlg.addEventListener('close', () => {
+			hold(true);
+			if (location.hash === '#film') history.replaceState(null, '', location.pathname + location.search);
+			opener.focus();
+		});
 		// full screen: the video alone, with the browser's own controls; the phone turns it sideways when it may
 		const enter = v.requestFullscreen || v.webkitRequestFullscreen;
 		if (!enter && !v.webkitEnterFullscreen) fullB.hidden = true;
@@ -2507,13 +2867,6 @@
 		document.addEventListener('fullscreenchange', onFull);
 		document.addEventListener('webkitfullscreenchange', onFull);
 		v.addEventListener('webkitendfullscreen', onFull);
-		// as it enters the view it starts to load (not with reduced motion: then only on a press); half in view, it plays
-		new IntersectionObserver((es) => { if (es[0].isIntersecting && !reduced) load(); }, { rootMargin: '0px' }).observe(fig);
-		new IntersectionObserver((es) => {
-			const r = es[0].intersectionRatio;
-			if (r >= 0.5) seen = true; else if (r < 0.15) seen = false; else return;
-			sync();
-		}, { threshold: [0, 0.15, 0.5] }).observe(fig.querySelector('.reel__stage'));
 		document.addEventListener('visibilitychange', sync);
 		paint();
 		ui();
@@ -2609,6 +2962,8 @@
 	record();
 	vocabulary();
 	disclosure();
+	story();
+	entry();
 	film();
 	page();
 	// the mark is sampled now, so its first frames never wait on the sampling
