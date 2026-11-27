@@ -22,6 +22,8 @@
   Code and models of <a href="https://arxiv.org/abs/2611.34821">LoopTitan: What Does Parameter Revisit Buy a Mixture-of-Experts?</a>
 </p>
 
+https://github.com/user-attachments/assets/c9022c7b-6dd8-48b9-b5d7-cc1a099bb3dd
+
 <p align="center">
   <picture>
     <source media="(max-width: 640px)" srcset="docs/assets/hero-narrow.svg">
