@@ -156,6 +156,7 @@ window.CONTENT = {
 			kinds: [['study', 'Studies'], ['run', 'Run tasks'], ['plan', 'Plans'], ['code', 'Code tasks'], ['pr', 'Pull requests']]
 		},
 		copy: { idle: 'Copy', done: 'Copied' },
+		film: { pause: 'Pause the film', play: 'Play the film', soundOn: 'Turn the music on', soundOff: 'Turn the music off' },
 		/* the published configurations of the results table: name in the results data, configuration */
 		pub: [['V3', 'methods/smelt-v3'], ['V4', 'methods/smelt-v4'], ['LatentLoop-Residual', 'methods/latentloop-residual'], ['Meta', 'methods/meta'], ['Foil', 'methods/foil'], ['Tying', 'methods/expert-tying'], ['Huginn', 'methods/huginn'], ['Sandwich', 'methods/sandwich'], ['LOOM', 'methods/loom'], ['Ouro', 'methods/ouro'], ['Relaxed', 'methods/relaxed']]
 	}

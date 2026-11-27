@@ -198,6 +198,71 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .key--acc { background: var(--acc); }
 .key--arc { font-size: var(--fs-1); color: var(--acc); font-weight: var(--w-s); font-feature-settings: 'case'; }
 
+/* ------------------------------------------------------------------ the film */
+/* The page in sixteen seconds, built like the instrument: one card, the picture on the film's own ground, and a bar
+   whose chapters are the film's timeline, in the page's order. Each chapter's width is its duration, so the line
+   under them fills at one speed. The ground is measured from the film's frames, so the poster never shows an edge. */
+.reel { --film: #e8ebfa; padding: 0 0 var(--s-2); }
+/* an object placed on the page, not a band across it: narrower than the sections, and never taller than the view */
+.reel__card { width: min(100%, 64rem, calc((100svh - var(--nav-h) - 9rem) * 16 / 9)); margin: 0 auto; padding: var(--s-3); border-radius: var(--r-3); background: var(--paper); box-shadow: var(--bd), var(--sh-2); }
+.reel__stage { position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-2); overflow: hidden; background: var(--film); isolation: isolate; }
+/* the picture keeps its edge in the film's white scenes */
+.reel__stage::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(22, 24, 29, .06); pointer-events: none; }
+.reel__v { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--film); cursor: pointer; }
+.reel__v:fullscreen { object-fit: contain; cursor: auto; }
+.reel__big {
+	position: absolute; left: 50%; bottom: 5.5%; translate: -50% 0; z-index: 1;
+	display: inline-flex; align-items: center; gap: var(--s-3); height: var(--h-5); padding: 0 var(--s-6) 0 var(--s-5);
+	border-radius: var(--r-p); background: var(--acc); color: #fff; box-shadow: 0 0 0 1px var(--acc-d) inset, var(--sh-2);
+	font-size: var(--fs-3); font-weight: var(--w-m); line-height: 1; letter-spacing: -.01em;
+	transition: background-color var(--t-1) var(--e-out), transform var(--t-2) var(--e-out);
+	-webkit-tap-highlight-color: transparent;
+}
+.reel__big:hover { background: var(--acc-d); }
+.reel__big:active { transform: translateY(1px); transition-duration: var(--t-press); }
+.reel__big .i { width: 0.875rem; height: 0.875rem; }
+.reel__dur { font-family: var(--mono); font-size: var(--fs-1); color: var(--acc-3); font-variant-numeric: tabular-nums; }
+.reel__big:focus-visible { outline-color: var(--ink); }
+.reel__bar { display: flex; align-items: center; gap: var(--s-7); padding: var(--s-3) 0 0 var(--s-1); }
+.reel__ch { flex: 1; min-width: 0; display: flex; gap: var(--s-1); }
+.reel__ch li { position: relative; flex: var(--g) 1 0; min-width: 0; --f: 0; }
+.reel__ch li::before, .reel__ch li::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; border-radius: 1px; background: var(--line); pointer-events: none; }
+.reel__ch li::after { background: var(--ink); transform-origin: left; transform: scaleX(var(--f)); }
+.reel__ch button {
+	display: flex; align-items: center; width: 100%; height: var(--h-4); padding: var(--s-1) 0 0; margin-top: 2px;
+	font-size: var(--fs-2); font-weight: var(--w-m); line-height: 1; letter-spacing: -.008em; color: var(--mid); white-space: nowrap; text-align: left;
+	transition: color var(--t-1) var(--e-out); -webkit-tap-highlight-color: transparent;
+}
+.reel__ch button:hover, .reel__ch li.is-on button { color: var(--ink); }
+.reel__ch button:focus-visible { outline-offset: -2px; border-radius: var(--r-1); }
+.reel__acts { flex: none; display: flex; align-items: center; gap: var(--s-2); }
+.reel__snd {
+	display: inline-flex; align-items: center; gap: var(--s-2); height: var(--h-4); padding: 0 var(--s-4) 0 var(--s-3); border-radius: var(--r-p);
+	font-size: var(--fs-2); font-weight: var(--w-m); line-height: 1; letter-spacing: -.008em; color: var(--mid); background: var(--paper); box-shadow: var(--bd-in);
+	transition: color var(--t-1) var(--e-out), background-color var(--t-1) var(--e-out), transform var(--t-press) var(--e-out);
+	-webkit-tap-highlight-color: transparent;
+}
+.reel__snd:hover { color: var(--ink); background: var(--surface); }
+.reel__snd:active { transform: scale(.96); }
+.reel__snd .i { width: 0.875rem; height: 0.875rem; }
+.reel__snd .reel__on, .reel__snd[aria-pressed='true'] .reel__off { display: none; }
+.reel__snd[aria-pressed='true'] .reel__on { display: block; }
+.reel__snd[aria-pressed='true'] { color: var(--ink); }
+.reel__acts .iconbtn svg { fill: currentColor; }
+/* without script the browser's own controls play it */
+.no-js .reel__bar { display: none; }
+@media (max-width: 640px) {
+	/* the phone: no card, so the picture runs from gutter to gutter; the timeline without its words; the play control
+	   in the film's one empty corner */
+	.reel__card { padding: 0; border-radius: 0; background: none; box-shadow: none; }
+	.reel__stage { box-shadow: var(--sh-2); }
+	.reel__bar { gap: var(--s-4); padding: var(--s-3) 0 0; }
+	.reel__ch button { height: var(--h-4); }
+	.reel__ch .reel__l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.reel__big { left: auto; right: 3%; bottom: 5%; translate: none; width: var(--h-5); padding: 0; justify-content: center; }
+	.reel__big > span { display: none; }
+}
+
 /* ------------------------------------------------------------------ sections */
 .sec { padding: var(--sec-y) 0; position: relative; }
 .sec--alt { background: var(--surface-2); box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line); }

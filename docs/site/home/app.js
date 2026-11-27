@@ -2425,6 +2425,100 @@
 		set(false);
 	}
 
+	/* ---------------------------------------------------------------- the film */
+	/* Muted, it plays while it is in view and stops when it leaves, the tab hides or the visitor holds it; nothing of it
+	   loads until it is near the view. With reduced motion it waits on its poster for a press. Sound and full screen
+	   are one press each; native controls only in full screen. The chapters below are its timeline. */
+	function film() {
+		const fig = document.querySelector('[data-reel]');
+		if (!fig) return;
+		const L = T.film;
+		const v = fig.querySelector('[data-reel-v]');
+		const big = fig.querySelector('[data-reel-big]');
+		const playB = fig.querySelector('[data-reel-play]');
+		const sndB = fig.querySelector('[data-reel-snd]');
+		const fullB = fig.querySelector('[data-reel-full]');
+		v.controls = false;
+		v.muted = true;
+		// the last stretch, the end card, is a rest: a line without a label
+		const chs = [...fig.querySelectorAll('[data-reel-ch] li')].map((li) => ({ li, b: li.querySelector('button'), a: +li.dataset.a, z: +li.dataset.z }));
+		let held = reduced; // the visitor holds it still: reduced motion, a pause, or a refused autoplay
+		let seen = false, loaded = false, raf = 0, cur = -1;
+		const isFull = () => document.fullscreenElement === v || document.webkitFullscreenElement === v || v.webkitDisplayingFullscreen === true;
+		const load = () => { if (loaded) return; loaded = true; v.preload = 'auto'; v.load(); };
+		const paint = () => {
+			const t = v.currentTime;
+			let k = -1;
+			chs.forEach((c, i) => {
+				c.li.style.setProperty('--f', clamp((t - c.a) / (c.z - c.a)).toFixed(4));
+				if (t >= c.a && t < c.z) k = i;
+			});
+			if (k === cur) return;
+			cur = k;
+			chs.forEach((c, i) => { c.li.classList.toggle('is-on', i === k); if (!c.b) return; if (i === k) c.b.setAttribute('aria-current', 'time'); else c.b.removeAttribute('aria-current'); });
+		};
+		const tick = () => { paint(); raf = v.paused ? 0 : requestAnimationFrame(tick); };
+		const ui = () => {
+			const playing = !v.paused;
+			playB.classList.toggle('is-paused', !playing);
+			playB.setAttribute('aria-label', playing ? L.pause : L.play);
+			playB.title = playing ? L.pause : L.play;
+			big.hidden = !(held && v.paused) || isFull();
+			sndB.setAttribute('aria-pressed', String(!v.muted));
+			sndB.title = v.muted ? L.soundOn : L.soundOff;
+		};
+		// the events our own calls cause are expected, so a play or pause from the browser's controls reads as the visitor's
+		const mine = { play: 0, pause: 0 };
+		const play = () => {
+			load();
+			mine.play++;
+			const p = v.play();
+			if (p) p.catch(() => { mine.play = 0; if (v.paused) { held = true; ui(); } });
+		};
+		const stop = () => { mine.pause++; v.pause(); };
+		const sync = () => {
+			if (!held && !document.hidden && (seen || isFull())) { if (v.paused) play(); } else if (!v.paused) stop();
+			ui();
+		};
+		v.addEventListener('play', () => { if (mine.play) mine.play--; else held = false; if (!raf) raf = requestAnimationFrame(tick); ui(); });
+		v.addEventListener('pause', () => { if (mine.pause) mine.pause--; else held = true; paint(); ui(); });
+		v.addEventListener('seeked', paint);
+		v.addEventListener('volumechange', ui);
+		const hold = (on) => { held = on; sync(); };
+		v.addEventListener('click', () => { if (!isFull()) hold(!v.paused); });
+		playB.addEventListener('click', () => hold(!v.paused));
+		big.addEventListener('click', () => hold(false));
+		sndB.addEventListener('click', () => { v.muted = !v.muted; if (!v.muted) held = false; sync(); });
+		chs.forEach((c) => c.b && c.b.addEventListener('click', () => { load(); v.currentTime = c.a; paint(); hold(false); }));
+		// full screen: the video alone, with the browser's own controls; the phone turns it sideways when it may
+		const enter = v.requestFullscreen || v.webkitRequestFullscreen;
+		if (!enter && !v.webkitEnterFullscreen) fullB.hidden = true;
+		fullB.addEventListener('click', () => {
+			held = false;
+			load();
+			if (enter) {
+				const p = enter.call(v);
+				const turn = () => { try { const o = screen.orientation; if (o && o.lock) o.lock('landscape').catch(() => {}); } catch (e) { /* no lock here */ } };
+				if (p && p.then) p.then(turn, () => {}); else turn();
+			} else v.webkitEnterFullscreen();
+			sync();
+		});
+		const onFull = () => { v.controls = isFull(); sync(); };
+		document.addEventListener('fullscreenchange', onFull);
+		document.addEventListener('webkitfullscreenchange', onFull);
+		v.addEventListener('webkitendfullscreen', onFull);
+		// as it enters the view it starts to load (not with reduced motion: then only on a press); half in view, it plays
+		new IntersectionObserver((es) => { if (es[0].isIntersecting && !reduced) load(); }, { rootMargin: '0px' }).observe(fig);
+		new IntersectionObserver((es) => {
+			const r = es[0].intersectionRatio;
+			if (r >= 0.5) seen = true; else if (r < 0.15) seen = false; else return;
+			sync();
+		}, { threshold: [0, 0.15, 0.5] }).observe(fig.querySelector('.reel__stage'));
+		document.addEventListener('visibilitychange', sync);
+		paint();
+		ui();
+	}
+
 	/* ---------------------------------------------------------------- page */
 	function page() {
 		const nav = document.querySelector('[data-nav]');
@@ -2515,6 +2609,7 @@
 	record();
 	vocabulary();
 	disclosure();
+	film();
 	page();
 	// the mark is sampled now, so its first frames never wait on the sampling
 	// the copy reveals in one frame; the mark starts in a later one, so the two never share a frame
