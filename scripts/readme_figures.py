@@ -15,7 +15,8 @@ if a file differs from what the data gives; tests/setup/test_readme_figures.py r
 fonts, because GitHub shows these files as images.
 
 The drawing follows the homepage: state shown by the thing itself (a dot on its tolerance band, a square
-per value), mono labels, hairlines, stations on a shaft with hanging numerals, and indigo only for the loop.
+per value), mono labels, hairlines, stations on a shaft with hanging numerals, and indigo only for the loop. One
+figure moves: the record's tree on the first screenful grows, holds and grows again (see tree_fig); the rest stay still.
 """
 import argparse
 import json
@@ -1157,6 +1158,55 @@ def day(iso):
     return f"{d.day} {d.strftime('%b')}"
 
 
+# The tree grows as the record happened, as on the homepage: a cursor walks the issues in their order; the trunk
+# follows it and each issue on it lands as it passes; a study or plan rises from its own issue and runs forward a moment
+# behind the cursor, its tasks landing in turn, and a finished path stops; at the present the new branches reach out
+# together and the line arrives. Then the finished tree holds, fades down briefly and grows again. SMIL inside the SVG
+# (GitHub shows it through <img>, no script). Every animation runs only while the tree grows or fades, and none during
+# the hold, so the held tree costs no frames. Each mark's animation ends on its static value, so the held tree is the
+# finished drawing. The growing tree is a copy shown while motion is allowed; its still twin is shown with
+# prefers-reduced-motion and the two coincide where styles are ignored. Title, counts and axis labels never move.
+# Times in ms.
+GROW, RISE, POP, TWIG, STAG, SAY, HOLD, FADE = 2900, 240, 300, 700, 90, 420, 10000, 350
+TREE_CSS = ".st{display:none}@media (prefers-reduced-motion: reduce){.mo{display:none}.st{display:inline}}"
+
+
+def grown(el, anims):
+    """el (one empty element) with its growth animations inside it."""
+    tag = re.match(r"<(\w+)", el)[1]
+    return el[:-2] + ">" + "".join(anims) + f"</{tag}>"
+
+
+def kt(*ms):
+    """keyTimes for times in ms within the animation's own span (the last)."""
+    return ";".join(f"{m / ms[-1]:.4f}".rstrip("0").rstrip(".") or "0" for m in ms)
+
+
+def pop(r, at):
+    """A dot that lands at at ms: its radius from nothing, a little past, to r."""
+    end = at + POP
+    return (f'<animate attributeName="r" values="0;0;{r * 1.18:.2f};{r:g}" keyTimes="{kt(0, at, at + POP * .55, end)}" '
+            f'dur="{end:.0f}ms" begin="g0.begin"/>')
+
+
+def hidden(at):
+    """Invisible until at ms (a mark that appears at once, or a path before it starts)."""
+    return f'<set attributeName="visibility" to="hidden" dur="{max(at, 1):.0f}ms" begin="g0.begin"/>'
+
+
+def drawn(at, length, mid=None):
+    """A path (pathLength 1) drawn from its start between at and at + length ms; mid=(ms, share) eases it there."""
+    end = at + length
+    times, values = [0, at], ["1", "1"]
+    if mid:
+        times.append(mid[0])
+        values.append(f"{1 - mid[1]:.4f}")
+    times.append(end)
+    values.append("0")
+    return (f'<animate attributeName="stroke-dashoffset" values="{";".join(values)}" keyTimes="{kt(*times)}" '
+            f'dur="{end:.0f}ms" begin="g0.begin"/>')
+
+
 def tree_fig(t):
     """The public record as a tree. The trunk is the one record, every issue in the order opened; each study or plan
     leaves it at its own issue and runs to its last task, its run tasks filled and code tasks hollow on it; a finished
@@ -1176,6 +1226,9 @@ def tree_fig(t):
 
     def X(n):
         return X0 + rank[n] / (len(th) - 1) * (X1 - X0)
+
+    def at(x):  # when the cursor passes x
+        return (x - X0) / (X1 - X0) * GROW
     lanes, paths = [], []
     for p in heads:
         xs, ks = X(p["n"]), kids[p["n"]]
@@ -1197,7 +1250,6 @@ def tree_fig(t):
         out.append(text(pad, 38, TREE_TITLE, 17, t["ink"], 600, ls=-.2))
         tx, ty = pad, 64
     for k, name in TREE_KINDS:
-        item = f"{count[k]} {name}"
         iw = width(str(count[k]), 12, mono=True) + 6 + mlabel_width(name)
         if tx + iw > w - pad:
             tx, ty = pad, ty + 20
@@ -1206,37 +1258,58 @@ def tree_fig(t):
         tx += iw + (16 if narrow else 22)
     top = ty + (24 if narrow else 40)
     base = top + len(lanes) * LH + 10
-    g = [f'<g transform="translate({pad} 0)">']
-    g.append(line(X0, base, X1, base, t["ink"], 1.5))
+    marks = []  # (still element, its growth animations)
+    trunk = path(f"M{num(X0)} {num(base)}L{num(X1)} {num(base)}", t["ink"], 1.5, extra=' pathLength="1"')
+    marks.append((trunk, [drawn(0, GROW)]))
     rt = 1.6 if narrow else 2.25
     for x in th:  # the trunk: issues of no study or plan
         if x["parent"] or x["kind"] in ("study", "plan"):
             continue
         xx = X(x["n"])
         if x["kind"] == "pr":
-            g.append(line(xx, base + 3, xx, base + 7, t["hair"], 1.25))
+            marks.append((line(xx, base + 3, xx, base + 7, t["hair"], 1.25), [hidden(at(xx))]))
         elif x["kind"] == "code":
-            g.append(circle(xx, base, rt, t["card"], t["grey"], 1.1))
+            marks.append((circle(xx, base, rt, t["card"], t["grey"], 1.1), [pop(rt, at(xx))]))
         else:
-            g.append(circle(xx, base, rt, t["ink"]))
+            marks.append((circle(xx, base, rt, t["ink"]), [pop(rt, at(xx))]))
     rn = 1.6 if narrow else 2.4
     for p, xs, xe, ks, lane in paths:
         y = base - (lane + 1) * LH
         col = t["soft"] if p["kind"] == "plan" else t["ink"]
-        g.append(path(f"M{num(xs)} {num(base)}V{num(y + R)}Q{num(xs)} {num(y)} {num(xs + R)} {num(y)}H{num(xe)}", col, 1.25))
-        g.append(circle(xs, base, 1.75 if narrow else 2.5, col))
+        # the riser climbs in RISE ms, then the path runs forward with the cursor, RISE ms behind it
+        rise = base - y - R + math.pi * R / 2
+        run = max(xe - xs - R, 0)
+        start = at(xs)
+        branch = path(f"M{num(xs)} {num(base)}V{num(y + R)}Q{num(xs)} {num(y)} {num(xs + R)} {num(y)}H{num(xe)}", col, 1.25,
+                      extra=' pathLength="1"')
+        marks.append((branch, [hidden(start), drawn(start, RISE + run / (X1 - X0) * GROW, (start + RISE, rise / (rise + run)))]))
+        rr = 1.75 if narrow else 2.5
+        marks.append((circle(xs, base, rr, col), [pop(rr, start)]))
         if p["closed"]:
-            g.append(line(xe, y - 3, xe, y + 3, col, 1.25))
+            marks.append((line(xe, y - 3, xe, y + 3, col, 1.25), [hidden(at(xe) + RISE)]))
         else:
-            g.append(circle(xe, y, 2 if narrow else 2.75, t["card"], t["ink"], 1.25))
+            rl = 2 if narrow else 2.75
+            marks.append((circle(xe, y, rl, t["card"], t["ink"], 1.25), [pop(rl, GROW + RISE)]))
         for c in ks:
             xx = max(xs + R, X(c["n"]))
-            g.append(circle(xx, y, rn, t["ink"]) if c["kind"] == "run" else circle(xx, y, rn, t["card"], t["grey"], 1.1))
-    # new branches in indigo: a few from results across the record, and a fan from the present
-    def twig(x0, y0, x1, y1, k):
-        return (path(f"M{num(x0)} {num(y0)}C{num(x0 + (x1 - x0) * k)} {num(y0)} {num(x0 + (x1 - x0) * (1 - k) * .6)} {num(y1)} "
-                     f"{num(x1)} {num(y1)}", t["acc"], 1.5, dash="3 4") +
-                circle(x1, y1, 2.5 if narrow else 3.25, t["card"], t["acc"], 2))
+            dot = circle(xx, y, rn, t["ink"]) if c["kind"] == "run" else circle(xx, y, rn, t["card"], t["grey"], 1.1)
+            marks.append((dot, [pop(rn, at(xx) + RISE)]))
+    # new branches in indigo: a few from results across the record, and a fan from the present. The growing copy draws
+    # each through a mask opened along it, so its dashes stay still while it reaches out.
+    now = GROW + RISE
+    masks = []
+
+    def twig(x0, y0, x1, y1, k, delay):
+        d = (f"M{num(x0)} {num(y0)}C{num(x0 + (x1 - x0) * k)} {num(y0)} {num(x0 + (x1 - x0) * (1 - k) * .6)} {num(y1)} "
+             f"{num(x1)} {num(y1)}")
+        mid = f"tw{len(masks)}"
+        masks.append(f'<mask id="{mid}" maskUnits="userSpaceOnUse">' +
+                     grown(path(d, "#fff", 5, extra=' pathLength="1" stroke-dasharray="1 1"'),
+                           [drawn(delay, TWIG, (delay + TWIG * .35, .7))]) + "</mask>")
+        still = path(d, t["acc"], 1.5, dash="3 4")
+        you = 2.5 if narrow else 3.25
+        return [(still, None, f' mask="url(#{mid})"'),
+                (circle(x1, y1, you, t["card"], t["acc"], 2), [pop(you, delay + TWIG * .85)])]
     free = []
     for p, xs, xe, ks, lane in paths:
         for c in ks:
@@ -1251,32 +1324,60 @@ def tree_fig(t):
             c = free[min(len(free) - 1, round((i + .5) / 3 * (len(free) - 1)))]
             if c not in buds:
                 buds.append(c)
-    for bx, by in buds:
-        g.append(circle(bx, by, 2.6, t["acc"]) + twig(bx, by, bx + 30, by - LH * 1.4, .1))
     fan, ex = (3, X1 + F * .8) if narrow else (4, X1 + F * .62)
     yhi = base - max(2, len(lanes)) * LH * .9
-    for i in range(fan):
-        g.append(twig(X1, base, ex + ((-6 if narrow else 18) if i % 2 else 0), yhi + i / (fan - 1) * (base - yhi), .45))
-    g.append(circle(X1, base, 2.5 if narrow else 3.25, t["acc"]))
+    fans = [(X1, base, ex + ((-6 if narrow else 18) if i % 2 else 0), yhi + i / (fan - 1) * (base - yhi), .45)
+            for i in range(fan)]
+    order = []  # the fan and the buds reach out together, interleaved, as many agents start at once
+    for i in range(max(fan, len(buds))):
+        order += ([("fan", fans[i])] if i < fan else []) + ([("bud", buds[i])] if i < len(buds) else [])
+    for i, (kind, spec) in enumerate(order):
+        delay = now + i * STAG
+        if kind == "bud":
+            bx, by = spec
+            marks.append((circle(bx, by, 2.6, t["acc"]), [pop(2.6, delay)]))
+            marks += twig(bx, by, bx + 30, by - LH * 1.4, .1, delay)
+        else:
+            marks += twig(*spec, delay)
+    tip = 2.5 if narrow else 3.25
+    marks.append((circle(X1, base, tip, t["acc"]), [pop(tip, now)]))
     h = base + 34
+    say = (f'<animate attributeName="opacity" values="0;0;1" keyTimes="{kt(0, now + SAY, now + SAY + 520)}" '
+           f'dur="{now + SAY + 520:.0f}ms" begin="g0.begin"/>')
     if not narrow:
-        g.append(text(W, yhi - 16, TREE_NEXT, 13, t["acc"], 600, "end"))
+        marks.append((text(W, yhi - 16, TREE_NEXT, 13, t["acc"], 600, "end"), [say]))
+    # the still tree, and its growing copy: the copy fades down HOLD ms after it has grown, then grows again
+    still, moving = [], []
+    for m in marks:
+        el, anims = m[0], m[1]
+        still.append(el)
+        moving.append(el.replace("/>", m[2] + "/>", 1) if len(m) > 2 else el if anims is None else
+                      grown(el.replace('style="', 'style="stroke-dasharray:1 1;', 1) if 'pathLength="1"' in el else el,
+                            anims) if not el.startswith("<text") else el.replace("</text>", anims[0] + "</text>"))
+    total = now + (len(order) - 1) * STAG + TWIG + 520
+    clock = (f'<rect width="0" height="0"><animate id="g0" attributeName="x" values="0;0" dur="{total}ms" '
+             f'begin="0s;fd.end"/></rect>')
+    fade = (f'<animate id="fd" attributeName="opacity" values="1;0" dur="{FADE}ms" begin="g0.end+{HOLD}ms" '
+            f'calcMode="spline" keySplines=".4 0 .6 1"/>')
+    g = [f'<g transform="translate({pad} 0)">', f'<g class="st">{"".join(still)}</g>',
+         f'<g class="mo"><defs>{"".join(masks)}</defs>{fade}{"".join(moving)}</g>']
     # the ends of the record
     g.append(text(X0, h - 8, f"#{th[0]['n']} · {day(th[0]['opened'])}", 10, t["softt"], mono=True))
     g.append(text(X1, h - 8, f"#{th[-1]['n']} · {day(snap['as_of'])}", 10, t["softt"], 400, "end", mono=True))
     if not narrow:
         g.append(text((X0 + X1) / 2, h - 8, TREE_AXIS, 10, t["softt"], 400, "middle", mono=True))
     g.append("</g>")
-    out += g
+    out += [clock] + g
     if narrow:  # on a phone the invitation is set under the drawing
-        out.append(text(pad, h + 18, TREE_NEXT, 14, t["acc"], 600))
+        line_ = text(pad, h + 18, TREE_NEXT, 14, t["acc"], 600)
+        out.append(f'<g class="st">{line_}</g><g class="mo">{line_.replace("</text>", say + "</text>")}</g>')
         h += 30
     h += 14
     out[0] = card(0, 0, w, h, t)
     desc = (f"{TREE_TITLE} The public record as a tree, to {day(snap['as_of'])}: {len(th)} GitHub issues and pull requests, "
             + ", ".join(f"{count[k]} {name}" for k, name in TREE_KINDS) + ". Each study or plan is a branch with its tasks "
             f"on it; every issue stays. New branches in indigo: {TREE_NEXT}")
-    return svg(w, int(h), "The record as a tree", desc, t, "".join(out))
+    return svg(w, int(h), "The record as a tree", desc, t, "".join(out), TREE_CSS)
 
 
 # ---------------------------------------------------------------- citation

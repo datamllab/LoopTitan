@@ -87,3 +87,29 @@ def test_film_capsule_gives_the_film_length():
     import readme_figures
     assert readme_figures.film_length() == "0:16"
     assert ">0:16</text>" in (ROOT / "docs" / "assets" / "capsule-film-light.svg").read_text()
+
+
+def test_only_the_tree_moves_and_it_rests():
+    """The tree grows, holds as the finished drawing and grows again; nothing runs during the hold (its clock waits on
+    the end of the growth), reduced motion shows the still twin, and the file stays small. No other figure moves."""
+    import re
+    import readme_figures as rf
+    for name, content in rf.figures().items():
+        moves = bool(re.search(r"<animate|<set |animation:", content))
+        assert moves == name.startswith("tree-"), name
+        assert "indefinite" not in content and "infinite" not in content, name
+        if moves:
+            assert len(content.encode()) < 150_000 and "prefers-reduced-motion: reduce" in content, name
+            assert 'begin="0s;fd.end"' in content and f'begin="g0.end+{rf.HOLD}ms"' in content, name
+            assert content.count('<g class="st">') == content.count('<g class="mo">') >= 1, name
+    assert rf.HOLD <= 10_000
+
+
+def test_the_growing_tree_ends_on_the_still_one():
+    """Every growth animation of a mark ends on that mark's static value: a radius on r, a path drawn to offset 0."""
+    import re
+    import readme_figures as rf
+    tree = rf.tree_fig(rf.LIGHT)
+    for r, values in re.findall(r'<circle [^>]*r="([\d.]+)"[^>]*><animate attributeName="r" values="([^"]+)"', tree):
+        assert float(values.split(";")[-1]) == float(r)
+    assert all(v.endswith(";0") for v in re.findall(r'attributeName="stroke-dashoffset" values="([^"]+)"', tree))
