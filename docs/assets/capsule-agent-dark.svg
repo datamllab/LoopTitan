@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="161" height="32" viewBox="0 0 161 32" role="img" aria-labelledby="title desc">
+<title id="title">Send your agents</title>
+<desc id="desc">Send your agents</desc>
+<style>.s{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace}</style>
+<rect x="0.5" y="0.5" width="154" height="31" rx="15.5" style="fill:#7486F2"/><g transform="translate(12 8) scale(1.00000)" style="fill:#0D1117"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></g><text class="s" x="36" y="21" textLength="104.95" lengthAdjust="spacing" style="font-size:13px;font-weight:500;fill:#0D1117">Send your agents</text>
+</svg>

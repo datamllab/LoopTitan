@@ -32,6 +32,15 @@ def test_budget_counts_follow_the_compare_result(monkeypatch):
     assert "2 of 3 within ±5%" in readme_figures.compare_fig(readme_figures.LIGHT)
 
 
+def test_record_tile_counts_follow_the_snapshot(monkeypatch):
+    import readme_figures
+    snapshot = readme_figures.threads()
+    snapshot["threads"] = snapshot["threads"][:100]
+    monkeypatch.setattr(readme_figures, "threads", lambda: snapshot)
+    figure = readme_figures.pillars(readme_figures.LIGHT)
+    assert ">100</text>" in figure and "Every path on the record. 100 issues, failures included." in figure
+
+
 def test_banners_place_the_brand_lockups_as_they_are():
     import re
     import readme_figures
@@ -46,12 +55,35 @@ def test_banners_place_the_brand_lockups_as_they_are():
 
 def test_capsules_place_the_marks_as_they_are():
     import re
-    import readme_figures
-    for i, (key, label, family, mark) in enumerate(readme_figures.PLACES):
-        if mark == "bars":
+    import readme_figures as rf
+    for key, label, family, mark in rf.PLACES + rf.ACTIONS:
+        if mark in ("bars", "play", "tree"):
             continue
-        for theme in (readme_figures.LIGHT, readme_figures.DARK):
-            name = f"{mark}-{'white' if theme is readme_figures.LIGHT else 'ink'}" if mark.startswith("brand/") else f"brand/external/{mark}"
+        primary = key == rf.PRIMARY
+        for theme in (rf.LIGHT, rf.DARK):
+            variant = "white" if (theme is rf.LIGHT) == primary else "ink"
+            name = f"{mark}-{variant}" if mark.startswith("brand/") else f"brand/external/{mark}"
             text = (ROOT / "docs" / "assets" / f"{name}.svg").read_text()
             inner = re.search(r"<svg[^>]*>(.*)</svg>", text, re.S).group(1)
-            assert inner in readme_figures.capsule(key, label, family, mark, i == 0, theme, readme_figures.HOSTS.get(key))  # as published, (key, name)
+            assert inner in rf.capsule(key, label, family, mark, primary, theme, rf.HOSTS.get(key))  # as published, (key, name)
+
+
+def test_tree_draws_every_issue_of_the_snapshot(monkeypatch):
+    """The tree's counts come from the record snapshot, and it follows the snapshot when it changes."""
+    import readme_figures as rf
+    snapshot = rf.threads()
+    figure = rf.tree_fig(rf.LIGHT)
+    assert rf.TREE_TITLE in figure and rf.TREE_NEXT in figure
+    assert all(part in rf.tree_fig(rf.AUTO) for part in ("Many agents, many directions,", ">one record.<"))
+    for kind, name in rf.TREE_KINDS:
+        count = sum(1 for th in snapshot["threads"] if th["kind"] == kind)
+        assert f">{count}</text>" in figure and f">{name.upper()}</text>" in figure
+    snapshot["threads"] = snapshot["threads"][:100]
+    monkeypatch.setattr(rf, "threads", lambda: snapshot)
+    assert f"{sum(1 for th in snapshot['threads'] if th['kind'] == 'pr')} pull requests" in rf.tree_fig(rf.LIGHT)
+
+
+def test_film_capsule_gives_the_film_length():
+    import readme_figures
+    assert readme_figures.film_length() == "0:16"
+    assert ">0:16</text>" in (ROOT / "docs" / "assets" / "capsule-film-light.svg").read_text()

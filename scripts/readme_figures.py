@@ -5,12 +5,12 @@ Writes SVG files to docs/assets/: each figure in a light and a dark variant (REA
 <picture> and prefers-color-scheme), and the large figures also in a narrow variant for phones, which
 follows the reader's colour scheme by itself. Every value drawn comes from the repository: the frozen
 recipes (recipes/), the lineage of scripts/lineage.py, the cost model (moeloop.comparison), the CPU
-record docs/evidence/qwen3-cpu.json, the Phase 1 results docs/results/phase1.json, pyproject.toml and
-eval/bench/tracks.json; the layout (positions, sizes, axis ranges) is chosen in this script. The destination
-capsules place the marks of docs/assets/brand/ and docs/assets/brand/external/ unchanged. It also
-writes README.md's BibTeX block (between the citation markers) from CITATION.cff with bibtex(), the entry
-the model cards carry too. The mark
-comes from the lockup files in docs/assets/brand/, placed as they are. --check writes nothing and exits 1
+record docs/evidence/qwen3-cpu.json, the Phase 1 results docs/results/phase1.json, the homepage's snapshot of
+the issue record docs/site/data/record-snapshot.json and the length of the homepage's film; the layout (positions,
+sizes, axis ranges) is chosen in this script. The destination capsules place the marks of docs/assets/brand/ and
+docs/assets/brand/external/ unchanged, and the mark comes from the lockup files in docs/assets/brand/, placed as
+they are. It also writes README.md's BibTeX block (between the citation markers) from CITATION.cff with bibtex(),
+the entry the model cards carry too. --check writes nothing and exits 1
 if a file differs from what the data gives; tests/setup/test_readme_figures.py runs it. Text uses system
 fonts, because GitHub shows these files as images.
 
@@ -38,6 +38,7 @@ ASSETS = ROOT / "docs" / "assets"
 BRAND = ASSETS / "brand"
 README = ROOT / "README.md"
 CITATION = ROOT / "CITATION.cff"
+SNAPSHOT = ROOT / "docs" / "site" / "data" / "record-snapshot.json"
 # README.md's BibTeX block, between these markers, is rendered from CITATION.cff by bibtex()
 CITE = re.compile(r"(<!-- citation: [^\n]* -->\n```bibtex\n).*?(\n```\n<!-- /citation -->)", re.S)
 SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"
@@ -251,6 +252,11 @@ def checks():
     return record, rows
 
 
+def threads():
+    """The public issue record: the homepage's committed snapshot of the GitHub issues (docs/site/scripts/gen_data.py)."""
+    return json.loads(SNAPSHOT.read_text())
+
+
 def chain_deltas():
     """For each optimizer: mBPB of each chain step against step 0."""
     rows = {row["runs"]["adamw"]["config"]: row for row in
@@ -321,8 +327,13 @@ def glyph(node, x, cy, t, k=1.0, label=True):
 
 # ---------------------------------------------------------------- figures
 
+HEADLINE = "A common ground for looped MoE research."
+SLOGAN = "Let all agents explore in one space."
+
+
 def banner(t, narrow=None):
-    """The lockup as the homepage's header carries it, and the homepage's display line under it. The narrow
+    """The lockup as the homepage's header carries it, the headline and the slogan under it, as the homepage's first
+    screen. The narrow
     drawing is the AUTO variant, or (for Hugging Face) a narrow drawing in one theme."""
     narrow = t is AUTO if narrow is None else narrow
     w, h = (360, 232) if narrow else (880, 272)
@@ -347,24 +358,12 @@ def banner(t, narrow=None):
     if narrow:
         out.append(text(cx, 112, "A common ground for", 27, t["ink"], 650, "middle", ls=-.8))
         out.append(text(cx, 145, "looped MoE research.", 27, t["ink"], 650, "middle", ls=-.8))
-        out.append(text(cx, 182, "The design space of looped MoE in one", 14.5, t["mid"], 400, "middle"))
-        out.append(text(cx, 204, "model, compared on equal terms.", 14.5, t["mid"], 400, "middle"))
+        out.append(text(cx, 188, SLOGAN, 16, t["mid"], 400, "middle"))
     else:
         out.append(text(cx, 146, "A common ground for", 44, t["ink"], 650, "middle", ls=-1.6))
         out.append(text(cx, 196, "looped MoE research.", 44, t["ink"], 650, "middle", ls=-1.6))
-        out.append(text(cx, 240, "The design space of looped MoE in one model, compared on equal terms.", 17,
-                        t["mid"], 400, "middle"))
-    return svg(w, h, "LoopTitan", "A common ground for looped MoE research. The design space of looped MoE in "
-               "one model, compared on equal terms.", t, "".join(out), css)
-
-
-def badge(label, value, t):
-    """A mono key and its value over a hairline, as the homepage's release line."""
-    kw = mlabel_width(label)
-    end = math.ceil(kw + 8 + width(value, 12, mono=True))
-    body = (mlabel(0, 14, label, t) + text(kw + 8, 14, value, 12, t["ink"], 500, mono=True) +
-            line(0, 21.5, end, 21.5, t["hair"], 1))
-    return svg(end + 12, 22, f"{label}: {value}", f"{label}: {value}", t, body)
+        out.append(text(cx, 240, SLOGAN, 19, t["mid"], 400, "middle"))
+    return svg(w, h, "LoopTitan", f"{HEADLINE} {SLOGAN}", t, "".join(out), css)
 
 
 # The README's destination capsules, in row order: (key, label, colour family, mark). Marks of other organisations
@@ -372,8 +371,14 @@ def badge(label, value, t):
 PLACES = [("homepage", "Homepage", "ours", "brand/looptitan-shell-small"), ("docs", "Documentation", "ours", "octicons-book-16"),
           ("models", "Models", "hf", "huggingface-logo"), ("paper", "Paper", "arxiv", "arxiv-logomark-small"),
           ("results", "Results", "ours", "bars"), ("record", "Record", "github", "octicons-issue-opened-16"),
-          ("contribute", "Contribute", "github", "octicons-git-pull-request-16")]
-HOSTS = {"paper": "arXiv"}  # the service named in words beside its mark
+          ("film", "Film", "ours", "play")]
+# The README's actions, as capsules of the same kind: agents at work and the invitation (the one filled capsule), both
+# to the homepage, and the paper button of Phase 1
+ACTIONS = [("work", "See agents at work", "ours", "tree"), ("agent", "Send your agents", "github", "octicons-git-pull-request-16"),
+           ("read", "Read the paper", "arxiv", "arxiv-logomark-small")]
+PRIMARY = "agent"
+HOSTS = {"paper": "arXiv", "read": "arXiv"}  # the service named in words beside its mark
+FILM = ROOT / "docs" / "site" / "home" / "media" / "film.mp4"  # the homepage's film, which the film capsule opens
 # per family and theme: (ground, border, mark colour); LoopTitan's own places take the identity's indigo
 HUES = {"ours": {"light": ("#F2F4FD", "#C8CFF5", "#3346D3"), "dark": ("#151A2E", "#2C3672", "#7486F2")},
         "hf": {"light": ("#FFF8DD", "#F3D77A", None), "dark": ("#241F0E", "#5E4F1C", None)},
@@ -394,7 +399,7 @@ def placed(file, x, y, size, colour=None):
 # Advance widths of a common sans (per 1000 em), so that a label's length is set, not left to the viewer's font
 ADVANCE = dict(zip("abcdefghijklmnopqrstuvwxyz", [556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833,
                                                    556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500]))
-ADVANCE |= dict(zip("CDHMPR", [722, 722, 722, 833, 667, 722]))
+ADVANCE |= dict(zip("CDFHMPRSW ", [722, 722, 611, 722, 833, 667, 722, 667, 944, 278]))
 
 
 def label_text(x, y, s, size, fill, weight=500, mono=False):
@@ -422,8 +427,15 @@ def capsule(key, label, family, mark, primary, t, host=None):
     out = [rect(.5, .5, w - 1, h - 1, (h - 1) / 2, ground, border)]
     if mark == "bars":  # results: bars of a result, the last in the loop's colour
         out += [rect(pad + 1.5 + i * 4.6, 22 - bh, 3.2, bh, 1, colour if i == 2 else ink) for i, bh in enumerate([6, 9, 12])]
-    elif mark.startswith("brand/"):
-        out.append(placed(f"{mark}-{'white' if t is LIGHT else 'ink'}.svg", pad, 8.5, 15))
+    elif mark == "play":  # the film: a play mark in a ring
+        out += [circle(pad + 8, 16, 7.25, stroke=colour, sw=1.5),
+                path("M18.6 12.6L23.4 16L18.6 19.4Z", colour, 1.2, fill=colour)]
+    elif mark == "tree":  # agents at work: a trunk, one branch with its tasks, a new branch in dashes
+        out += [path("M12.5 22.5H27.5", colour, 1.5), path("M15 22.5V16.5Q15 14 17.5 14H23", colour, 1.3),
+                circle(19.5, 14, 1.6, colour), path("M23 14C25 14 25 9.5 27.5 9.5", colour, 1.3, dash="1.6 2"),
+                circle(15, 22.5, 1.7, colour)]
+    elif mark.startswith("brand/"):  # white on the indigo of a filled capsule or on the dark ground, else ink
+        out.append(placed(f"{mark}-{'white' if (t is LIGHT) == primary else 'ink'}.svg", pad, 8.5, 15))
     elif mark in ("huggingface-logo", "arxiv-logomark-small"):  # full-colour marks with margins: 2 px larger to match
         out.append(placed(f"brand/external/{mark}.svg", pad - 1, 7, 18))
     else:
@@ -432,186 +444,101 @@ def capsule(key, label, family, mark, primary, t, host=None):
     return svg(w + 6, h, label, label + (f" ({host})" if host else ""), t, "".join(out))  # 6 px of air after each capsule
 
 
-def hero(t):
-    """The Phase 1 loop: bars on a shaft, the middle layers run twice; a light passes the looped ones twice."""
-    narrow = t is AUTO
-    m, cells = layers("phase1/m3")
-    pre, core, suf, visits = m["prefix_cells"], m["num_cells"], m["suffix_cells"], m["num_visits"]
-    if narrow:
-        w, h, bw, bh, gap, ggap, cy, r = 360, 288, 12, 72, 9, 20, 104, 2.5
-    else:
-        w, h, bw, bh, gap, ggap, cy, r = 880, 336, 16, 104, 30, 52, 146, 3
-    groups = [pre, core, suf]
-    total = sum(n * bw + (n - 1) * gap for n in groups) + 2 * ggap
-    x = (w - total) / 2
-    bars = []
-    for g, n in enumerate(groups):
-        for i in range(n):
-            bars.append((x, g == 1))
-            x += bw + (gap if i < n - 1 else ggap)
-    first, last = bars[pre][0], bars[pre + core - 1][0]
-    loop_l, loop_r = first - ggap / 2, last + bw + ggap / 2
-    xs, xe = (16, w - 16) if narrow else (64, w - 64)
-    top = cy - bh / 2
-    a0 = top - (6 if narrow else 8)
-    c = 46 if narrow else 72
-    ax1, ax2 = last + bw / 2, first + bw / 2
-    arc = f"M{num(ax1)} {num(a0)}C{num(ax1)} {num(a0 - c)} {num(ax2)} {num(a0 - c)} {num(ax2)} {num(a0)}"
-    # the light: the token's path through the layers, timed as the homepage's pulse. One quick hop per layer
-    # with the motion easing, the way back along the arc, out, then a rest; each layer flashes as it is reached.
-    T, hop, back, edge, start, fade = 4.0, .075, .54, .12, .3, .06
-    route = f"M{num(xs)} {num(cy)}H{num(ax1)}V{num(a0)}C{num(ax1)} {num(a0 - c)} {num(ax2)} {num(a0 - c)} {num(ax2)} {num(a0)}V{num(cy)}H{num(xe)}"
-    ctrl = [(ax1, a0), (ax1, a0 - c), (ax2, a0 - c), (ax2, a0)]
-    pts = [tuple((1 - u) ** 3 * p[0] + 3 * (1 - u) ** 2 * u * p[1] + 3 * (1 - u) * u ** 2 * p[2] + u ** 3 * p[3]
-                 for p in zip(*ctrl)) for u in (i / 400 for i in range(401))]
-    second = ax1 - xs + 2 * (cy - a0) + sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))  # where the second visit starts
-    length = second + xe - ax2
-    seq = list(range(pre)) + list(range(pre, pre + core)) * visits + list(range(pre + core, pre + core + suf))
-    keys = [(0, 0, None), (start, 0, None)]  # (time, distance along the route, easing of the move that ends here)
-    hits = {}
-    for j, i in enumerate(seq):
-        centre = bars[i][0] + bw / 2
-        again = j >= pre + core  # past the first visit: measured from where the way back lands
-        d = (second + centre - ax2) if again else (centre - xs)
-        move = edge if j == 0 else back if i < seq[j - 1] else hop * (i - seq[j - 1])
-        keys.append((keys[-1][0] + move, d, None if j == 0 else ".65 0 .35 1"))
-        hits.setdefault(i, []).append(keys[-1][0])
-    keys.append((keys[-1][0] + edge, length, None))
-    end = keys[-1][0]
-    keys.append((T, length, None))
-    times = ";".join(f"{k / T:.4f}" for k, _, _ in keys)
-    splines = ";".join(e or "0 0 1 1" for _, _, e in keys[1:])
-    timing = f'dur="{num(T)}s" repeatCount="indefinite" keyTimes="{times}" calcMode="spline" keySplines="{splines}"'
-    tail = (14 if narrow else 22) / length * 1000
-    css = ["@media (prefers-reduced-motion: reduce){.mo{display:none}}"]
-    out = ['<defs><radialGradient id="glow" cx="50%" cy="50%" r="50%">'
-           f'<stop offset="0" style="stop-color:{t["acc"]};stop-opacity:.10"/>'
-           f'<stop offset="1" style="stop-color:{t["acc"]};stop-opacity:0"/></radialGradient></defs>']
-    out.append(f'<ellipse cx="{num((loop_l + loop_r) / 2)}" cy="{num(cy)}" rx="{num((loop_r - loop_l) * .72)}" '
-               f'ry="{num(bh * .9)}" fill="url(#glow)"/>')
-    out.append(line(xs, cy, xe, cy, t["hair"], 1))
-    for i, (bx, loop) in enumerate(bars):
-        out.append(rect(bx, top, bw, bh, r, t["acc"] if loop else t["bar"]))
-        flash = [(0, 0)] + [(at + dt, v) for at in hits[i] for dt, v in [(-.01, 0), (0, 1), (.15, .49), (.3, .16), (.5, 0)]] + [(T, 0)]
-        out.append(f'<rect class="mo" x="{num(bx)}" y="{num(top)}" width="{bw}" height="{bh}" rx="{num(r)}" opacity="0" '
-                   f'style="fill:{t["lit"] if loop else t["inkhi"]}"><animate attributeName="opacity" dur="{num(T)}s" '
-                   f'repeatCount="indefinite" keyTimes="{";".join(f"{a / T:.4f}" for a, _ in flash)}" '
-                   f'values="{";".join(num(float(v)) for _, v in flash)}"/></rect>')
-    out.append(path(arc, t["acc"], 1.6 if narrow else 2))
-    out.append(arrow_head(ax2, a0, 0, 1, t["acc"], 1.6 if narrow else 2, 5.5 if narrow else 7))
-    apex = a0 - .75 * c
-    out.append(text((ax1 + ax2) / 2, apex - (9 if narrow else 12), f"×{visits}", 18 if narrow else 22, t["acc"], 600, "middle"))
-    show = [(0, 0), (start, 0), (start + fade, 1), (end - fade, 1), (end, 0), (T, 0)]
-    out.append(f'<g class="mo" opacity="0"><animate attributeName="opacity" dur="{num(T)}s" repeatCount="indefinite" '
-               f'keyTimes="{";".join(f"{a / T:.4f}" for a, _ in show)}" values="{";".join(str(v) for _, v in show)}"/>'
-               f'<path d="{route}" pathLength="1000" style="fill:none;stroke:{t["lit"]};stroke-width:{3 if narrow else 4};'
-               f'stroke-linecap:round;stroke-dasharray:{num(tail)} 2000;stroke-opacity:.6">'
-               f'<animate attributeName="stroke-dashoffset" {timing} '
-               f'values="{";".join(num(tail - 1000 * d / length) for _, d, _ in keys)}"/></path>'
-               f'<g><animateMotion path="{route}" {timing} keyPoints="{";".join(f"{d / length:.4f}" for _, d, _ in keys)}"/>'
-               + circle(0, 0, 8 if narrow else 11, t["acc"], op=.18) + circle(0, 0, 3.2 if narrow else 4.5, t["spark"], t["acc"], 1.5 if narrow else 1.75)
-               + "</g></g>")
-    # each group: a hairline span under it and its label
-    yb = cy + bh / 2 + (14 if narrow else 20)
-    starts = [bars[0][0], first, bars[pre + core][0]]
-    ends = [bars[pre - 1][0] + bw, last + bw, bars[-1][0] + bw]
-    size = 12.5 if narrow else 14
-    run_words = "twice" if visits == 2 else f"{visits} times"
-    labels = [f"{pre} layers", f"{core} layers, one set of weights, run {run_words}", f"{suf} layers"]
-    if narrow:
-        labels[1] = f"{core} layers, run {run_words}"
-    for i, (a, b) in enumerate(zip(starts, ends)):
-        col = t["acc"] if i == 1 else t["hair"]
-        out.append(path(f"M{num(a)} {num(yb - 4)}V{num(yb)}H{num(b)}V{num(yb - 4)}", col, 1))
-        out.append(text((a + b) / 2, yb + (19 if narrow else 23), labels[i], size, t["acc"] if i == 1 else t["mid"],
-                        500 if i == 1 else 400, "middle"))
-    if narrow:
-        out.append(text(w / 2, yb + 37, "one set of weights", size, t["acc"], 500, "middle"))
-    # the two counts, as hanging numerals: the label above, the number under it
-    stored, run = pre + core + suf, pre + core * visits + suf
-    ny = h - (18 if narrow else 22)
-    for dx, label, value, col in [(-1, "layers stored", stored, t["ink"]), (1, "layers run", run, t["acc"])]:
-        x = w / 2 + dx * (54 if narrow else 64)
-        out.append(mlabel(x, ny - (30 if narrow else 34), label, t, "middle"))
-        out.append(text(x, ny, str(value), 24 if narrow else 28, col, 600, "middle"))
-    desc = (f"{pre} outer layers, {core} middle layers that run {visits} times with one set of weights, "
-            f"{suf} outer layers: {stored} layers stored, {run} run. A light passes the middle layers twice.")
-    return svg(w, h, "The Phase 1 loop", desc, t, "".join(out), "".join(css))
+# ---- pillars: the four properties of the common ground, each a small mark (as the homepage's first-screen pillars
+# draw them, in a 56 x 32 box), the property, its number and one caption
+
+PILLARS = [("One model,", "every design."), ("Equal budgets", "before you train."), ("Checked against", "independent code."),
+           ("Every path", "on the record.")]
 
 
-# ---- pillars (each figure in a local box 256 x 120)
-
-def pillar_designs(t):
-    """Many designs, one model: three looped designs, drawn as in the lineage figure, into one ModelConfig."""
-    out = []
-    for node, y in zip(["phase1/m3", "methods/huginn", "methods/ouro"], [22, 60, 98]):
-        g, gw = glyph(node, 4, y, t, .56, label=False)
-        out.append(g)
-        visits = recipe(node)["model"]["num_visits"]
-        out.append(text(4 + gw + 10, y + 4.3, f"×{visits}", 12, t["acc"], 600, mono=True))
-        x = 4 + gw + 34
-        out.append(path(f"M{num(x)} {y}C{num(x + 30)} {y} 128 60 152 60", t["hair"], 1))
-    out.append(station(156, 68, t) + text(168, 64.5, "ModelConfig", 12, t["ink"], 500, mono=True))
+def mark_model(t):
+    """The lineage in miniature: the root, its trunk and its first four children, indigo when they loop."""
+    nodes = lineage.lineage()
+    root = next(n for n, (parent, _, _) in nodes.items() if parent is None)
+    kids = [n for n, (parent, _, _) in nodes.items() if parent == root][:4]
+    out = [rect(2, 1, 4, 8, 1.2, t["ink"]), path(f"M4 10V{8 + len(kids) * 6 - 1}", t["hair"], 1.75)]
+    for i, k in enumerate(kids):
+        y = 13 + i * 6
+        out.append(path(f"M4 {y - 3}V{y - 1}Q4 {y} 6 {y}H14", t["hair"], 1.75))
+        out.append(rect(16, y - 2.5, 4, 5, 1, t["acc"] if recipe(k)["model"]["num_visits"] > 1 else t["ink"]))
+        out.append(rect(23, y - 1, min(32, 8 + len(k.split("/")[-1]) * 1.6), 2, 1, t["hair"]))
     return "".join(out)
 
 
-def pillar_budgets(t, matched):
-    out = []
-    for i, (key, label) in enumerate(BUDGETS):
-        y = 24 + i * 32
-        rel = matched[key]["relative_difference"]
-        tol = matched[key]["relative_tolerance"]
-        x0, x1 = 96, 184
-        out.append(text(0, y + 4.2, label.replace("Training ", ""), 12, t["mid"]))
-        out.append(tolerance_band(x0, y, x1 - x0, t))
-        out.append(circle((x0 + x1) / 2 + rel / tol * (x1 - x0) / 2, y, 4.5, t["ink"], t["panel"], 2))
-        out.append(text(256, y + 4.2, f"{100 * rel:+.2f}%".replace("-", "−"), 12, t["ink"], 500, "end", mono=True))
+def mark_budgets(t, matched):
+    """The tolerance band of ±5% and the three budgets of the loop against the standard MoE on it."""
     tol = within(matched)[2]
-    for x, s in [(96, f"−{pct(tol)}"), (140, "0"), (184, f"+{pct(tol)}")]:
-        out.append(text(x, 114, s, 11, t["softt"], 400, "middle", mono=True))
+
+    def X(v):
+        return 28 + max(-.08, min(.08, v)) / .08 * 26
+    out = [line(1, 16, 55, 16, t["hair"], 1.5), rect(X(-tol), 9, X(tol) - X(-tol), 14, 7, t["band"], t["soft"], 1.5)]
+    out += [circle(X(v["relative_difference"]), 16, 3.2, t["ink"], t["band"], 1) for v in matched.values()]
     return "".join(out)
 
 
-def pillar_checks(t, rows):
-    """A square per value: a row per configuration, a column per quantity."""
-    out = []
-    for i, (_, cells) in enumerate(rows):
-        for j, (value, tol) in enumerate(cells):
-            x, y = 4 + j * 17, 10 + i * 17
-            out.append(rect(x, y, 12, 12, 1.5, t["ink"]) if value <= tol else
-                       rect(x + .5, y + .5, 11, 11, 1.5, t["panel"], t["ink"]))
-    out.append(text(108, 50, f"{len(rows)} configurations", 12, t["mid"], 400, mono=True))
-    out.append(text(108, 68, f"× {len(rows[0][1])} quantities", 12, t["mid"], 400, mono=True))
+def mark_checks(t, rows):
+    """The tolerance plot in miniature: per quantity, the span of its differences, all left of the tolerance line."""
+    out = [line(51, 1, 51, 31, t["ink"], 2)]
+    for j in range(len(QUANTITIES)):
+        ratios = [cells[j][0] / cells[j][1] for _, cells in rows if cells[j][0] > 0]
+        if ratios:
+            xs = [4 + (math.log10(r) + 3) / 3 * 44 for r in (min(ratios), max(ratios))]
+            out.append(line(xs[0], 4 + j * 6, xs[1], 4 + j * 6, t["ink"], 3))
+    return "".join(out)
+
+
+def mark_record(t, threads_):
+    """The record in miniature: the trunk, the three studies with most tasks as paths off it, and one new branch."""
+    studies = sorted(((p, [c for c in threads_ if c["parent"] == p["n"]]) for p in threads_ if p["kind"] == "study"),
+                     key=lambda q: (-len(q[1]), q[0]["n"]))[:3]
+    out = [line(1, 28, 42, 28, t["ink"], 1.75)]
+    for i, (p, ks) in enumerate(sorted(studies, key=lambda q: q[0]["n"])):
+        x0, y = 3 + i * 8, 21 - i * 7
+        x1 = x0 + 14 + min(len(ks), 8) * 1.6
+        out.append(path(f"M{x0} 28V{y + 2}Q{x0} {y} {x0 + 2} {y}H{num(x1)}", t["ink"], 1.25))
+        for j, c in enumerate(ks[:4]):
+            out.append(circle(x0 + 5 + j * 3.6, y, 1.3, t["ink"]) if c["kind"] == "run" else
+                       circle(x0 + 5 + j * 3.6, y, 1.3, t["card"], t["ink"], .9))
+        out.append(line(x1, y - 2, x1, y + 2, t["ink"], 1.25))
+    out.append(path("M42 28C48 28 48 17 54 17", t["acc"], 1.25, dash="1.5 2") + path("M42 28H54", t["acc"], 1.25, dash="1.5 2"))
+    out.append(circle(42, 28, 1.6, t["acc"]))
     return "".join(out)
 
 
 def pillars(t):
+    """The four properties of the common ground in one row of four; a list of four rows in the narrow variant."""
     narrow = t is AUTO
     matched = budgets("phase1/m0", "phase1/m3")
-    record, rows = checks()
+    _, rows = checks()
+    issues = threads()["threads"]
     inside = sum(v <= tol for _, cells in rows for v, tol in cells)
-    n = sum(len(cells) for _, cells in rows)
     b_in, b_n, b_tol = within(matched)
-    tiles = [(pillar_designs(t), str(len(lineage.lineage())), "configurations, one model",
-              f"{len(MECHANISMS)} mechanisms, each a field"),
-             (pillar_budgets(t, matched), f"{b_in} of {b_n}", f"budgets within ±{pct(b_tol)}",
-              "The loop against the standard MoE"),
-             (pillar_checks(t, rows), f"{inside} of {n}", "within tolerance", "Against Transformers Qwen3-MoE")]
-    cw, ch, gap = (360, 228, 28) if narrow else (272, 228, 32)
-    w = cw if narrow else 3 * cw + 2 * gap
-    h = 3 * ch + 2 * gap if narrow else ch
+    tiles = [(mark_model(t), str(len(lineage.lineage())), "configurations in one model"),
+             (mark_budgets(t, matched), f"{b_in} of {b_n}", f"budgets within ±{pct(b_tol)}"),
+             (mark_checks(t, rows), f"{inside} of {sum(len(c) for _, c in rows)}", "values within tolerance"),
+             (mark_record(t, issues), str(len(issues)), "issues, failures included")]
     out = []
-    for i, (art, big, head, sub) in enumerate(tiles):
-        x, y = (0, i * (ch + gap)) if narrow else (i * (cw + gap), 0)
-        if narrow and i:
-            out.append(line(0, y - gap / 2 + .5, w, y - gap / 2 + .5, t["line"], 1))
-        out.append(f'<g transform="translate({num(x)} {y + 8})">{art}</g>')
-        out.append(text(x, y + 168, big, 30, t["ink"], 600, ls=-.8))
-        out.append(text(x, y + 194, head, 14, t["ink"], 500))
-        out.append(text(x, y + 215, sub, 13, t["mid"]))
-    desc = (f"Three tiles. {tiles[0][1]} {tiles[0][2]}: {tiles[0][3]}. {tiles[1][1]} {tiles[1][2]}: parameters, "
-            f"training FLOPs and KV cache of the loop against the standard MoE. {tiles[2][1]} {tiles[2][2]}: six "
-            "configurations, five quantities, against Transformers Qwen3-MoE.")
+    if narrow:
+        w, rh = 360, 76
+        for i, ((mark, big, caption), title) in enumerate(zip(tiles, PILLARS)):
+            y = i * rh
+            if i:
+                out.append(line(0, y + .5, w, y + .5, t["line"], 1))
+            out.append(f'<g transform="translate(0 {y + 20}) scale(1.15)">{mark}</g>')
+            out.append(text(80, y + 32, " ".join(title), 13.5, t["ink"], 600))
+            out.append(f'<text class="s" x="80" y="{y + 54}" style="font-size:13px;fill:{t["mid"]}">'
+                       f'<tspan style="font-weight:600;fill:{t["ink"]}">{esc(big)}</tspan> {esc(caption)}</text>')
+        h = 4 * rh
+    else:
+        w, gap, h = 880, 28, 176
+        cw = (w - 3 * gap) / 4
+        for i, ((mark, big, caption), title) in enumerate(zip(tiles, PILLARS)):
+            x = i * (cw + gap)
+            out.append(f'<g transform="translate({num(x)} 2) scale(1.5)">{mark}</g>')
+            out.append(text(x, 80, title[0], 14.5, t["ink"], 600) + text(x, 99, title[1], 14.5, t["ink"], 600))
+            out.append(text(x, 142, big, 30, t["ink"], 600, ls=-.8))
+            out.append(text(x, 166, caption, 13, t["mid"]))
+    desc = "Four properties. " + " ".join(f"{' '.join(title)} {big} {caption}." for (_, big, caption), title in zip(tiles, PILLARS))
     return svg(w, h, "LoopTitan at a glance", desc, t, "".join(out))
 
 
@@ -1217,6 +1144,141 @@ def flow_fig(t):
     return svg(w, int(h), "How research runs here", desc, t, "".join(out))
 
 
+# ---- the record as a tree, as the homepage's record section draws it (docs/site/home/app.js, record())
+
+TREE_TITLE = "Many agents, many directions, one record."
+TREE_NEXT = "Branch from any result."
+TREE_AXIS = "every public issue, in the order opened"
+TREE_KINDS = [("study", "studies"), ("run", "run tasks"), ("plan", "plans"), ("code", "code tasks"), ("pr", "pull requests")]
+
+
+def day(iso):
+    d = __import__("datetime").date.fromisoformat(iso)
+    return f"{d.day} {d.strftime('%b')}"
+
+
+def tree_fig(t):
+    """The public record as a tree. The trunk is the one record, every issue in the order opened; each study or plan
+    leaves it at its own issue and runs to its last task, its run tasks filled and code tasks hollow on it; a finished
+    path ends in a stop, an open one in a ring. Past the present, and from a few results, new branches in indigo."""
+    narrow = t is AUTO
+    snap = threads()
+    th = sorted(snap["threads"], key=lambda x: x["n"])
+    rank = {x["n"]: i for i, x in enumerate(th)}
+    heads = [x for x in th if x["kind"] in ("study", "plan")]
+    kids = {p["n"]: [x for x in th if x["parent"] == p["n"]] for p in heads}
+    w = 360 if narrow else 880
+    pad = 16 if narrow else 24
+    W = w - 2 * pad
+    F = 64 if narrow else min(260, W * .2)
+    X0, X1 = 4, W - F
+    LH, R, gap = (10, 4, 6) if narrow else (17, 7, 12)
+
+    def X(n):
+        return X0 + rank[n] / (len(th) - 1) * (X1 - X0)
+    lanes, paths = [], []
+    for p in heads:
+        xs, ks = X(p["n"]), kids[p["n"]]
+        xe = X1 if not p["closed"] else max([xs + R + 6] + [X(c["n"]) + 4 for c in ks])
+        lane = next((i for i, end in enumerate(lanes) if end + gap < xs), None)
+        if lane is None:
+            lane = len(lanes)
+            lanes.append(0)
+        lanes[lane] = xe
+        paths.append((p, xs, xe, ks, lane))
+    count = {k: sum(1 for x in th if x["kind"] == k) for k, _ in TREE_KINDS}
+    out = [""]
+    # the title and the tally
+    if narrow:  # the title in two lines, broken after its first comma pair
+        first, rest = TREE_TITLE.rsplit(", ", 1)
+        out.append(text(pad, 36, first + ",", 15, t["ink"], 600, ls=-.2) + text(pad, 56, rest, 15, t["ink"], 600, ls=-.2))
+        tx, ty = pad, 82
+    else:
+        out.append(text(pad, 38, TREE_TITLE, 17, t["ink"], 600, ls=-.2))
+        tx, ty = pad, 64
+    for k, name in TREE_KINDS:
+        item = f"{count[k]} {name}"
+        iw = width(str(count[k]), 12, mono=True) + 6 + mlabel_width(name)
+        if tx + iw > w - pad:
+            tx, ty = pad, ty + 20
+        out.append(text(tx, ty, str(count[k]), 12, t["ink"], 600, mono=True))
+        out.append(mlabel(tx + width(str(count[k]), 12, mono=True) + 6, ty, name, t))
+        tx += iw + (16 if narrow else 22)
+    top = ty + (24 if narrow else 40)
+    base = top + len(lanes) * LH + 10
+    g = [f'<g transform="translate({pad} 0)">']
+    g.append(line(X0, base, X1, base, t["ink"], 1.5))
+    rt = 1.6 if narrow else 2.25
+    for x in th:  # the trunk: issues of no study or plan
+        if x["parent"] or x["kind"] in ("study", "plan"):
+            continue
+        xx = X(x["n"])
+        if x["kind"] == "pr":
+            g.append(line(xx, base + 3, xx, base + 7, t["hair"], 1.25))
+        elif x["kind"] == "code":
+            g.append(circle(xx, base, rt, t["card"], t["grey"], 1.1))
+        else:
+            g.append(circle(xx, base, rt, t["ink"]))
+    rn = 1.6 if narrow else 2.4
+    for p, xs, xe, ks, lane in paths:
+        y = base - (lane + 1) * LH
+        col = t["soft"] if p["kind"] == "plan" else t["ink"]
+        g.append(path(f"M{num(xs)} {num(base)}V{num(y + R)}Q{num(xs)} {num(y)} {num(xs + R)} {num(y)}H{num(xe)}", col, 1.25))
+        g.append(circle(xs, base, 1.75 if narrow else 2.5, col))
+        if p["closed"]:
+            g.append(line(xe, y - 3, xe, y + 3, col, 1.25))
+        else:
+            g.append(circle(xe, y, 2 if narrow else 2.75, t["card"], t["ink"], 1.25))
+        for c in ks:
+            xx = max(xs + R, X(c["n"]))
+            g.append(circle(xx, y, rn, t["ink"]) if c["kind"] == "run" else circle(xx, y, rn, t["card"], t["grey"], 1.1))
+    # new branches in indigo: a few from results across the record, and a fan from the present
+    def twig(x0, y0, x1, y1, k):
+        return (path(f"M{num(x0)} {num(y0)}C{num(x0 + (x1 - x0) * k)} {num(y0)} {num(x0 + (x1 - x0) * (1 - k) * .6)} {num(y1)} "
+                     f"{num(x1)} {num(y1)}", t["acc"], 1.5, dash="3 4") +
+                circle(x1, y1, 2.5 if narrow else 3.25, t["card"], t["acc"], 2))
+    free = []
+    for p, xs, xe, ks, lane in paths:
+        for c in ks:
+            xx = max(xs + R, X(c["n"]))
+            over = any(o[4] > lane and o[1] - R * 2 <= xx + 34 and o[2] + 4 >= xx for o in paths)
+            if not over and xx < X1 - 40:
+                free.append((xx, base - (lane + 1) * LH))
+    free.sort()
+    buds = []
+    for i in range(0 if narrow else 3):
+        if free:
+            c = free[min(len(free) - 1, round((i + .5) / 3 * (len(free) - 1)))]
+            if c not in buds:
+                buds.append(c)
+    for bx, by in buds:
+        g.append(circle(bx, by, 2.6, t["acc"]) + twig(bx, by, bx + 30, by - LH * 1.4, .1))
+    fan, ex = (3, X1 + F * .8) if narrow else (4, X1 + F * .62)
+    yhi = base - max(2, len(lanes)) * LH * .9
+    for i in range(fan):
+        g.append(twig(X1, base, ex + ((-6 if narrow else 18) if i % 2 else 0), yhi + i / (fan - 1) * (base - yhi), .45))
+    g.append(circle(X1, base, 2.5 if narrow else 3.25, t["acc"]))
+    h = base + 34
+    if not narrow:
+        g.append(text(W, yhi - 16, TREE_NEXT, 13, t["acc"], 600, "end"))
+    # the ends of the record
+    g.append(text(X0, h - 8, f"#{th[0]['n']} · {day(th[0]['opened'])}", 10, t["softt"], mono=True))
+    g.append(text(X1, h - 8, f"#{th[-1]['n']} · {day(snap['as_of'])}", 10, t["softt"], 400, "end", mono=True))
+    if not narrow:
+        g.append(text((X0 + X1) / 2, h - 8, TREE_AXIS, 10, t["softt"], 400, "middle", mono=True))
+    g.append("</g>")
+    out += g
+    if narrow:  # on a phone the invitation is set under the drawing
+        out.append(text(pad, h + 18, TREE_NEXT, 14, t["acc"], 600))
+        h += 30
+    h += 14
+    out[0] = card(0, 0, w, h, t)
+    desc = (f"{TREE_TITLE} The public record as a tree, to {day(snap['as_of'])}: {len(th)} GitHub issues and pull requests, "
+            + ", ".join(f"{count[k]} {name}" for k, name in TREE_KINDS) + ". Each study or plan is a branch with its tasks "
+            f"on it; every issue stays. New branches in indigo: {TREE_NEXT}")
+    return svg(w, int(h), "The record as a tree", desc, t, "".join(out))
+
+
 # ---------------------------------------------------------------- citation
 
 def bibtex(cff):
@@ -1259,29 +1321,30 @@ def cited(readme, cff):
 
 # ---------------------------------------------------------------- files
 
-def badges():
-    project = (ROOT / "pyproject.toml").read_text()
-    pythons = re.findall(r"Programming Language :: Python :: (3\.\d+)", project)
-    torch = re.search(r'"torch==([\d.]+)"', project).group(1)
-    licence = re.search(r'^license = "([^"]+)"', project, re.M).group(1)
-    tracks = json.loads((ROOT / "eval" / "bench" / "tracks.json").read_text())["tracks"]
-    return {"licence": ("licence", licence), "python": ("python", " · ".join(pythons)),
-            "pytorch": ("pytorch", torch), "benchmark": ("benchmark", f"{len(tracks)} tracks")}
+def film_length():
+    """The film's length as m:ss, from the duration in its MP4 header (the mvhd box)."""
+    data = FILM.read_bytes()
+    at = data.index(b"mvhd") + 4
+    if data[at] == 1:  # version 1: 64-bit times
+        scale, length = int.from_bytes(data[at + 20:at + 24], "big"), int.from_bytes(data[at + 24:at + 32], "big")
+    else:
+        scale, length = int.from_bytes(data[at + 12:at + 16], "big"), int.from_bytes(data[at + 16:at + 20], "big")
+    seconds = round(length / scale)
+    return f"{seconds // 60}:{seconds % 60:02d}"
 
 
 def figures():
     out = {}
-    for name, draw in [("banner", banner), ("hero", hero), ("pillars", pillars), ("mechanisms", mechanisms),
+    for name, draw in [("banner", banner), ("pillars", pillars), ("mechanisms", mechanisms),
                        ("lineage", lineage_fig), ("compare", compare_fig), ("check", check_fig),
-                       ("results", results_fig), ("flow", flow_fig)]:
+                       ("results", results_fig), ("flow", flow_fig),
+                       ("tree", tree_fig)]:
         for variant, theme in [("light", LIGHT), ("dark", DARK), ("narrow", AUTO)]:
             out[f"{name}-{variant}.svg"] = draw(theme)
-    for i, (key, label, family, mark) in enumerate(PLACES):
+    hosts = HOSTS | {"film": film_length()}  # beside the label, in mono
+    for key, label, family, mark in PLACES + ACTIONS:
         for variant, theme in [("light", LIGHT), ("dark", DARK)]:
-            out[f"capsule-{key}-{variant}.svg"] = capsule(key, label, family, mark, i == 0, theme, HOSTS.get(key))
-    for key, (label, value) in badges().items():
-        for variant, theme in [("light", LIGHT), ("dark", DARK)]:
-            out[f"badge-{key}-{variant}.svg"] = badge(label, value, theme)
+            out[f"capsule-{key}-{variant}.svg"] = capsule(key, label, family, mark, key == PRIMARY, theme, hosts.get(key))
     return out
 
 
