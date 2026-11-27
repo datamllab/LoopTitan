@@ -275,10 +275,10 @@
 			<div class="term term--start" data-rv>
 				<span class="term__k">For you</span>
 				<span class="term__acts"><button type="button" class="tbtn" data-copy="cmd-start" data-text="git clone https://github.com/datamllab/LoopTitan && cd LoopTitan
-uv pip install &#39;.[data,hf]&#39;
-python scripts/lineage.py
-python -m pytest -q" aria-label="Copy the four commands" data-tip="Copy"><svg class="i tbtn__a" aria-hidden="true"><use href="#g-twin"/></svg><svg class="i tbtn__b" aria-hidden="true"><use href="#g-in"/></svg><span>copy</span></button></span>
-<pre class="term__body term__body--n" id="cmd-start"><code><span class="ln"><span class="term__p" aria-hidden="true">1</span>git clone https://github.com/datamllab/LoopTitan &amp;&amp; cd LoopTitan</span><span class="ln"><span class="term__p" aria-hidden="true">2</span>uv pip install '.[data,hf]'</span><span class="ln"><span class="term__p" aria-hidden="true">3</span>python scripts/lineage.py</span><span class="ln"><span class="term__p" aria-hidden="true">4</span>python -m pytest -q</span></code></pre>
+uv sync --frozen
+uv run --frozen python scripts/lineage.py
+uv run --frozen python -m pytest -q" aria-label="Copy the four commands" data-tip="Copy"><svg class="i tbtn__a" aria-hidden="true"><use href="#g-twin"/></svg><svg class="i tbtn__b" aria-hidden="true"><use href="#g-in"/></svg><span>copy</span></button></span>
+<pre class="term__body term__body--n" id="cmd-start"><code><span class="ln"><span class="term__p" aria-hidden="true">1</span>git clone https://github.com/datamllab/LoopTitan &amp;&amp; cd LoopTitan</span><span class="ln"><span class="term__p" aria-hidden="true">2</span>uv sync --frozen</span><span class="ln"><span class="term__p" aria-hidden="true">3</span>uv run --frozen python scripts/lineage.py</span><span class="ln"><span class="term__p" aria-hidden="true">4</span>uv run --frozen python -m pytest -q</span></code></pre>
 			</div>
 			<div class="term term--agent" data-rv>
 				<span class="term__k">For your agent</span>
